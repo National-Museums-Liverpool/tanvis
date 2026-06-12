@@ -6,8 +6,7 @@ export function parseOptions(element) {
     source: dataset.visSource,
     area: dataset.visArea || 'vc-58-59-60',
     ctl: parseBoolean(dataset.visCtl),
-    hectads: parseBooleanDefaultTrue(dataset.visHectads),
-    options: parseJson(dataset.visOptions)
+    hectads: parseBooleanDefaultTrue(dataset.visHectads)
   };
 }
 
@@ -21,16 +20,4 @@ function parseBooleanDefaultTrue(value) {
   }
 
   return String(value).toLowerCase() === 'true';
-}
-
-function parseJson(value) {
-  if (!value) {
-    return {};
-  }
-
-  try {
-    return JSON.parse(value);
-  } catch {
-    return {};
-  }
 }

@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
-import { renderMap } from '../../src/renderers/map.js';
+import { renderStaticMap } from '../../src/renderers/map.js';
 
-describe('renderMap', () => {
+describe('renderStaticMap', () => {
   it('calls brc-atlas svgMap, renders controls, and updates area selection', () => {
     const setIdentfierCalls = [];
     const redrawCalls = [];
@@ -22,17 +22,13 @@ describe('renderMap', () => {
       type: 'map',
       area: 'vc-58-59-60',
       source: '/example.csv',
-      ctl: true,
-      options: {
-        mapTypesKey: 'Standard hectad'
-      }
+      ctl: true
     };
 
-    renderMap(element, config);
+    renderStaticMap(element, config);
 
     expect(svgMapCalls).toHaveLength(1);
     expect(svgMapCalls[0].selector).toMatch(/^#tanvis-map-/);
-    expect(svgMapCalls[0].mapTypesKey).toBe('Standard hectad');
     expect(svgMapCalls[0].transOptsControl).toBe(false);
     expect(svgMapCalls[0].transOptsKey).toBe('vc-58-59-60');
     expect(svgMapCalls[0].gridGjson).toBe('/data/vcs/hectad-grids/vc-58-59-60-hectads.geojson');
@@ -90,13 +86,12 @@ describe('renderMap', () => {
     };
 
     const element = document.createElement('div');
-    renderMap(element, {
+    renderStaticMap(element, {
       type: 'map',
       area: 'vc-58',
       source: '/example.csv',
       ctl: false,
-      hectads: false,
-      options: {}
+      hectads: false
     });
 
     expect(svgMapCalls).toHaveLength(1);

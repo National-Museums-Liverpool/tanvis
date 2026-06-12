@@ -7,15 +7,13 @@ describe('parseOptions', () => {
     element.dataset.visType = 'chart';
     element.dataset.visSource = '/data.json';
     element.dataset.visCtl = 'true';
-    element.dataset.visOptions = '{"theme":"dark"}';
 
     expect(parseOptions(element)).toEqual({
       type: 'chart',
       source: '/data.json',
       area: 'vc-58-59-60',
       ctl: true,
-      hectads: true,
-      options: { theme: 'dark' }
+      hectads: true
     });
   });
 

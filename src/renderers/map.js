@@ -2,6 +2,6 @@ import { createBrcAtlasAdapter } from '../adapters/brcAtlas.js';
 
 const atlasAdapter = createBrcAtlasAdapter();
 
-export function renderMap(element, config) {
+export function renderStaticMap(element, config) {
   atlasAdapter.render(element, config);
 }

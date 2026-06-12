@@ -9,11 +9,10 @@ test('map controls reflect and update data-vis-area', async ({ page }) => {
   await page.setContent(`
     <div
       class="tanvis"
-      data-vis-type="map"
+      data-vis-type="static-map"
       data-vis-area="vc-60"
       data-vis-source="/example.csv"
       data-vis-ctl="true"
-      data-vis-options='{"mapTypesKey":"Standard hectad"}'
     ></div>
   `);
 

@@ -108,8 +108,7 @@ function createMapOptions(element, config) {
     boundaryGjson: `/data/vcs/simp-100/${config.area}-100.geojson`, 
     ...(includeHectads
       ? { gridGjson: `/data/vcs/hectad-grids/${config.area}-hectads.geojson` }
-      : { gridLineStyle: 'none' }),
-    ...(config.options || {})
+      : { gridLineStyle: 'none' })
   };
 }
 

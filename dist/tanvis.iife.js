@@ -17,8 +17,7 @@ var Tanvis = (function (exports) {
       source: dataset.visSource,
       area: dataset.visArea || 'vc-58-59-60',
       ctl: parseBoolean(dataset.visCtl),
-      hectads: parseBooleanDefaultTrue(dataset.visHectads),
-      options: parseJson(dataset.visOptions)
+      hectads: parseBooleanDefaultTrue(dataset.visHectads)
     };
   }
 
@@ -32,18 +31,6 @@ var Tanvis = (function (exports) {
     }
 
     return String(value).toLowerCase() === 'true';
-  }
-
-  function parseJson(value) {
-    if (!value) {
-      return {};
-    }
-
-    try {
-      return JSON.parse(value);
-    } catch {
-      return {};
-    }
   }
 
   function validateAttributes(config) {
@@ -372,7 +359,7 @@ var Tanvis = (function (exports) {
   // This allows users to specify BRC Atlas maps as a visualization 
   // type in their HTML, and have them rendered using the BRC Atlas library.
 
-  let mapIdCounter = 0;
+  let mapIdCounter$1 = 0;
   const areaOptions = [
     { label: 'vc58', value: 'vc-58' },
     { label: 'vc59', value: 'vc-59' },
@@ -384,15 +371,15 @@ var Tanvis = (function (exports) {
     return {
       name: 'brc-atlas',
       render(element, config) {
-        const brcAtlas = getBrcAtlasGlobal();
+        const brcAtlas = getBrcAtlasGlobal$1();
 
         if (!brcAtlas || typeof brcAtlas.svgMap !== 'function') {
           throw new Error('BRC Atlas is not available. Include brcatlas.umd.js before Tanvis.');
         }
 
         if (!element.id) {
-          mapIdCounter += 1;
-          element.id = `tanvis-map-${mapIdCounter}`;
+          mapIdCounter$1 += 1;
+          element.id = `tanvis-map-${mapIdCounter$1}`;
         }
 
         clearElement(element);
@@ -474,8 +461,7 @@ var Tanvis = (function (exports) {
       boundaryGjson: `/data/vcs/simp-100/${config.area}-100.geojson`, 
       ...(includeHectads
         ? { gridGjson: `/data/vcs/hectad-grids/${config.area}-hectads.geojson` }
-        : { gridLineStyle: 'none' }),
-      ...(config.options || {})
+        : { gridLineStyle: 'none' })
     };
   }
 
@@ -505,7 +491,7 @@ var Tanvis = (function (exports) {
     return panel;
   }
 
-  function getBrcAtlasGlobal() {
+  function getBrcAtlasGlobal$1() {
     if (typeof window === 'undefined') {
       return null;
     }
@@ -515,8 +501,64 @@ var Tanvis = (function (exports) {
 
   const atlasAdapter = createBrcAtlasAdapter();
 
-  function renderMap(element, config) {
+  function renderStaticMap(element, config) {
     atlasAdapter.render(element, config);
+  }
+
+  // Wrapper to adapt BRC Atlas Leaflet maps for use in Tanvis.
+  // This allows users to specify Leaflet/slippy maps as a visualization 
+  // type in their HTML, and have them rendered using the BRC Atlas library.
+
+  let mapIdCounter = 0;
+
+  function createLeafletMapAdapter() {
+    return {
+      name: 'leaflet-map',
+      render(element, config) {
+        const brcAtlas = getBrcAtlasGlobal();
+
+        if (!brcAtlas || typeof brcAtlas.leafletMap !== 'function') {
+          throw new Error('BRC Atlas is not available. Include brcatlas.umd.js before Tanvis.');
+        }
+
+        if (!element.id) {
+          mapIdCounter += 1;
+          element.id = `tanvis-leaflet-map-${mapIdCounter}`;
+        }
+
+        clearElement(element);
+
+        console.log('Creating BRC Atlas Leaflet map with config:', config);
+
+        const map = brcAtlas.leafletMap({
+          selector: `#${element.id}`
+        });
+
+        if (map && typeof map.setIdentfier === 'function' && config.source) {
+          map.setIdentfier(config.source);
+        }
+
+        if (map && typeof map.redrawMap === 'function') {
+          map.redrawMap();
+        }
+
+        return map;
+      }
+    };
+  }
+
+  function getBrcAtlasGlobal() {
+    if (typeof window === 'undefined') {
+      return null;
+    }
+
+    return window.brcatlas || null;
+  }
+
+  const leafletMapAdapter = createLeafletMapAdapter();
+
+  function renderLeafletMap(element, config) {
+    leafletMapAdapter.render(element, config);
   }
 
   // Makes initialization idempotent so calling init() repeatedly 
@@ -532,7 +574,8 @@ var Tanvis = (function (exports) {
 
     registerRenderer('table', renderTable);
     registerRenderer('chart', renderChart);
-    registerRenderer('map', renderMap);
+    registerRenderer('static-map', renderStaticMap);
+    registerRenderer('slippy-map', renderLeafletMap);
     defaultsRegistered = true;
   }
 

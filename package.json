@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "license": "GPL-3.0-only",
-  "description": "Browser-first visualization library for scanning data-driven containers and rendering visualizations for Tanyptera project.",
+  "description": "Browser-first visualisation library for scanning data-driven containers and rendering visualisations for Tanyptera project.",
   "type": "module",
   "scripts": {
     "build": "rollup -c",
