@@ -1,0 +1,24 @@
+{
+  "name": "tanvis",
+  "version": "0.1.0",
+  "private": true,
+  "license": "GPL-3.0-only",
+  "description": "Browser-first visualization library for scanning data-driven containers and rendering visualizations for Tanyptera project.",
+  "type": "module",
+  "scripts": {
+    "build": "rollup -c",
+    "build:watch": "rollup -c -w",
+    "test:unit": "vitest run",
+    "test:e2e": "playwright test",
+    "test": "vitest run && playwright test"
+  },
+  "devDependencies": {
+    "@rollup/plugin-commonjs": "^28.0.3",
+    "@rollup/plugin-node-resolve": "^16.0.1",
+    "@rollup/plugin-terser": "^0.4.4",
+    "@playwright/test": "^1.54.2",
+    "jsdom": "^24.1.3",
+    "rollup": "^4.45.0",
+    "vitest": "^2.1.9"
+  }
+}

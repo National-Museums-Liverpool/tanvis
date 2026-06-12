@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Tanvis Map Example</title>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/biologicalrecordscentre/brc-atlas/dist/brcatlas.umd.js"></script>
+    <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/gh/biologicalrecordscentre/brc-atlas/dist/brcatlas.umd.css" />
+  </head>
+  <body>
+    <h1>Tanvis Map Renderer Example</h1>
+    <p>This renders a BRC Atlas map using Tanvis.</p>
+
+    <div
+      class="tanvis"
+      data-vis-type="map"
+      data-vis-area="vc-60"
+      data-vis-ctl="true"
+      data-vis-hectads="true"
+      data-vis-options='{"mapTypesKey":"Standard hectad"}'
+    ></div>
+
+    <script src="../dist/tanvis.iife.js"></script>
+    <script>
+      window.Tanvis.init();
+    </script>
+  </body>
+</html>
