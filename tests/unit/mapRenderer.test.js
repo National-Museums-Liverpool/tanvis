@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { renderStaticMap } from '../../src/renderers/map.js';
+import { renderLeafletMap } from '../../src/renderers/leafletMap.js';
 
 describe('renderStaticMap', () => {
   it('calls brc-atlas svgMap, renders controls, and updates area selection', () => {
@@ -98,5 +99,56 @@ describe('renderStaticMap', () => {
     expect(svgMapCalls[0].gridGjson).toBeUndefined();
     expect(svgMapCalls[0].gridLineStyle).toBe('none');
     expect(svgMapCalls[0].boundaryGjson).toBe('/data/vcs/simp-100/vc-58-100.geojson');
+  });
+
+  it('passes width and calculated height when width is provided', () => {
+    const svgMapCalls = [];
+
+    window.brcatlas = {
+      svgMap: (opts) => {
+        svgMapCalls.push(opts);
+        return {
+          redrawMap: () => {}
+        };
+      }
+    };
+
+    const element = document.createElement('div');
+    renderStaticMap(element, {
+      type: 'map',
+      area: 'vc-60',
+      ctl: false,
+      width: 700
+    });
+
+    expect(svgMapCalls).toHaveLength(1);
+    expect(svgMapCalls[0].width).toBe(700);
+    expect(svgMapCalls[0].height).toBe(800);
+  });
+});
+
+describe('renderLeafletMap', () => {
+  it('passes width and calculated height when width is provided', () => {
+    const leafletMapCalls = [];
+
+    window.brcatlas = {
+      leafletMap: (opts) => {
+        leafletMapCalls.push(opts);
+        return {
+          redrawMap: () => {}
+        };
+      }
+    };
+
+    const element = document.createElement('div');
+    renderLeafletMap(element, {
+      type: 'slippy-map',
+      area: 'vc-59',
+      width: 630
+    });
+
+    expect(leafletMapCalls).toHaveLength(1);
+    expect(leafletMapCalls[0].width).toBe(630);
+    expect(leafletMapCalls[0].height).toBe(560);
   });
 });

@@ -1,4 +1,5 @@
 import { clearElement } from '../utils/dom.js';
+import { transOptsSel } from './transOptsSel.js';
 
 // Wrapper to adapt BRC Atlas Leaflet maps for use in Tanvis.
 // This allows users to specify Leaflet/slippy maps as a visualization 
@@ -25,9 +26,7 @@ export function createLeafletMapAdapter() {
 
       console.log('Creating BRC Atlas Leaflet map with config:', config);
 
-      const map = brcAtlas.leafletMap({
-        selector: `#${element.id}`
-      });
+      const map = brcAtlas.leafletMap(createMapOptions(element, config));
 
       if (map && typeof map.setIdentfier === 'function' && config.source) {
         map.setIdentfier(config.source);
@@ -40,6 +39,46 @@ export function createLeafletMapAdapter() {
       return map;
     }
   };
+}
+
+function createMapOptions(element, config) {
+  const width = parseOptionalPositiveNumber(config.width);
+  const selectedBounds = transOptsSel[config.area]?.bounds;
+  const height = calculateHeightFromBounds(width, selectedBounds);
+
+  return {
+    selector: `#${element.id}`,
+    ...(width !== undefined ? { width } : {}),
+    ...(height !== undefined ? { height } : {}),
+    ...(config.expand === true ? { expand: true } : {})
+  };
+}
+
+function parseOptionalPositiveNumber(value) {
+  if (value === undefined || value === null || value === '') {
+    return undefined;
+  }
+
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed) || parsed <= 0) {
+    return undefined;
+  }
+
+  return parsed;
+}
+
+function calculateHeightFromBounds(width, bounds) {
+  if (width === undefined || !bounds) {
+    return undefined;
+  }
+
+  const boxWidth = bounds.xmax - bounds.xmin;
+  const boxHeight = bounds.ymax - bounds.ymin;
+  if (boxWidth <= 0 || boxHeight <= 0) {
+    return undefined;
+  }
+
+  return Math.round(width * (boxHeight / boxWidth));
 }
 
 function getBrcAtlasGlobal() {

@@ -11,13 +11,17 @@ var Tanvis = (function (exports) {
 
   function parseOptions(element) {
     const dataset = element?.dataset || {};
+    const expand = parseOptionalBoolean(dataset.visExpand);
+    const width = parseOptionalPositiveNumber$2(dataset.visWidth);
 
     return {
       type: dataset.visType || 'table',
       source: dataset.visSource,
       area: dataset.visArea || 'vc-58-59-60',
       ctl: parseBoolean(dataset.visCtl),
-      hectads: parseBooleanDefaultTrue(dataset.visHectads)
+      hectads: parseBooleanDefaultTrue(dataset.visHectads),
+      ...(expand !== undefined ? { expand } : {}),
+      ...(width !== undefined ? { width } : {})
     };
   }
 
@@ -31,6 +35,27 @@ var Tanvis = (function (exports) {
     }
 
     return String(value).toLowerCase() === 'true';
+  }
+
+  function parseOptionalBoolean(value) {
+    if (value === undefined || value === null || value === '') {
+      return undefined;
+    }
+
+    return String(value).toLowerCase() === 'true';
+  }
+
+  function parseOptionalPositiveNumber$2(value) {
+    if (value === undefined || value === null || value === '') {
+      return undefined;
+    }
+
+    const parsed = Number(value);
+    if (!Number.isFinite(parsed) || parsed <= 0) {
+      return undefined;
+    }
+
+    return parsed;
   }
 
   function validateAttributes(config) {
@@ -369,7 +394,7 @@ var Tanvis = (function (exports) {
 
   function createBrcAtlasAdapter() {
     return {
-      name: 'brc-atlas',
+      name: 'static-map',
       render(element, config) {
         const brcAtlas = getBrcAtlasGlobal$1();
 
@@ -386,7 +411,7 @@ var Tanvis = (function (exports) {
 
         console.log('Creating BRC Atlas map with config:', config);
 
-        const map = brcAtlas.svgMap(createMapOptions(element, config));
+        const map = brcAtlas.svgMap(createMapOptions$1(element, config));
 
         if (map && typeof map.setIdentfier === 'function' && config.source) {
           map.setIdentfier(config.source);
@@ -405,64 +430,99 @@ var Tanvis = (function (exports) {
     };
   }
 
-  function createMapOptions(element, config) {
+  function createMapOptions$1(element, config) {
     const includeHectads = config.hectads !== false;
+    const shouldExpand = config.expand === true;
+    const width = parseOptionalPositiveNumber$1(config.width);
+    const transOptsSel = {
+      // Custom transOptsSel to define different views for
+      // the three different VCs in the Cheshire/Lancashire area
+      // and a combined view for all of them together.
+      'vc-58-59-60': {
+        id: 'vc-58-59-60',
+        caption: 'Cheshire Lancashire VCs',
+        bounds: {
+          xmin: 302500,
+          ymin: 325000,
+          xmax: 425000,
+          ymax: 495000
+        },
+      },
+      'vc-58': {
+        id: 'vc-58',
+        caption: 'Cheshire (58)',
+        bounds: {
+          xmin: 305000,
+          ymin: 325000,
+          xmax: 425000,
+          ymax: 415000
+        }
+      },
+      'vc-59': {
+        id: 'vc-59',
+        caption: 'South Lancashire (59)',
+        bounds: {
+          xmin: 315000,
+          ymin: 375000,
+          xmax: 405000,
+          ymax: 455000
+        }
+      },
+      'vc-60': {
+        id: 'vc-60',
+        caption: 'West Lancashire (60)',
+        bounds: {
+          xmin: 315000,
+          ymin: 415000,
+          xmax: 385000,
+          ymax: 495000
+        }
+      }
+    };
+    const selectedBounds = transOptsSel[config.area]?.bounds;
+    const height = calculateHeightFromBounds$1(width, selectedBounds);
 
     return {
       selector: `#${element.id}`,
       transOptsControl: config.ctl,
-      transOptsSel: {
-        // Custom transOptsSel to define different views for
-        // the three different VCs in the Cheshire/Lancashire area
-        // and a combined view for all of them together.
-        'vc-58-59-60': {
-          id: 'vc-58-59-60',
-          caption: 'Cheshire Lancashire VCs',
-          bounds: {
-            xmin: 302500,
-            ymin: 325000,
-            xmax: 425000,
-            ymax: 495000
-          },
-        },
-        'vc-58': {
-          id: 'vc-58',
-          caption: 'Cheshire (58)',
-          bounds: {
-            xmin: 305000,
-            ymin: 325000,
-            xmax: 425000,
-            ymax: 415000
-          }
-        },
-        'vc-59': {
-          id: 'vc-59',
-          caption: 'South Lancashire (59)',
-          bounds: {
-            xmin: 315000,
-            ymin: 375000,
-            xmax: 405000,
-            ymax: 455000
-          }
-        },
-        'vc-60': {
-          id: 'vc-60',
-          caption: 'West Lancashire (60)',
-          bounds: {
-            xmin: 315000,
-            ymin: 415000,
-            xmax: 385000,
-            ymax: 495000
-          }
-        }
-      },
+      transOptsSel,
       transOptsKey: config.area,
       transOptsControl: false, // We create our own custom control for area selection, so disable the built-in one.
       boundaryGjson: `/data/vcs/simp-100/${config.area}-100.geojson`, 
+      ...(width !== undefined ? { width } : {}),
+      ...(height !== undefined ? { height } : {}),
+      ...(shouldExpand ? { expand: true } : {}),
       ...(includeHectads
         ? { gridGjson: `/data/vcs/hectad-grids/${config.area}-hectads.geojson` }
         : { gridLineStyle: 'none' })
     };
+  }
+
+  function parseOptionalPositiveNumber$1(value) {
+    if (value === undefined || value === null || value === '') {
+      return undefined;
+    }
+
+    const parsed = Number(value);
+    if (!Number.isFinite(parsed) || parsed <= 0) {
+      return undefined;
+    }
+
+    return parsed;
+  }
+
+  function calculateHeightFromBounds$1(width, bounds) {
+    if (width === undefined || !bounds) {
+      return undefined;
+    }
+
+    const boxWidth = bounds.xmax - bounds.xmin;
+    const boxHeight = bounds.ymax - bounds.ymin;
+    if (boxWidth <= 0 || boxHeight <= 0) {
+      return undefined;
+    }
+
+    return Math.round(width * (boxHeight / boxWidth));
   }
 
   function createAreaControls(element, config) {
@@ -510,6 +570,48 @@ var Tanvis = (function (exports) {
   // type in their HTML, and have them rendered using the BRC Atlas library.
 
   let mapIdCounter = 0;
+  const transOptsSel = {
+    'vc-58-59-60': {
+      id: 'vc-58-59-60',
+      caption: 'Cheshire Lancashire VCs',
+      bounds: {
+        xmin: 302500,
+        ymin: 325000,
+        xmax: 425000,
+        ymax: 495000
+      }
+    },
+    'vc-58': {
+      id: 'vc-58',
+      caption: 'Cheshire (58)',
+      bounds: {
+        xmin: 305000,
+        ymin: 325000,
+        xmax: 425000,
+        ymax: 415000
+      }
+    },
+    'vc-59': {
+      id: 'vc-59',
+      caption: 'South Lancashire (59)',
+      bounds: {
+        xmin: 315000,
+        ymin: 375000,
+        xmax: 405000,
+        ymax: 455000
+      }
+    },
+    'vc-60': {
+      id: 'vc-60',
+      caption: 'West Lancashire (60)',
+      bounds: {
+        xmin: 315000,
+        ymin: 415000,
+        xmax: 385000,
+        ymax: 495000
+      }
+    }
+  };
 
   function createLeafletMapAdapter() {
     return {
@@ -530,9 +632,7 @@ var Tanvis = (function (exports) {
 
         console.log('Creating BRC Atlas Leaflet map with config:', config);
 
-        const map = brcAtlas.leafletMap({
-          selector: `#${element.id}`
-        });
+        const map = brcAtlas.leafletMap(createMapOptions(element, config));
 
         if (map && typeof map.setIdentfier === 'function' && config.source) {
           map.setIdentfier(config.source);
@@ -545,6 +645,46 @@ var Tanvis = (function (exports) {
         return map;
       }
     };
+  }
+
+  function createMapOptions(element, config) {
+    const width = parseOptionalPositiveNumber(config.width);
+    const selectedBounds = transOptsSel[config.area]?.bounds;
+    const height = calculateHeightFromBounds(width, selectedBounds);
+
+    return {
+      selector: `#${element.id}`,
+      ...(width !== undefined ? { width } : {}),
+      ...(height !== undefined ? { height } : {}),
+      ...(config.expand === true ? { expand: true } : {})
+    };
+  }
+
+  function parseOptionalPositiveNumber(value) {
+    if (value === undefined || value === null || value === '') {
+      return undefined;
+    }
+
+    const parsed = Number(value);
+    if (!Number.isFinite(parsed) || parsed <= 0) {
+      return undefined;
+    }
+
+    return parsed;
+  }
+
+  function calculateHeightFromBounds(width, bounds) {
+    if (width === undefined || !bounds) {
+      return undefined;
+    }
+
+    const boxWidth = bounds.xmax - bounds.xmin;
+    const boxHeight = bounds.ymax - bounds.ymin;
+    if (boxWidth <= 0 || boxHeight <= 0) {
+      return undefined;
+    }
+
+    return Math.round(width * (boxHeight / boxWidth));
   }
 
   function getBrcAtlasGlobal() {

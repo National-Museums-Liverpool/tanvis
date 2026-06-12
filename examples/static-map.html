@@ -7,6 +7,17 @@
     <script src="https://d3js.org/d3.v7.min.js"></script>
     <script src="https://cdn.jsdelivr.net/gh/biologicalrecordscentre/brc-atlas/dist/brcatlas.umd.js"></script>
     <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/gh/biologicalrecordscentre/brc-atlas/dist/brcatlas.umd.css" />
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        margin: 20px;
+      }
+      .tanvis {
+        /* width: 100%;
+        height: 800px; */
+        border: 1px solid #ccc;
+      }
+    </style>
   </head>
   <body>
     <h1>Tanvis Map Renderer Example</h1>
@@ -18,6 +29,8 @@
       data-vis-area="vc-60"
       data-vis-ctl="true"
       data-vis-hectads="true"
+      data-vis-expand="false"
+      data-vis-width="600"
     ></div>
 
     <script src="../dist/tanvis.iife.js"></script>

@@ -1,6 +1,7 @@
 import { clearElement } from '../utils/dom.js';
 import { createControlsPanel } from '../controls/panel.js';
 import { createRadioGroup } from '../controls/radioGroup.js';
+import { transOptsSel } from './transOptsSel.js';
 
 // Wrapper to adapt BRC Atlas maps for use in Tanvis.
 // This allows users to specify BRC Atlas maps as a visualization 
@@ -16,7 +17,7 @@ const areaOptions = [
 
 export function createBrcAtlasAdapter() {
   return {
-    name: 'brc-atlas',
+    name: 'static-map',
     render(element, config) {
       const brcAtlas = getBrcAtlasGlobal();
 
@@ -54,62 +55,52 @@ export function createBrcAtlasAdapter() {
 
 function createMapOptions(element, config) {
   const includeHectads = config.hectads !== false;
+  const shouldExpand = config.expand === true;
+  const width = parseOptionalPositiveNumber(config.width);
+  const selectedBounds = transOptsSel[config.area]?.bounds;
+  const height = calculateHeightFromBounds(width, selectedBounds);
 
   return {
     selector: `#${element.id}`,
     transOptsControl: config.ctl,
-    transOptsSel: {
-      // Custom transOptsSel to define different views for
-      // the three different VCs in the Cheshire/Lancashire area
-      // and a combined view for all of them together.
-      'vc-58-59-60': {
-        id: 'vc-58-59-60',
-        caption: 'Cheshire Lancashire VCs',
-        bounds: {
-          xmin: 302500,
-          ymin: 325000,
-          xmax: 425000,
-          ymax: 495000
-        },
-      },
-      'vc-58': {
-        id: 'vc-58',
-        caption: 'Cheshire (58)',
-        bounds: {
-          xmin: 305000,
-          ymin: 325000,
-          xmax: 425000,
-          ymax: 415000
-        }
-      },
-      'vc-59': {
-        id: 'vc-59',
-        caption: 'South Lancashire (59)',
-        bounds: {
-          xmin: 315000,
-          ymin: 375000,
-          xmax: 405000,
-          ymax: 455000
-        }
-      },
-      'vc-60': {
-        id: 'vc-60',
-        caption: 'West Lancashire (60)',
-        bounds: {
-          xmin: 315000,
-          ymin: 415000,
-          xmax: 385000,
-          ymax: 495000
-        }
-      }
-    },
+    transOptsSel,
     transOptsKey: config.area,
     transOptsControl: false, // We create our own custom control for area selection, so disable the built-in one.
     boundaryGjson: `/data/vcs/simp-100/${config.area}-100.geojson`, 
+    ...(width !== undefined ? { width } : {}),
+    ...(height !== undefined ? { height } : {}),
+    ...(shouldExpand ? { expand: true } : {}),
     ...(includeHectads
       ? { gridGjson: `/data/vcs/hectad-grids/${config.area}-hectads.geojson` }
       : { gridLineStyle: 'none' })
   };
+}
+
+function parseOptionalPositiveNumber(value) {
+  if (value === undefined || value === null || value === '') {
+    return undefined;
+  }
+
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed) || parsed <= 0) {
+    return undefined;
+  }
+
+  return parsed;
+}
+
+function calculateHeightFromBounds(width, bounds) {
+  if (width === undefined || !bounds) {
+    return undefined;
+  }
+
+  const boxWidth = bounds.xmax - bounds.xmin;
+  const boxHeight = bounds.ymax - bounds.ymin;
+  if (boxWidth <= 0 || boxHeight <= 0) {
+    return undefined;
+  }
+
+  return Math.round(width * (boxHeight / boxWidth));
 }
 
 function createAreaControls(element, config) {

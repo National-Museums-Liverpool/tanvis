@@ -35,4 +35,44 @@ describe('parseOptions', () => {
 
     expect(parseOptions(element).hectads).toBe(false);
   });
+
+  it('does not include expand when not supplied', () => {
+    const element = document.createElement('div');
+
+    expect(parseOptions(element)).not.toHaveProperty('expand');
+  });
+
+  it('parses expand true when supplied as true', () => {
+    const element = document.createElement('div');
+    element.dataset.visExpand = 'true';
+
+    expect(parseOptions(element).expand).toBe(true);
+  });
+
+  it('parses expand false when supplied as false', () => {
+    const element = document.createElement('div');
+    element.dataset.visExpand = 'false';
+
+    expect(parseOptions(element).expand).toBe(false);
+  });
+
+  it('does not include width when not supplied', () => {
+    const element = document.createElement('div');
+
+    expect(parseOptions(element)).not.toHaveProperty('width');
+  });
+
+  it('parses width when supplied as a positive number', () => {
+    const element = document.createElement('div');
+    element.dataset.visWidth = '640';
+
+    expect(parseOptions(element).width).toBe(640);
+  });
+
+  it('ignores width when supplied as a non-positive number', () => {
+    const element = document.createElement('div');
+    element.dataset.visWidth = '0';
+
+    expect(parseOptions(element)).not.toHaveProperty('width');
+  });
 });

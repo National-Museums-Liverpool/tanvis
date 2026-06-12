@@ -1,4 +1,4 @@
-import { createBrcAtlasAdapter } from '../adapters/brcAtlas.js';
+import { createBrcAtlasAdapter } from '../adapters/staticMap.js';
 
 const atlasAdapter = createBrcAtlasAdapter();
 

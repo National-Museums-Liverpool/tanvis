@@ -1,12 +1,16 @@
 export function parseOptions(element) {
   const dataset = element?.dataset || {};
+  const expand = parseOptionalBoolean(dataset.visExpand);
+  const width = parseOptionalPositiveNumber(dataset.visWidth);
 
   return {
     type: dataset.visType || 'table',
     source: dataset.visSource,
     area: dataset.visArea || 'vc-58-59-60',
     ctl: parseBoolean(dataset.visCtl),
-    hectads: parseBooleanDefaultTrue(dataset.visHectads)
+    hectads: parseBooleanDefaultTrue(dataset.visHectads),
+    ...(expand !== undefined ? { expand } : {}),
+    ...(width !== undefined ? { width } : {})
   };
 }
 
@@ -20,4 +24,25 @@ function parseBooleanDefaultTrue(value) {
   }
 
   return String(value).toLowerCase() === 'true';
+}
+
+function parseOptionalBoolean(value) {
+  if (value === undefined || value === null || value === '') {
+    return undefined;
+  }
+
+  return String(value).toLowerCase() === 'true';
+}
+
+function parseOptionalPositiveNumber(value) {
+  if (value === undefined || value === null || value === '') {
+    return undefined;
+  }
+
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed) || parsed <= 0) {
+    return undefined;
+  }
+
+  return parsed;
 }
