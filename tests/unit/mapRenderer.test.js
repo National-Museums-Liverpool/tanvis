@@ -283,6 +283,81 @@ describe('renderLeafletMap', () => {
     expect(leafletMapCalls[0].height).toBe(410);
   });
 
+  it('uses parent width when expand is true', () => {
+    const leafletMapCalls = [];
+
+    window.brcatlas = {
+      leafletMap: (opts) => {
+        leafletMapCalls.push(opts);
+        return {
+          redrawMap: () => {}
+        };
+      }
+    };
+
+    const parent = document.createElement('div');
+    const element = document.createElement('div');
+    parent.appendChild(element);
+
+    let parentWidth = 900;
+    Object.defineProperty(parent, 'clientWidth', {
+      get() {
+        return parentWidth;
+      }
+    });
+
+    renderLeafletMap(element, {
+      type: 'slippy-map',
+      area: 'vc-59',
+      width: 630,
+      expand: true
+    });
+
+    expect(leafletMapCalls).toHaveLength(1);
+    expect(leafletMapCalls[0].width).toBe(900);
+    expect(leafletMapCalls[0].height).toBe(800);
+
+    element.__tanvisExpandCleanup?.();
+  });
+
+  it('resizes expanded map using setSize and invalidateSize on window resize', () => {
+    const setSizeCalls = [];
+    const invalidateSizeCalls = [];
+
+    window.brcatlas = {
+      leafletMap: () => ({
+        setSize: (width, height) => setSizeCalls.push({ width, height }),
+        invalidateSize: () => invalidateSizeCalls.push(true),
+        redrawMap: () => {}
+      })
+    };
+
+    const parent = document.createElement('div');
+    const element = document.createElement('div');
+    parent.appendChild(element);
+
+    let parentWidth = 500;
+    Object.defineProperty(parent, 'clientWidth', {
+      get() {
+        return parentWidth;
+      }
+    });
+
+    renderLeafletMap(element, {
+      type: 'slippy-map',
+      area: 'vc-59',
+      expand: true
+    });
+
+    parentWidth = 700;
+    window.dispatchEvent(new Event('resize'));
+
+    expect(setSizeCalls).toEqual([{ width: 700, height: 622 }]);
+    expect(invalidateSizeCalls).toHaveLength(1);
+
+    element.__tanvisExpandCleanup?.();
+  });
+
   it('passes showVcs when boundaries is true', () => {
     const leafletMapCalls = [];
 
