@@ -1,6 +1,5 @@
 import { clearElement } from '../utils/dom.js';
-import { createControlsPanel } from '../controls/panel.js';
-import { createRadioGroup } from '../controls/radioGroup.js';
+import { createAreaControls } from '../controls/areaControls.js';
 import { transOptsSel } from './transOptsSel.js';
 
 // Wrapper to adapt BRC Atlas maps for use in Tanvis.
@@ -8,12 +7,6 @@ import { transOptsSel } from './transOptsSel.js';
 // type in their HTML, and have them rendered using the BRC Atlas library.
 
 let mapIdCounter = 0;
-const areaOptions = [
-  { label: 'vc58', value: 'vc-58' },
-  { label: 'vc59', value: 'vc-59' },
-  { label: 'vc60', value: 'vc-60' },
-  { label: 'all', value: 'vc-58-59-60' }
-];
 
 export function createBrcAtlasAdapter() {
   return {
@@ -45,7 +38,16 @@ export function createBrcAtlasAdapter() {
       }
 
       if (config.ctl) {
-        element.appendChild(createAreaControls(element, config));
+        element.appendChild(createAreaControls({
+          element,
+          selectedValue: config.area,
+          onAreaChange: (value) => {
+            createBrcAtlasAdapter().render(element, {
+              ...config,
+              area: value
+            });
+          }
+        }));
       }
 
       return map;
@@ -57,8 +59,11 @@ function createMapOptions(element, config) {
   const includeHectads = config.hectads !== false;
   const shouldExpand = config.expand === true;
   const width = parseOptionalPositiveNumber(config.width);
+  const explicitHeight = parseOptionalPositiveNumber(config.height);
   const selectedBounds = transOptsSel[config.area]?.bounds;
-  const height = calculateHeightFromBounds(width, selectedBounds);
+  // For static maps, width is derived from transOpts. If data-vis-height is provided,
+  // use it directly; otherwise fall back to calculating height from data-vis-width.
+  const height = explicitHeight ?? calculateHeightFromBounds(width, selectedBounds);
 
   return {
     selector: `#${element.id}`,
@@ -67,7 +72,7 @@ function createMapOptions(element, config) {
     transOptsKey: config.area,
     transOptsControl: false, // We create our own custom control for area selection, so disable the built-in one.
     boundaryGjson: `/data/vcs/simp-100/${config.area}-100.geojson`, 
-    ...(width !== undefined ? { width } : {}),
+    // Static map width is determined by the selected transOpts bounds, so only height is passed through.
     ...(height !== undefined ? { height } : {}),
     ...(shouldExpand ? { expand: true } : {}),
     ...(includeHectads
@@ -101,32 +106,6 @@ function calculateHeightFromBounds(width, bounds) {
   }
 
   return Math.round(width * (boxHeight / boxWidth));
-}
-
-function createAreaControls(element, config) {
-  const { panel, body } = createControlsPanel({
-    label: 'Data options',
-    ariaLabel: 'Toggle map controls'
-  });
-  panel.dataset.tanvisControls = 'area';
-
-  const groupName = `${element.id}-area`;
-  const group = createRadioGroup({
-    name: groupName,
-    selectedValue: config.area,
-    items: areaOptions,
-    onChange: (value) => {
-      element.dataset.visArea = value;
-      createBrcAtlasAdapter().render(element, {
-        ...config,
-        area: value
-      });
-    }
-  });
-
-  body.appendChild(group);
-
-  return panel;
 }
 
 function getBrcAtlasGlobal() {

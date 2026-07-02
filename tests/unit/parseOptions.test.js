@@ -13,6 +13,7 @@ describe('parseOptions', () => {
       source: '/data.json',
       area: 'vc-58-59-60',
       ctl: true,
+      boundaries: false,
       hectads: true
     });
   });
@@ -21,6 +22,19 @@ describe('parseOptions', () => {
     const element = document.createElement('div');
 
     expect(parseOptions(element).ctl).toBe(false);
+  });
+
+  it('defaults boundaries to false when not supplied', () => {
+    const element = document.createElement('div');
+
+    expect(parseOptions(element).boundaries).toBe(false);
+  });
+
+  it('parses boundaries true when supplied as true', () => {
+    const element = document.createElement('div');
+    element.dataset.visBoundaries = 'true';
+
+    expect(parseOptions(element).boundaries).toBe(true);
   });
 
   it('defaults hectads to true when not supplied', () => {
@@ -74,5 +88,25 @@ describe('parseOptions', () => {
     element.dataset.visWidth = '0';
 
     expect(parseOptions(element)).not.toHaveProperty('width');
+  });
+
+  it('does not include height when not supplied', () => {
+    const element = document.createElement('div');
+
+    expect(parseOptions(element)).not.toHaveProperty('height');
+  });
+
+  it('parses height when supplied as a positive number', () => {
+    const element = document.createElement('div');
+    element.dataset.visHeight = '480';
+
+    expect(parseOptions(element).height).toBe(480);
+  });
+
+  it('ignores height when supplied as a non-positive number', () => {
+    const element = document.createElement('div');
+    element.dataset.visHeight = '-10';
+
+    expect(parseOptions(element)).not.toHaveProperty('height');
   });
 });

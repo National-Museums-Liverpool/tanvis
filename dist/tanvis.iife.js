@@ -13,15 +13,18 @@ var Tanvis = (function (exports) {
     const dataset = element?.dataset || {};
     const expand = parseOptionalBoolean(dataset.visExpand);
     const width = parseOptionalPositiveNumber$2(dataset.visWidth);
+    const height = parseOptionalPositiveNumber$2(dataset.visHeight);
 
     return {
       type: dataset.visType || 'table',
       source: dataset.visSource,
       area: dataset.visArea || 'vc-58-59-60',
       ctl: parseBoolean(dataset.visCtl),
+      boundaries: parseBoolean(dataset.visBoundaries),
       hectads: parseBooleanDefaultTrue(dataset.visHectads),
       ...(expand !== undefined ? { expand } : {}),
-      ...(width !== undefined ? { width } : {})
+      ...(width !== undefined ? { width } : {}),
+      ...(height !== undefined ? { height } : {})
     };
   }
 
@@ -380,17 +383,108 @@ var Tanvis = (function (exports) {
     return group;
   }
 
-  // Wrapper to adapt BRC Atlas maps for use in Tanvis.
-  // This allows users to specify BRC Atlas maps as a visualization 
-  // type in their HTML, and have them rendered using the BRC Atlas library.
-
-  let mapIdCounter$1 = 0;
   const areaOptions = [
     { label: 'vc58', value: 'vc-58' },
     { label: 'vc59', value: 'vc-59' },
     { label: 'vc60', value: 'vc-60' },
     { label: 'all', value: 'vc-58-59-60' }
   ];
+
+  function createAreaControls({ element, selectedValue, onAreaChange }) {
+    const { panel, body } = createControlsPanel({
+      label: 'Data options',
+      ariaLabel: 'Toggle map controls'
+    });
+    panel.dataset.tanvisControls = 'area';
+
+    const groupName = `${element.id}-area`;
+    const group = createRadioGroup({
+      name: groupName,
+      selectedValue,
+      items: areaOptions,
+      onChange: (value) => {
+        element.dataset.visArea = value;
+        if (typeof onAreaChange === 'function') {
+          onAreaChange(value);
+        }
+      }
+    });
+
+    body.appendChild(group);
+
+    return panel;
+  }
+
+  const transOptsSel = {
+    // Different views for the three VCs in the Cheshire/Lancashire area
+    // and a combined view for all of them together.
+    'vc-58-59-60': {
+      id: 'vc-58-59-60',
+      caption: 'Cheshire Lancashire VCs',
+      initZoom: 8,
+      bounds: {
+        xmin: 302500,
+        ymin: 325000,
+        xmax: 425000,
+        ymax: 495000
+      },
+      centroid: {
+        lat: 53.585317,
+        lon: -2.549048
+      }
+    },
+    'vc-58': {
+      id: 'vc-58',
+      caption: 'Cheshire (58)',
+      initZoom: 9,
+      bounds: {
+        xmin: 305000,
+        ymin: 325000,
+        xmax: 425000,
+        ymax: 415000
+      },
+      centroid: {
+        lat: 53.225875,
+        lon: -2.525714
+      }
+    },
+    'vc-59': {
+      id: 'vc-59',
+      caption: 'South Lancashire (59)',
+      initZoom: 9,
+      bounds: {
+        xmin: 315000,
+        ymin: 375000,
+        xmax: 405000,
+        ymax: 455000
+      },
+      centroid: {
+        lat: 53.629982,
+        lon: -2.606334
+      }
+    },
+    'vc-60': {
+      id: 'vc-60',
+      caption: 'West Lancashire (60)',
+      initZoom: 9,
+      bounds: {
+        xmin: 315000,
+        ymin: 415000,
+        xmax: 385000,
+        ymax: 495000
+      },
+      centroid: {
+        lat: 53.988606,
+        lon: -2.764047
+      }
+    }
+  };
+
+  // Wrapper to adapt BRC Atlas maps for use in Tanvis.
+  // This allows users to specify BRC Atlas maps as a visualization 
+  // type in their HTML, and have them rendered using the BRC Atlas library.
+
+  let mapIdCounter$1 = 0;
 
   function createBrcAtlasAdapter() {
     return {
@@ -422,7 +516,16 @@ var Tanvis = (function (exports) {
         }
 
         if (config.ctl) {
-          element.appendChild(createAreaControls(element, config));
+          element.appendChild(createAreaControls({
+            element,
+            selectedValue: config.area,
+            onAreaChange: (value) => {
+              createBrcAtlasAdapter().render(element, {
+                ...config,
+                area: value
+              });
+            }
+          }));
         }
 
         return map;
@@ -434,53 +537,11 @@ var Tanvis = (function (exports) {
     const includeHectads = config.hectads !== false;
     const shouldExpand = config.expand === true;
     const width = parseOptionalPositiveNumber$1(config.width);
-    const transOptsSel = {
-      // Custom transOptsSel to define different views for
-      // the three different VCs in the Cheshire/Lancashire area
-      // and a combined view for all of them together.
-      'vc-58-59-60': {
-        id: 'vc-58-59-60',
-        caption: 'Cheshire Lancashire VCs',
-        bounds: {
-          xmin: 302500,
-          ymin: 325000,
-          xmax: 425000,
-          ymax: 495000
-        },
-      },
-      'vc-58': {
-        id: 'vc-58',
-        caption: 'Cheshire (58)',
-        bounds: {
-          xmin: 305000,
-          ymin: 325000,
-          xmax: 425000,
-          ymax: 415000
-        }
-      },
-      'vc-59': {
-        id: 'vc-59',
-        caption: 'South Lancashire (59)',
-        bounds: {
-          xmin: 315000,
-          ymin: 375000,
-          xmax: 405000,
-          ymax: 455000
-        }
-      },
-      'vc-60': {
-        id: 'vc-60',
-        caption: 'West Lancashire (60)',
-        bounds: {
-          xmin: 315000,
-          ymin: 415000,
-          xmax: 385000,
-          ymax: 495000
-        }
-      }
-    };
+    const explicitHeight = parseOptionalPositiveNumber$1(config.height);
     const selectedBounds = transOptsSel[config.area]?.bounds;
-    const height = calculateHeightFromBounds$1(width, selectedBounds);
+    // For static maps, width is derived from transOpts. If data-vis-height is provided,
+    // use it directly; otherwise fall back to calculating height from data-vis-width.
+    const height = explicitHeight ?? calculateHeightFromBounds$1(width, selectedBounds);
 
     return {
       selector: `#${element.id}`,
@@ -489,7 +550,7 @@ var Tanvis = (function (exports) {
       transOptsKey: config.area,
       transOptsControl: false, // We create our own custom control for area selection, so disable the built-in one.
       boundaryGjson: `/data/vcs/simp-100/${config.area}-100.geojson`, 
-      ...(width !== undefined ? { width } : {}),
+      // Static map width is determined by the selected transOpts bounds, so only height is passed through.
       ...(height !== undefined ? { height } : {}),
       ...(shouldExpand ? { expand: true } : {}),
       ...(includeHectads
@@ -525,32 +586,6 @@ var Tanvis = (function (exports) {
     return Math.round(width * (boxHeight / boxWidth));
   }
 
-  function createAreaControls(element, config) {
-    const { panel, body } = createControlsPanel({
-      label: 'Data options',
-      ariaLabel: 'Toggle map controls'
-    });
-    panel.dataset.tanvisControls = 'area';
-
-    const groupName = `${element.id}-area`;
-    const group = createRadioGroup({
-      name: groupName,
-      selectedValue: config.area,
-      items: areaOptions,
-      onChange: (value) => {
-        element.dataset.visArea = value;
-        createBrcAtlasAdapter().render(element, {
-          ...config,
-          area: value
-        });
-      }
-    });
-
-    body.appendChild(group);
-
-    return panel;
-  }
-
   function getBrcAtlasGlobal$1() {
     if (typeof window === 'undefined') {
       return null;
@@ -570,48 +605,6 @@ var Tanvis = (function (exports) {
   // type in their HTML, and have them rendered using the BRC Atlas library.
 
   let mapIdCounter = 0;
-  const transOptsSel = {
-    'vc-58-59-60': {
-      id: 'vc-58-59-60',
-      caption: 'Cheshire Lancashire VCs',
-      bounds: {
-        xmin: 302500,
-        ymin: 325000,
-        xmax: 425000,
-        ymax: 495000
-      }
-    },
-    'vc-58': {
-      id: 'vc-58',
-      caption: 'Cheshire (58)',
-      bounds: {
-        xmin: 305000,
-        ymin: 325000,
-        xmax: 425000,
-        ymax: 415000
-      }
-    },
-    'vc-59': {
-      id: 'vc-59',
-      caption: 'South Lancashire (59)',
-      bounds: {
-        xmin: 315000,
-        ymin: 375000,
-        xmax: 405000,
-        ymax: 455000
-      }
-    },
-    'vc-60': {
-      id: 'vc-60',
-      caption: 'West Lancashire (60)',
-      bounds: {
-        xmin: 315000,
-        ymin: 415000,
-        xmax: 385000,
-        ymax: 495000
-      }
-    }
-  };
 
   function createLeafletMapAdapter() {
     return {
@@ -634,12 +627,24 @@ var Tanvis = (function (exports) {
 
         const map = brcAtlas.leafletMap(createMapOptions(element, config));
 
+        panToAreaCentroid(config.area, map);
+
         if (map && typeof map.setIdentfier === 'function' && config.source) {
           map.setIdentfier(config.source);
         }
 
         if (map && typeof map.redrawMap === 'function') {
           map.redrawMap();
+        }
+
+        if (config.ctl) {
+          element.appendChild(createAreaControls({
+            element,
+            selectedValue: config.area,
+            onAreaChange: (value) => {
+              handleAreaSelection(value, element, config, map);
+            }
+          }));
         }
 
         return map;
@@ -649,11 +654,16 @@ var Tanvis = (function (exports) {
 
   function createMapOptions(element, config) {
     const width = parseOptionalPositiveNumber(config.width);
+    const explicitHeight = parseOptionalPositiveNumber(config.height);
     const selectedBounds = transOptsSel[config.area]?.bounds;
-    const height = calculateHeightFromBounds(width, selectedBounds);
+    // For slippy maps, width and height can be specified independently.
+    // If data-vis-height is not provided, derive height from data-vis-width and selected bounds.
+    const height = explicitHeight ?? calculateHeightFromBounds(width, selectedBounds);
+    const showBoundaries = config.boundaries === true;
 
     return {
       selector: `#${element.id}`,
+      showVcs: showBoundaries,
       ...(width !== undefined ? { width } : {}),
       ...(height !== undefined ? { height } : {}),
       ...(config.expand === true ? { expand: true } : {})
@@ -685,6 +695,54 @@ var Tanvis = (function (exports) {
     }
 
     return Math.round(width * (boxHeight / boxWidth));
+  }
+
+  function handleAreaSelection(value, element, config, map) {
+    if (value === 'vc-58') {
+      onSelectVc58(element, config, map);
+      return;
+    }
+
+    if (value === 'vc-59') {
+      onSelectVc59(element, config, map);
+      return;
+    }
+
+    if (value === 'vc-60') {
+      onSelectVc60(element, config, map);
+      return;
+    }
+
+    onSelectAll(element, config, map);
+  }
+
+  function onSelectVc58(_element, _config, map) {
+    panToAreaCentroid('vc-58', map);
+  }
+
+  function onSelectVc59(_element, _config, map) {
+    panToAreaCentroid('vc-59', map);
+  }
+
+  function onSelectVc60(_element, _config, map) {
+    panToAreaCentroid('vc-60', map);
+  }
+
+  function onSelectAll(_element, _config, map) {
+    panToAreaCentroid('vc-58-59-60', map);
+  }
+
+  function panToAreaCentroid(areaKey, map) {
+    const areaConfig = transOptsSel[areaKey];
+    const centroid = areaConfig?.centroid;
+    const zoom = areaConfig?.initZoom ?? 10;
+    const leafletMap = map?.lmap;
+
+    if (!centroid || !leafletMap || typeof leafletMap.setView !== 'function') {
+      return;
+    }
+
+    leafletMap.setView([centroid.lat, centroid.lon], zoom);
   }
 
   function getBrcAtlasGlobal() {

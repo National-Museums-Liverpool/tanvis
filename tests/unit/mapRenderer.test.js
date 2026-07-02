@@ -101,7 +101,7 @@ describe('renderStaticMap', () => {
     expect(svgMapCalls[0].boundaryGjson).toBe('/data/vcs/simp-100/vc-58-100.geojson');
   });
 
-  it('passes width and calculated height when width is provided', () => {
+  it('passes calculated height but not width when width is provided', () => {
     const svgMapCalls = [];
 
     window.brcatlas = {
@@ -122,12 +122,117 @@ describe('renderStaticMap', () => {
     });
 
     expect(svgMapCalls).toHaveLength(1);
-    expect(svgMapCalls[0].width).toBe(700);
+    expect(svgMapCalls[0].width).toBeUndefined();
     expect(svgMapCalls[0].height).toBe(800);
+  });
+
+  it('uses explicit height when width and height are both provided', () => {
+    const svgMapCalls = [];
+
+    window.brcatlas = {
+      svgMap: (opts) => {
+        svgMapCalls.push(opts);
+        return {
+          redrawMap: () => {}
+        };
+      }
+    };
+
+    const element = document.createElement('div');
+    renderStaticMap(element, {
+      type: 'map',
+      area: 'vc-60',
+      ctl: false,
+      width: 700,
+      height: 555
+    });
+
+    expect(svgMapCalls).toHaveLength(1);
+    expect(svgMapCalls[0].width).toBeUndefined();
+    expect(svgMapCalls[0].height).toBe(555);
   });
 });
 
 describe('renderLeafletMap', () => {
+  it('renders data options controls and updates data-vis-area when ctl is true', () => {
+    const leafletMapCalls = [];
+    const setViewCalls = [];
+
+    window.brcatlas = {
+      leafletMap: (opts) => {
+        leafletMapCalls.push(opts);
+        return {
+          lmap: {
+            setView: (coords, zoom) => setViewCalls.push({ coords, zoom })
+          },
+          redrawMap: () => {}
+        };
+      }
+    };
+
+    const element = document.createElement('div');
+    renderLeafletMap(element, {
+      type: 'slippy-map',
+      area: 'vc-58-59-60',
+      ctl: true
+    });
+
+    expect(leafletMapCalls).toHaveLength(1);
+    expect(element.querySelector('.tanvis-controls')).not.toBeNull();
+    expect(element.querySelector('.tanvis-controls-toggle')).not.toBeNull();
+    expect(element.querySelector('.tanvis-controls-group')).not.toBeNull();
+
+    const radios = Array.from(element.querySelectorAll('input[type="radio"]'));
+    expect(radios).toHaveLength(4);
+    expect(radios.map((radio) => radio.value)).toEqual(['vc-58', 'vc-59', 'vc-60', 'vc-58-59-60']);
+    expect(radios.find((radio) => radio.value === 'vc-58-59-60')?.checked).toBe(true);
+    expect(setViewCalls[0]).toEqual({ coords: [53.585317, -2.549048], zoom: 8 });
+
+    const vc59Radio = radios.find((radio) => radio.value === 'vc-59');
+    vc59Radio.checked = true;
+    vc59Radio.dispatchEvent(new Event('change'));
+
+    expect(element.dataset.visArea).toBe('vc-59');
+    expect(leafletMapCalls).toHaveLength(1);
+    expect(setViewCalls[1]).toEqual({ coords: [53.629982, -2.606334], zoom: 9 });
+
+    const vc58Radio = radios.find((radio) => radio.value === 'vc-58');
+    vc58Radio.checked = true;
+    vc58Radio.dispatchEvent(new Event('change'));
+    expect(setViewCalls[2]).toEqual({ coords: [53.225875, -2.525714], zoom: 9 });
+
+    const vc60Radio = radios.find((radio) => radio.value === 'vc-60');
+    vc60Radio.checked = true;
+    vc60Radio.dispatchEvent(new Event('change'));
+    expect(setViewCalls[3]).toEqual({ coords: [53.988606, -2.764047], zoom: 9 });
+
+    const allRadio = radios.find((radio) => radio.value === 'vc-58-59-60');
+    allRadio.checked = true;
+    allRadio.dispatchEvent(new Event('change'));
+    expect(setViewCalls[4]).toEqual({ coords: [53.585317, -2.549048], zoom: 8 });
+  });
+
+  it('pans to the selected area centroid on initial render', () => {
+    const setViewCalls = [];
+
+    window.brcatlas = {
+      leafletMap: () => ({
+        lmap: {
+          setView: (coords, zoom) => setViewCalls.push({ coords, zoom })
+        },
+        redrawMap: () => {}
+      })
+    };
+
+    const element = document.createElement('div');
+    renderLeafletMap(element, {
+      type: 'slippy-map',
+      area: 'vc-59'
+    });
+
+    expect(setViewCalls).toEqual([{ coords: [53.629982, -2.606334], zoom: 9 }]);
+  });
+
   it('passes width and calculated height when width is provided', () => {
     const leafletMapCalls = [];
 
@@ -150,5 +255,54 @@ describe('renderLeafletMap', () => {
     expect(leafletMapCalls).toHaveLength(1);
     expect(leafletMapCalls[0].width).toBe(630);
     expect(leafletMapCalls[0].height).toBe(560);
+    expect(leafletMapCalls[0].showVcs).toBe(false);
+  });
+
+  it('passes explicit width and height independently when both are provided', () => {
+    const leafletMapCalls = [];
+
+    window.brcatlas = {
+      leafletMap: (opts) => {
+        leafletMapCalls.push(opts);
+        return {
+          redrawMap: () => {}
+        };
+      }
+    };
+
+    const element = document.createElement('div');
+    renderLeafletMap(element, {
+      type: 'slippy-map',
+      area: 'vc-59',
+      width: 630,
+      height: 410
+    });
+
+    expect(leafletMapCalls).toHaveLength(1);
+    expect(leafletMapCalls[0].width).toBe(630);
+    expect(leafletMapCalls[0].height).toBe(410);
+  });
+
+  it('passes showVcs when boundaries is true', () => {
+    const leafletMapCalls = [];
+
+    window.brcatlas = {
+      leafletMap: (opts) => {
+        leafletMapCalls.push(opts);
+        return {
+          redrawMap: () => {}
+        };
+      }
+    };
+
+    const element = document.createElement('div');
+    renderLeafletMap(element, {
+      type: 'slippy-map',
+      area: 'vc-58',
+      boundaries: true
+    });
+
+    expect(leafletMapCalls).toHaveLength(1);
+    expect(leafletMapCalls[0].showVcs).toBe(true);
   });
 });
