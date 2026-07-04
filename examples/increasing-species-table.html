@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Tanvis Increasing Species Table Example</title>
+    <link rel="stylesheet" href="https://unpkg.com/tabulator-tables@6.3.0/dist/css/tabulator.min.css" />
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        margin: 20px;
+      }
+
+      .tanvis {
+        margin-top: 1rem;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Tanvis Increasing Species Table Example</h1>
+    <p>This renders the top increasing species ranked by frequency trend score.</p>
+
+    <div
+      class="tanvis"
+      data-vis-type="increasing-species-table"
+      data-vis-top-n="25"
+    ></div>
+
+    <script src="https://unpkg.com/tabulator-tables@6.3.0/dist/js/tabulator.min.js"></script>
+    <script src="../dist/tanvis.iife.js"></script>
+    <script type="module">
+      import { installSpeciesStatsMockApi } from './mock/speciesStatsMockApi.js';
+
+      installSpeciesStatsMockApi({ baseUrl: '/api', latencyMs: 150 });
+      window.Tanvis.init();
+    </script>
+  </body>
+</html>

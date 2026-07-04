@@ -14,6 +14,7 @@ var Tanvis = (function (exports) {
     const expand = parseOptionalBoolean(dataset.visExpand);
     const width = parseOptionalPositiveNumber$2(dataset.visWidth);
     const height = parseOptionalPositiveNumber$2(dataset.visHeight);
+    const topN = parseOptionalPositiveInteger(dataset.visTopN);
 
     return {
       type: dataset.visType || 'table',
@@ -24,6 +25,7 @@ var Tanvis = (function (exports) {
       ctl: parseBoolean(dataset.visCtl),
       boundaries: parseBoolean(dataset.visBoundaries),
       hectads: parseBooleanDefaultTrue(dataset.visHectads),
+      ...(topN !== undefined ? { topN } : {}),
       ...(expand !== undefined ? { expand } : {}),
       ...(width !== undefined ? { width } : {}),
       ...(height !== undefined ? { height } : {})
@@ -61,6 +63,19 @@ var Tanvis = (function (exports) {
     }
 
     return parsed;
+  }
+
+  function parseOptionalPositiveInteger(value) {
+    if (value === undefined || value === null || value === '') {
+      return undefined;
+    }
+
+    const parsed = Number(value);
+    if (!Number.isFinite(parsed) || parsed <= 0) {
+      return undefined;
+    }
+
+    return Math.floor(parsed);
   }
 
   function validateAttributes(config) {
@@ -853,8 +868,8 @@ var Tanvis = (function (exports) {
     leafletMapAdapter.render(element, config);
   }
 
-  const DEFAULT_ENDPOINT = '/api/new-species';
-  const columns = [
+  const DEFAULT_ENDPOINT$1 = '/api/new-species';
+  const columns$1 = [
     { title: 'Species ID', field: 'speciesId', sorter: 'number' },
     { title: 'Scientific name', field: 'scientificName', sorter: 'string' },
     { title: 'Common name', field: 'commonName', sorter: 'string' },
@@ -871,7 +886,7 @@ var Tanvis = (function (exports) {
 
         const startDate = config.startDate;
         const endDate = config.endDate || getCurrentIsoDate();
-        const endpoint = config.source || DEFAULT_ENDPOINT;
+        const endpoint = config.source || DEFAULT_ENDPOINT$1;
         const requestUrl = new URL(endpoint, window.location.origin);
         requestUrl.searchParams.set('startDate', startDate);
         requestUrl.searchParams.set('endDate', endDate);
@@ -885,15 +900,15 @@ var Tanvis = (function (exports) {
             }
 
             const records = Array.isArray(payload) ? payload : payload.records || [];
-            const Tabulator = getTabulatorGlobal();
+            const Tabulator = getTabulatorGlobal$1();
 
             if (!Tabulator) {
               throw new Error('Tabulator is not available. Include the Tabulator script before Tanvis.');
             }
 
             clearElement(element);
-            element.appendChild(createSummary(startDate, endDate, records.length));
-            element.appendChild(createTableContainer(records, Tabulator));
+            element.appendChild(createSummary$1(startDate, endDate, records.length));
+            element.appendChild(createTableContainer$1(records, Tabulator));
           })
           .catch((error) => {
             clearElement(element);
@@ -903,18 +918,18 @@ var Tanvis = (function (exports) {
     };
   }
 
-  function createSummary(startDate, endDate, count) {
+  function createSummary$1(startDate, endDate, count) {
     const summary = document.createElement('p');
     summary.textContent = `${count} new species between ${startDate} and ${endDate}`;
     return summary;
   }
 
-  function createTableContainer(records, Tabulator) {
+  function createTableContainer$1(records, Tabulator) {
     const container = document.createElement('div');
 
     new Tabulator(container, {
       data: records,
-      columns,
+      columns: columns$1,
       layout: 'fitColumns',
       pagination: true,
       paginationSize: 10,
@@ -928,7 +943,7 @@ var Tanvis = (function (exports) {
     return new Date().toISOString().slice(0, 10);
   }
 
-  function getTabulatorGlobal() {
+  function getTabulatorGlobal$1() {
     if (typeof window === 'undefined') {
       return null;
     }
@@ -942,6 +957,106 @@ var Tanvis = (function (exports) {
     // Renderers are Tanvis-facing entry points keyed by data-vis-type.
     // Adapters keep the implementation details for a specific library or API integration.
     newSpeciesTableAdapter.render(element, config);
+  }
+
+  const DEFAULT_ENDPOINT = '/api/species-stats/increasing';
+  const DEFAULT_TOP_N = 50;
+  const columns = [
+    { title: 'Species ID', field: 'speciesId', sorter: 'number' },
+    { title: 'VC number', field: 'vcNumber', sorter: 'number' },
+    { title: 'Rarity category', field: 'rarityCategory', sorter: 'string' },
+    { title: 'First record date', field: 'firstRecordDate', sorter: 'string' },
+    { title: 'Total records', field: 'totalRecords', sorter: 'number' },
+    { title: 'Occupied grid squares', field: 'occupiedGridSquares', sorter: 'number' },
+    { title: 'Frequency trend', field: 'frequencyTrendScore', sorter: 'number' }
+  ];
+
+  function createIncreasingSpeciesTableAdapter() {
+    return {
+      name: 'increasing-species-table',
+      render(element, config) {
+        clearElement(element);
+        element.textContent = 'Loading...';
+
+        const topN = parseTopN(config.topN) ?? DEFAULT_TOP_N;
+        const endpoint = config.source || DEFAULT_ENDPOINT;
+        const requestUrl = new URL(endpoint, window.location.origin);
+        requestUrl.searchParams.set('topN', String(topN));
+
+        fetch(requestUrl.toString())
+          .then(async (response) => {
+            const payload = await response.json();
+
+            if (!response.ok) {
+              throw new Error(payload?.error || 'Failed to load increasing species data');
+            }
+
+            const records = Array.isArray(payload) ? payload : payload.records || [];
+            const Tabulator = getTabulatorGlobal();
+
+            if (!Tabulator) {
+              throw new Error('Tabulator is not available. Include the Tabulator script before Tanvis.');
+            }
+
+            clearElement(element);
+            element.appendChild(createSummary(topN, records.length));
+            element.appendChild(createTableContainer(records, Tabulator));
+          })
+          .catch((error) => {
+            clearElement(element);
+            element.textContent = error.message;
+          });
+      }
+    };
+  }
+
+  function createSummary(topN, count) {
+    const summary = document.createElement('p');
+    summary.textContent = `${count} species returned (top ${topN} by frequency trend)`;
+    return summary;
+  }
+
+  function createTableContainer(records, Tabulator) {
+    const container = document.createElement('div');
+
+    new Tabulator(container, {
+      data: records,
+      columns,
+      layout: 'fitColumns',
+      pagination: true,
+      paginationSize: 10,
+      initialSort: [
+        { column: 'frequencyTrendScore', dir: 'desc' }
+      ],
+      placeholder: 'No records found'
+    });
+
+    return container;
+  }
+
+  function parseTopN(value) {
+    const parsed = Number(value);
+    if (!Number.isFinite(parsed) || parsed <= 0) {
+      return undefined;
+    }
+
+    return Math.floor(parsed);
+  }
+
+  function getTabulatorGlobal() {
+    if (typeof window === 'undefined') {
+      return null;
+    }
+
+    return window.Tabulator || null;
+  }
+
+  const increasingSpeciesTableAdapter = createIncreasingSpeciesTableAdapter();
+
+  function renderIncreasingSpeciesTable(element, config) {
+    // Renderers are Tanvis-facing entry points keyed by data-vis-type.
+    // Adapters keep the implementation details for a specific library or API integration.
+    increasingSpeciesTableAdapter.render(element, config);
   }
 
   // Makes initialization idempotent so calling init() repeatedly 
@@ -960,6 +1075,7 @@ var Tanvis = (function (exports) {
     registerRenderer('static-map', renderStaticMap);
     registerRenderer('slippy-map', renderLeafletMap);
     registerRenderer('new-species-table', renderNewSpeciesTable);
+    registerRenderer('increasing-species-table', renderIncreasingSpeciesTable);
     defaultsRegistered = true;
   }
 

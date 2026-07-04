@@ -122,4 +122,12 @@ describe('parseOptions', () => {
       endDate: '2025-12-31'
     });
   });
+
+  it('parses data-vis-top-n when supplied', () => {
+    const element = document.createElement('div');
+    element.dataset.visType = 'increasing-species-table';
+    element.dataset.visTopN = '25';
+
+    expect(parseOptions(element).topN).toBe(25);
+  });
 });

@@ -49,7 +49,7 @@ console.log(window.Tanvis.version);
 ```
 
 This snippet demonstrates the wiring pattern (`.tanvis` + `data-*` attributes + `init()`); the `table` renderer is currently scaffold-only.
-For working end-to-end examples, use `static-map`, `slippy-map`, or `new-species-table` (see `examples/static-map.html`, `examples/slippy-map.html`, and `examples/new-species-table.html`).
+For working end-to-end examples, use `static-map`, `slippy-map`, `new-species-table`, or `increasing-species-table` (see `examples/static-map.html`, `examples/slippy-map.html`, `examples/new-species-table.html`, and `examples/increasing-species-table.html`).
 
 ## Renderers
 
@@ -60,6 +60,7 @@ Tanvis currently registers these renderer types:
 - `static-map`
 - `slippy-map`
 - `new-species-table`
+- `increasing-species-table`
 
 `table` and `chart` are scaffolded but their adapters are not implemented yet.
 
@@ -156,4 +157,28 @@ Include Tabulator before Tanvis when using this renderer.
 
 Tanvis calls the configured endpoint with `startDate` and `endDate` query parameters and renders the returned records as an HTML table.
 
-See `examples/static-map.html`, `examples/slippy-map.html`, and `examples/new-species-table.html` for ready-to-run pages.
+### Increasing Species Table Renderer
+
+Use `data-vis-type="increasing-species-table"`.
+
+Supported attributes:
+
+- `data-vis-top-n`: optional positive integer; defaults to `50` when omitted
+- `data-vis-source`: optional endpoint URL; defaults to `/api/species-stats/increasing`
+
+Include Tabulator before Tanvis when using this renderer.
+
+```html
+<link rel="stylesheet" href="https://unpkg.com/tabulator-tables@6.3.0/dist/css/tabulator.min.css" />
+<script src="https://unpkg.com/tabulator-tables@6.3.0/dist/js/tabulator.min.js"></script>
+
+<div
+  class="tanvis"
+  data-vis-type="increasing-species-table"
+  data-vis-top-n="25"
+></div>
+```
+
+Tanvis calls the configured endpoint with `topN` and renders the returned records in descending `frequencyTrendScore` order.
+
+See `examples/static-map.html`, `examples/slippy-map.html`, `examples/new-species-table.html`, and `examples/increasing-species-table.html` for ready-to-run pages.

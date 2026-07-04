@@ -3,6 +3,7 @@ export function parseOptions(element) {
   const expand = parseOptionalBoolean(dataset.visExpand);
   const width = parseOptionalPositiveNumber(dataset.visWidth);
   const height = parseOptionalPositiveNumber(dataset.visHeight);
+  const topN = parseOptionalPositiveInteger(dataset.visTopN);
 
   return {
     type: dataset.visType || 'table',
@@ -13,6 +14,7 @@ export function parseOptions(element) {
     ctl: parseBoolean(dataset.visCtl),
     boundaries: parseBoolean(dataset.visBoundaries),
     hectads: parseBooleanDefaultTrue(dataset.visHectads),
+    ...(topN !== undefined ? { topN } : {}),
     ...(expand !== undefined ? { expand } : {}),
     ...(width !== undefined ? { width } : {}),
     ...(height !== undefined ? { height } : {})
@@ -50,4 +52,17 @@ function parseOptionalPositiveNumber(value) {
   }
 
   return parsed;
+}
+
+function parseOptionalPositiveInteger(value) {
+  if (value === undefined || value === null || value === '') {
+    return undefined;
+  }
+
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed) || parsed <= 0) {
+    return undefined;
+  }
+
+  return Math.floor(parsed);
 }

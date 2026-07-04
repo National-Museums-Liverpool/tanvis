@@ -53,6 +53,19 @@ const speciesStatsRows = {
 
 const speciesStatsList = Object.values(speciesStatsRows);
 
+function extractTopNQuery(url, baseUrl) {
+  const trimmedBase = baseUrl.endsWith('/') ? baseUrl.slice(0, -1) : baseUrl;
+  const increasingPath = `${trimmedBase}/species-stats/increasing`;
+
+  if (url.pathname !== increasingPath) {
+    return null;
+  }
+
+  return {
+    topN: url.searchParams.get('topN')
+  };
+}
+
 function extractSpeciesId(url, baseUrl) {
   const trimmedBase = baseUrl.endsWith('/') ? baseUrl.slice(0, -1) : baseUrl;
   const pathPrefix = `${trimmedBase}/species-stats`;
@@ -101,6 +114,13 @@ function filterByFirstRecordDate(firstRecordDateFrom, firstRecordDateTo) {
   });
 }
 
+function getIncreasingSpecies(topN) {
+  return speciesStatsList
+    .slice()
+    .sort((a, b) => b.frequencyTrendScore - a.frequencyTrendScore)
+    .slice(0, topN);
+}
+
 function jsonResponse(status, payload) {
   return new Response(JSON.stringify(payload), {
     status,
@@ -117,15 +137,28 @@ export function installSpeciesStatsMockApi(options = {}) {
 
   window.fetch = async (input, init) => {
     const requestUrl = new URL(typeof input === 'string' ? input : input.url, window.location.origin);
+    const topNQuery = extractTopNQuery(requestUrl, baseUrl);
     const speciesId = extractSpeciesId(requestUrl, baseUrl);
     const rangeQuery = extractRangeQuery(requestUrl, baseUrl);
 
-    if (speciesId === null && rangeQuery === null) {
+    if (topNQuery === null && speciesId === null && rangeQuery === null) {
       return originalFetch(input, init);
     }
 
     if (latencyMs > 0) {
       await new Promise((resolve) => setTimeout(resolve, latencyMs));
+    }
+
+    if (topNQuery !== null) {
+      const requestedTopN = Number(topNQuery.topN);
+      const topN = Number.isFinite(requestedTopN) && requestedTopN > 0 ? Math.floor(requestedTopN) : 50;
+      const records = getIncreasingSpecies(topN);
+
+      return jsonResponse(200, {
+        topN,
+        count: records.length,
+        records
+      });
     }
 
     if (rangeQuery !== null) {
