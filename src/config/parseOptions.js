@@ -7,6 +7,8 @@ export function parseOptions(element) {
   return {
     type: dataset.visType || 'table',
     source: dataset.visSource,
+    startDate: dataset.visStartDate,
+    endDate: dataset.visEndDate,
     area: dataset.visArea || 'vc-58-59-60',
     ctl: parseBoolean(dataset.visCtl),
     boundaries: parseBoolean(dataset.visBoundaries),

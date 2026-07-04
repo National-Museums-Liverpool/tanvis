@@ -2,7 +2,7 @@
 // does not keep re-registering the same renderers.
 
 import { registerRenderer } from './registry.js';
-import { renderTable, renderChart, renderStaticMap, renderLeafletMap } from '../renderers/index.js';
+import { renderTable, renderChart, renderStaticMap, renderLeafletMap, renderNewSpeciesTable } from '../renderers/index.js';
 
 let defaultsRegistered = false;
 
@@ -15,5 +15,6 @@ export function registerDefaults() {
   registerRenderer('chart', renderChart);
   registerRenderer('static-map', renderStaticMap);
   registerRenderer('slippy-map', renderLeafletMap);
+  registerRenderer('new-species-table', renderNewSpeciesTable);
   defaultsRegistered = true;
 }

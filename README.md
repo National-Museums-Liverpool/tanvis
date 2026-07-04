@@ -49,7 +49,7 @@ console.log(window.Tanvis.version);
 ```
 
 This snippet demonstrates the wiring pattern (`.tanvis` + `data-*` attributes + `init()`); the `table` renderer is currently scaffold-only.
-For working end-to-end examples, use `static-map` or `slippy-map` (see `examples/static-map.html` and `examples/slippy-map.html`).
+For working end-to-end examples, use `static-map`, `slippy-map`, or `new-species-table` (see `examples/static-map.html`, `examples/slippy-map.html`, and `examples/new-species-table.html`).
 
 ## Renderers
 
@@ -59,6 +59,7 @@ Tanvis currently registers these renderer types:
 - `chart`
 - `static-map`
 - `slippy-map`
+- `new-species-table`
 
 `table` and `chart` are scaffolded but their adapters are not implemented yet.
 
@@ -129,4 +130,30 @@ When `data-vis-ctl="true"`, Tanvis shows the same radio controls (`vc58`, `vc59`
 
 The slippy map renderer calls `brcatlas.leafletMap(...)` and then `setIdentfier(...)` and `redrawMap()` when available.
 
-See `examples/static-map.html` and `examples/slippy-map.html` for ready-to-run pages.
+### New Species Table Renderer
+
+Use `data-vis-type="new-species-table"`.
+
+Supported attributes:
+
+- `data-vis-start-date`: required start date in `YYYY-MM-DD` format
+- `data-vis-end-date`: optional end date in `YYYY-MM-DD` format; defaults to the current date when omitted
+- `data-vis-source`: optional endpoint URL; defaults to `/api/new-species`
+
+Include Tabulator before Tanvis when using this renderer.
+
+```html
+<link rel="stylesheet" href="https://unpkg.com/tabulator-tables@6.3.0/dist/css/tabulator.min.css" />
+<script src="https://unpkg.com/tabulator-tables@6.3.0/dist/js/tabulator.min.js"></script>
+
+<div
+  class="tanvis"
+  data-vis-type="new-species-table"
+  data-vis-start-date="2025-01-01"
+  data-vis-end-date="2025-12-31"
+></div>
+```
+
+Tanvis calls the configured endpoint with `startDate` and `endDate` query parameters and renders the returned records as an HTML table.
+
+See `examples/static-map.html`, `examples/slippy-map.html`, and `examples/new-species-table.html` for ready-to-run pages.

@@ -14,4 +14,14 @@ describe('render', () => {
     expect(render(element)).toEqual({ rendered: true, errors: [] });
     expect(element.textContent).toBe('rendered');
   });
+
+  it('requires data-vis-start-date for new-species-table', () => {
+    const element = document.createElement('div');
+    element.dataset.visType = 'new-species-table';
+
+    expect(render(element)).toEqual({
+      rendered: false,
+      errors: ['Missing data-vis-start-date for new-species-table']
+    });
+  });
 });

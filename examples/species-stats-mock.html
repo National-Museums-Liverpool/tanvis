@@ -1,0 +1,248 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Species Stats Mock API Example</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        margin: 1.5rem;
+        max-width: 960px;
+      }
+
+      .row {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+      }
+
+      .panel {
+        border: 1px solid #ddd;
+        padding: 1rem;
+        margin-top: 1rem;
+      }
+
+      input,
+      button {
+        font-size: 1rem;
+        padding: 0.45rem 0.6rem;
+      }
+
+      table {
+        border-collapse: collapse;
+        width: 100%;
+        margin-top: 1rem;
+      }
+
+      th,
+      td {
+        text-align: left;
+        border: 1px solid #ccc;
+        padding: 0.5rem;
+      }
+
+      th {
+        width: 32%;
+        background: #f5f5f5;
+      }
+
+      .hint,
+      .status {
+        margin-top: 0.75rem;
+      }
+
+      .status {
+        font-weight: 700;
+      }
+
+      .status.error {
+        color: #a00000;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Species Stats Mock API</h1>
+    <p>This page demonstrates a local test harness that mocks a REST API endpoint for species stats.</p>
+
+    <section class="panel">
+      <h2>Fetch One Species</h2>
+      <div class="row">
+        <label for="speciesIdInput">Species ID:</label>
+        <input id="speciesIdInput" type="text" value="1001" />
+        <button id="loadBtn" type="button">Load Stats</button>
+      </div>
+    </section>
+
+    <section class="panel">
+      <h2>Fetch By First Record Date Range</h2>
+      <div class="row">
+        <label for="firstRecordDateFromInput">From:</label>
+        <input id="firstRecordDateFromInput" type="date" value="1960-01-01" />
+        <label for="firstRecordDateToInput">To:</label>
+        <input id="firstRecordDateToInput" type="date" value="1985-12-31" />
+        <button id="loadRangeBtn" type="button">Load Range</button>
+      </div>
+    </section>
+
+    <p id="mockIds" class="hint"></p>
+    <p id="status" class="status"></p>
+
+    <table id="statsTable" hidden>
+      <tbody></tbody>
+    </table>
+
+    <table id="rangeTable" hidden>
+      <thead>
+        <tr>
+          <th>Species ID</th>
+          <th>VC number</th>
+          <th>First record date</th>
+          <th>Rarity category</th>
+          <th>Total records</th>
+          <th>Frequency trend</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+
+    <script type="module">
+      import { installSpeciesStatsMockApi, listMockSpeciesIds } from './mock/speciesStatsMockApi.js';
+
+      installSpeciesStatsMockApi({ baseUrl: '/api', latencyMs: 150 });
+
+      const speciesIdInput = document.getElementById('speciesIdInput');
+      const loadBtn = document.getElementById('loadBtn');
+      const firstRecordDateFromInput = document.getElementById('firstRecordDateFromInput');
+      const firstRecordDateToInput = document.getElementById('firstRecordDateToInput');
+      const loadRangeBtn = document.getElementById('loadRangeBtn');
+      const status = document.getElementById('status');
+      const statsTable = document.getElementById('statsTable');
+      const tableBody = statsTable.querySelector('tbody');
+      const rangeTable = document.getElementById('rangeTable');
+      const rangeTableBody = rangeTable.querySelector('tbody');
+      const mockIds = document.getElementById('mockIds');
+
+      const labelMap = {
+        speciesId: 'Species ID',
+        vcNumber: 'VC number',
+        totalRecords: 'Total records',
+        occupiedGridSquares: 'Occupied grid squares',
+        rarityCategory: 'Rarity category',
+        firstRecordDate: 'First record date',
+        firstRecordRecorderName: 'First record recorder name',
+        lastRecordDate: 'Last record date',
+        lastRecordRecorderName: 'Last record recorder name',
+        firstVerifiedRecordDate: 'First verified record date',
+        firstVerifiedRecordRecorderName: 'First verified record recorder name',
+        lastVerifiedRecordDate: 'Last verified record date',
+        lastVerifiedRecordRecorderName: 'Last verified record recorder name',
+        frequencyTrendScore: 'Frequency trend (0-100, 50 stable)'
+      };
+
+      mockIds.textContent = `Mock species IDs available: ${listMockSpeciesIds().join(', ')}`;
+
+      function formatValue(value) {
+        return value === null ? 'all VCs (null)' : String(value);
+      }
+
+      function renderRow(label, value) {
+        const tr = document.createElement('tr');
+        const th = document.createElement('th');
+        const td = document.createElement('td');
+
+        th.textContent = label;
+        td.textContent = formatValue(value);
+
+        tr.appendChild(th);
+        tr.appendChild(td);
+
+        return tr;
+      }
+
+      function renderRangeRow(record) {
+        const tr = document.createElement('tr');
+        const values = [
+          record.speciesId,
+          formatValue(record.vcNumber),
+          record.firstRecordDate,
+          record.rarityCategory,
+          record.totalRecords,
+          record.frequencyTrendScore
+        ];
+
+        for (const value of values) {
+          const td = document.createElement('td');
+          td.textContent = String(value);
+          tr.appendChild(td);
+        }
+
+        return tr;
+      }
+
+      function resetOutputs() {
+        tableBody.innerHTML = '';
+        statsTable.hidden = true;
+        rangeTableBody.innerHTML = '';
+        rangeTable.hidden = true;
+      }
+
+      async function loadStats() {
+        const speciesId = speciesIdInput.value.trim();
+        status.classList.remove('error');
+        status.textContent = 'Loading...';
+
+        resetOutputs();
+
+        const response = await fetch(`/api/species-stats?speciesId=${encodeURIComponent(speciesId)}`);
+        const payload = await response.json();
+
+        if (!response.ok) {
+          status.classList.add('error');
+          status.textContent = payload.error || 'Unknown error';
+          return;
+        }
+
+        for (const [field, value] of Object.entries(payload)) {
+          tableBody.appendChild(renderRow(labelMap[field] || field, value));
+        }
+
+        status.textContent = 'Loaded';
+        statsTable.hidden = false;
+      }
+
+      async function loadStatsRange() {
+        const firstRecordDateFrom = firstRecordDateFromInput.value;
+        const firstRecordDateTo = firstRecordDateToInput.value;
+
+        status.classList.remove('error');
+        status.textContent = 'Loading...';
+
+        resetOutputs();
+
+        const response = await fetch(
+          `/api/species-stats?firstRecordDateFrom=${encodeURIComponent(firstRecordDateFrom)}&firstRecordDateTo=${encodeURIComponent(firstRecordDateTo)}`
+        );
+        const payload = await response.json();
+
+        if (!response.ok) {
+          status.classList.add('error');
+          status.textContent = payload.error || 'Unknown error';
+          return;
+        }
+
+        for (const record of payload.records) {
+          rangeTableBody.appendChild(renderRangeRow(record));
+        }
+
+        status.textContent = `Loaded ${payload.count} record(s) for firstRecordDate between ${payload.firstRecordDateFrom} and ${payload.firstRecordDateTo}`;
+        rangeTable.hidden = false;
+      }
+
+      loadBtn.addEventListener('click', loadStats);
+      loadRangeBtn.addEventListener('click', loadStatsRange);
+      loadStats();
+    </script>
+  </body>
+</html>

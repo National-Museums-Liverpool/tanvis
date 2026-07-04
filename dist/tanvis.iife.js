@@ -18,6 +18,8 @@ var Tanvis = (function (exports) {
     return {
       type: dataset.visType || 'table',
       source: dataset.visSource,
+      startDate: dataset.visStartDate,
+      endDate: dataset.visEndDate,
       area: dataset.visArea || 'vc-58-59-60',
       ctl: parseBoolean(dataset.visCtl),
       boundaries: parseBoolean(dataset.visBoundaries),
@@ -64,6 +66,10 @@ var Tanvis = (function (exports) {
   function validateAttributes(config) {
     if (!config.type) {
       return ['Missing data-vis-type'];
+    }
+
+    if (config.type === 'new-species-table' && !config.startDate) {
+      return ['Missing data-vis-start-date for new-species-table'];
     }
 
     return [];
@@ -131,6 +137,8 @@ var Tanvis = (function (exports) {
   const tableAdapter = createTabulatorAdapter();
 
   function renderTable(element, config) {
+    // Renderers are Tanvis-facing entry points keyed by data-vis-type.
+    // Adapters keep the implementation details for a specific library or API integration.
     tableAdapter.render(element, config);
   }
 
@@ -150,6 +158,8 @@ var Tanvis = (function (exports) {
   const chartAdapter = createBrcChartsAdapter();
 
   function renderChart(element, config) {
+    // Renderers are Tanvis-facing entry points keyed by data-vis-type.
+    // Adapters keep the implementation details for a specific library or API integration.
     chartAdapter.render(element, config);
   }
 
@@ -597,6 +607,8 @@ var Tanvis = (function (exports) {
   const atlasAdapter = createBrcAtlasAdapter();
 
   function renderStaticMap(element, config) {
+    // Renderers are Tanvis-facing entry points keyed by data-vis-type.
+    // Adapters keep the implementation details for a specific library or API integration.
     atlasAdapter.render(element, config);
   }
 
@@ -621,6 +633,7 @@ var Tanvis = (function (exports) {
           element.id = `tanvis-leaflet-map-${mapIdCounter}`;
         }
 
+        // Clean up any previously attached expand listeners before re-rendering this element.
         clearExpandResizeHandlers(element);
         clearElement(element);
 
@@ -629,6 +642,7 @@ var Tanvis = (function (exports) {
         const map = brcAtlas.leafletMap(createMapOptions(element, config));
 
         if (config.expand === true) {
+          // Expand is handled locally for slippy maps: watch parent/container resize and sync map size.
           attachExpandResizeHandlers(element, config, map);
         }
 
@@ -681,6 +695,7 @@ var Tanvis = (function (exports) {
       return configuredWidth;
     }
 
+    // When expand is enabled, prefer parent width and only fall back to configured width.
     return getParentWidth(element) ?? configuredWidth;
   }
 
@@ -722,11 +737,13 @@ var Tanvis = (function (exports) {
 
     let resizeObserver;
     if (typeof ResizeObserver !== 'undefined' && element.parentElement) {
+      // Track parent-size changes directly when ResizeObserver is available.
       resizeObserver = new ResizeObserver(onResize);
       resizeObserver.observe(element.parentElement);
     }
 
     if (typeof window !== 'undefined') {
+      // Also listen to window resize as a broad fallback signal.
       window.addEventListener('resize', onResize);
     }
 
@@ -764,6 +781,7 @@ var Tanvis = (function (exports) {
       return;
     }
 
+    // Resize BRC Atlas map and then force a Leaflet refresh cycle.
     map.setSize(width, height);
 
     if (typeof map.invalidateSize === 'function') {
@@ -830,7 +848,100 @@ var Tanvis = (function (exports) {
   const leafletMapAdapter = createLeafletMapAdapter();
 
   function renderLeafletMap(element, config) {
+    // Renderers are Tanvis-facing entry points keyed by data-vis-type.
+    // Adapters keep the implementation details for a specific library or API integration.
     leafletMapAdapter.render(element, config);
+  }
+
+  const DEFAULT_ENDPOINT = '/api/new-species';
+  const columns = [
+    { title: 'Species ID', field: 'speciesId', sorter: 'number' },
+    { title: 'Scientific name', field: 'scientificName', sorter: 'string' },
+    { title: 'Common name', field: 'commonName', sorter: 'string' },
+    { title: 'First record date', field: 'firstRecordDate', sorter: 'string' },
+    { title: 'VC number', field: 'vcNumber', sorter: 'number' }
+  ];
+
+  function createNewSpeciesTableAdapter() {
+    return {
+      name: 'new-species-table',
+      render(element, config) {
+        clearElement(element);
+        element.textContent = 'Loading...';
+
+        const startDate = config.startDate;
+        const endDate = config.endDate || getCurrentIsoDate();
+        const endpoint = config.source || DEFAULT_ENDPOINT;
+        const requestUrl = new URL(endpoint, window.location.origin);
+        requestUrl.searchParams.set('startDate', startDate);
+        requestUrl.searchParams.set('endDate', endDate);
+
+        fetch(requestUrl.toString())
+          .then(async (response) => {
+            const payload = await response.json();
+
+            if (!response.ok) {
+              throw new Error(payload?.error || 'Failed to load new species data');
+            }
+
+            const records = Array.isArray(payload) ? payload : payload.records || [];
+            const Tabulator = getTabulatorGlobal();
+
+            if (!Tabulator) {
+              throw new Error('Tabulator is not available. Include the Tabulator script before Tanvis.');
+            }
+
+            clearElement(element);
+            element.appendChild(createSummary(startDate, endDate, records.length));
+            element.appendChild(createTableContainer(records, Tabulator));
+          })
+          .catch((error) => {
+            clearElement(element);
+            element.textContent = error.message;
+          });
+      }
+    };
+  }
+
+  function createSummary(startDate, endDate, count) {
+    const summary = document.createElement('p');
+    summary.textContent = `${count} new species between ${startDate} and ${endDate}`;
+    return summary;
+  }
+
+  function createTableContainer(records, Tabulator) {
+    const container = document.createElement('div');
+
+    new Tabulator(container, {
+      data: records,
+      columns,
+      layout: 'fitColumns',
+      pagination: true,
+      paginationSize: 10,
+      placeholder: 'No records found'
+    });
+
+    return container;
+  }
+
+  function getCurrentIsoDate() {
+    return new Date().toISOString().slice(0, 10);
+  }
+
+  function getTabulatorGlobal() {
+    if (typeof window === 'undefined') {
+      return null;
+    }
+
+    return window.Tabulator || null;
+  }
+
+  const newSpeciesTableAdapter = createNewSpeciesTableAdapter();
+
+  function renderNewSpeciesTable(element, config) {
+    // Renderers are Tanvis-facing entry points keyed by data-vis-type.
+    // Adapters keep the implementation details for a specific library or API integration.
+    newSpeciesTableAdapter.render(element, config);
   }
 
   // Makes initialization idempotent so calling init() repeatedly 
@@ -848,6 +959,7 @@ var Tanvis = (function (exports) {
     registerRenderer('chart', renderChart);
     registerRenderer('static-map', renderStaticMap);
     registerRenderer('slippy-map', renderLeafletMap);
+    registerRenderer('new-species-table', renderNewSpeciesTable);
     defaultsRegistered = true;
   }
 

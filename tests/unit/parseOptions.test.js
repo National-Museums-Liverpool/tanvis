@@ -109,4 +109,17 @@ describe('parseOptions', () => {
 
     expect(parseOptions(element)).not.toHaveProperty('height');
   });
+
+  it('reads start and end date attributes for new-species-table', () => {
+    const element = document.createElement('div');
+    element.dataset.visType = 'new-species-table';
+    element.dataset.visStartDate = '2025-01-01';
+    element.dataset.visEndDate = '2025-12-31';
+
+    expect(parseOptions(element)).toMatchObject({
+      type: 'new-species-table',
+      startDate: '2025-01-01',
+      endDate: '2025-12-31'
+    });
+  });
 });
