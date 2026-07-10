@@ -1,6 +1,6 @@
 import { clearElement } from '../utils/dom.js';
 import { transOptsSel } from './transOptsSel.js';
-import { createAreaControls } from '../controls/areaControls.js';
+import { getLatestControlEvent, subscribeToControl } from '../controls/controlBus.js';
 
 // Wrapper to adapt BRC Atlas Leaflet maps for use in Tanvis.
 // This allows users to specify Leaflet/slippy maps as a visualization 
@@ -25,35 +25,51 @@ export function createLeafletMapAdapter() {
 
       // Clean up any previously attached expand listeners before re-rendering this element.
       clearExpandResizeHandlers(element);
+      clearControlSubscription(element);
       clearElement(element);
 
-      console.log('Creating BRC Atlas Leaflet map with config:', config);
+      const effectiveArea = getEffectiveArea(config);
+      const renderConfig = effectiveArea === config.area
+        ? config
+        : {
+            ...config,
+            area: effectiveArea
+          };
 
-      const map = brcAtlas.leafletMap(createMapOptions(element, config));
+      element.dataset.visArea = renderConfig.area;
 
-      if (config.expand === true) {
+      console.log('Creating BRC Atlas Leaflet map with config:', renderConfig);
+
+      const map = brcAtlas.leafletMap(createMapOptions(element, renderConfig));
+
+      if (renderConfig.expand === true) {
         // Expand is handled locally for slippy maps: watch parent/container resize and sync map size.
-        attachExpandResizeHandlers(element, config, map);
+        attachExpandResizeHandlers(element, renderConfig, map);
       }
 
-      panToAreaCentroid(config.area, map);
+      panToAreaCentroid(renderConfig.area, map);
 
-      if (map && typeof map.setIdentfier === 'function' && config.source) {
-        map.setIdentfier(config.source);
+      if (map && typeof map.setIdentfier === 'function' && renderConfig.source) {
+        map.setIdentfier(renderConfig.source);
       }
 
       if (map && typeof map.redrawMap === 'function') {
         map.redrawMap();
       }
 
-      if (config.ctl) {
-        element.appendChild(createAreaControls({
-          element,
-          selectedValue: config.area,
-          onAreaChange: (value) => {
-            handleAreaSelection(value, element, config, map);
+      if (renderConfig.control) {
+        element.__tanvisControlCleanup = subscribeToControl(renderConfig.control, (event) => {
+          if (event?.type !== 'area-change' || !event.area) {
+            return;
           }
-        }));
+
+          if (event.area === element.dataset.visArea) {
+            return;
+          }
+
+          element.dataset.visArea = event.area;
+          handleAreaSelection(event.area, element, renderConfig, map);
+        });
       }
 
       return map;
@@ -155,6 +171,34 @@ function clearExpandResizeHandlers(element) {
   }
 
   delete element.__tanvisExpandCleanup;
+}
+
+function clearControlSubscription(element) {
+  const cleanup = element?.__tanvisControlCleanup;
+  if (typeof cleanup === 'function') {
+    cleanup();
+  }
+
+  delete element.__tanvisControlCleanup;
+}
+
+function getEffectiveArea(config) {
+  if (!config.control) {
+    return config.area;
+  }
+
+  const latestEvent = getLatestControlEvent(config.control);
+  if (latestEvent?.type === 'area-change' && latestEvent.area) {
+    return latestEvent.area;
+  }
+
+  if (typeof document === 'undefined') {
+    return config.area;
+  }
+
+  const controlElement = document.getElementById(config.control);
+  const controlArea = controlElement?.dataset?.visArea;
+  return controlArea || config.area;
 }
 
 function resizeExpandedMap(element, config, map) {

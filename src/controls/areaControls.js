@@ -8,27 +8,33 @@ export const areaOptions = [
   { label: 'all', value: 'vc-58-59-60' }
 ];
 
-export function createAreaControls({ element, selectedValue, onAreaChange }) {
-  const { panel, body } = createControlsPanel({
+export function createAreaControls({ element, selectedValue, onAreaChange, body }) {
+  const targetBody = body || createControlsPanel({
     label: 'Data options',
     ariaLabel: 'Toggle map controls'
-  });
-  panel.dataset.tanvisControls = 'area';
+  }).body;
 
-  const groupName = `${element.id}-area`;
+  if (body) {
+    body.dataset.tanvisControls = 'area';
+  }
+
+  const groupName = element?.id ? `${element.id}-area` : 'tanvis-control-block-area';
   const group = createRadioGroup({
     name: groupName,
     selectedValue,
     items: areaOptions,
     onChange: (value) => {
-      element.dataset.visArea = value;
+      if (element?.dataset) {
+        element.dataset.visArea = value;
+      }
+
       if (typeof onAreaChange === 'function') {
         onAreaChange(value);
       }
     }
   });
 
-  body.appendChild(group);
+  targetBody.appendChild(group);
 
-  return panel;
+  return targetBody;
 }

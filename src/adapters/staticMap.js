@@ -1,5 +1,5 @@
 import { clearElement } from '../utils/dom.js';
-import { createAreaControls } from '../controls/areaControls.js';
+import { getLatestControlEvent, subscribeToControl } from '../controls/controlBus.js';
 import { transOptsSel } from './transOptsSel.js';
 
 // Wrapper to adapt BRC Atlas maps for use in Tanvis.
@@ -23,36 +23,80 @@ export function createBrcAtlasAdapter() {
         element.id = `tanvis-map-${mapIdCounter}`;
       }
 
+      clearControlSubscription(element);
       clearElement(element);
 
-      console.log('Creating BRC Atlas map with config:', config);
+      const effectiveArea = getEffectiveArea(config);
+      const renderConfig = effectiveArea === config.area
+        ? config
+        : {
+            ...config,
+            area: effectiveArea
+          };
 
-      const map = brcAtlas.svgMap(createMapOptions(element, config));
+      element.dataset.visArea = renderConfig.area;
 
-      if (map && typeof map.setIdentfier === 'function' && config.source) {
-        map.setIdentfier(config.source);
+      console.log('Creating BRC Atlas map with config:', renderConfig);
+
+      const map = brcAtlas.svgMap(createMapOptions(element, renderConfig));
+
+      if (map && typeof map.setIdentfier === 'function' && renderConfig.source) {
+        map.setIdentfier(renderConfig.source);
       }
 
       if (map && typeof map.redrawMap === 'function') {
         map.redrawMap();
       }
 
-      if (config.ctl) {
-        element.appendChild(createAreaControls({
-          element,
-          selectedValue: config.area,
-          onAreaChange: (value) => {
-            createBrcAtlasAdapter().render(element, {
-              ...config,
-              area: value
-            });
+      if (renderConfig.control) {
+        element.__tanvisControlCleanup = subscribeToControl(renderConfig.control, (event) => {
+          if (event?.type !== 'area-change' || !event.area) {
+            return;
           }
-        }));
+
+          if (event.area === element.dataset.visArea) {
+            return;
+          }
+
+          element.dataset.visArea = event.area;
+          createBrcAtlasAdapter().render(element, {
+            ...renderConfig,
+            area: event.area
+          });
+        });
       }
 
       return map;
     }
   };
+}
+
+function getEffectiveArea(config) {
+  if (!config.control) {
+    return config.area;
+  }
+
+  const latestEvent = getLatestControlEvent(config.control);
+  if (latestEvent?.type === 'area-change' && latestEvent.area) {
+    return latestEvent.area;
+  }
+
+  if (typeof document === 'undefined') {
+    return config.area;
+  }
+
+  const controlElement = document.getElementById(config.control);
+  const controlArea = controlElement?.dataset?.visArea;
+  return controlArea || config.area;
+}
+
+function clearControlSubscription(element) {
+  const cleanup = element?.__tanvisControlCleanup;
+  if (typeof cleanup === 'function') {
+    cleanup();
+  }
+
+  delete element.__tanvisControlCleanup;
 }
 
 function createMapOptions(element, config) {

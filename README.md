@@ -51,6 +51,8 @@ console.log(window.Tanvis.version);
 This snippet demonstrates the wiring pattern (`.tanvis` + `data-*` attributes + `init()`); the `table` renderer is currently scaffold-only.
 For working end-to-end examples, use `static-map`, `slippy-map`, `new-species-table`, or `increasing-species-table` (see `examples/static-map.html`, `examples/slippy-map.html`, `examples/new-species-table.html`, and `examples/increasing-species-table.html`).
 
+To see a shared control block driving two map outputs together, open `examples/shared-control-maps.html`.
+
 ## Renderers
 
 Tanvis currently registers these renderer types:
@@ -72,12 +74,12 @@ Supported attributes:
 
 - `data-vis-source`: optional source string passed to `setIdentfier(...)`
 - `data-vis-area`: one of `vc-58`, `vc-59`, `vc-60`, `vc-58-59-60` (default: `vc-58-59-60`)
-- `data-vis-ctl`: `true`/`false` to show area controls (default: `false`)
+- `data-vis-control`: optional id of a `control-block` element used to drive area changes
 - `data-vis-hectads`: `true`/`false` to include hectad grid (default: `true`)
 - `data-vis-expand`: `true`/`false` (optional)
 - `data-vis-width`: positive number in pixels (optional)
 
-When `data-vis-ctl="true"`, Tanvis renders radio options `vc58`, `vc59`, `vc60`, and `all` that set `data-vis-area` to `vc-58`, `vc-59`, `vc-60`, and `vc-58-59-60`.
+A separate `control-block` visualization can render radio options (`vc58`, `vc59`, `vc60`, `all`) and any visualization with `data-vis-control` set to that block id responds to selections.
 
 ```html
 <script src="https://d3js.org/d3.v7.min.js"></script>
@@ -85,11 +87,18 @@ When `data-vis-ctl="true"`, Tanvis renders radio options `vc58`, `vc59`, `vc60`,
 <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/gh/biologicalrecordscentre/brc-atlas/dist/brcatlas.umd.css">
 
 <div
+  id="vc-control"
+  class="tanvis"
+  data-vis-type="control-block"
+  data-vis-area="vc-58-59-60"
+></div>
+
+<div
   class="tanvis"
   data-vis-type="static-map"
   data-vis-source="/example-hectads-1.csv"
   data-vis-area="vc-58-59-60"
-  data-vis-ctl="true"
+  data-vis-control="vc-control"
   data-vis-hectads="true"
   data-vis-width="600"
 ></div>
@@ -105,7 +114,7 @@ Supported attributes:
 
 - `data-vis-source`: optional source string passed to `setIdentfier(...)`
 - `data-vis-area`: used to calculate aspect ratio when `data-vis-width` is set (default: `vc-58-59-60`)
-- `data-vis-ctl`: `true`/`false` to show area controls (default: `false`)
+- `data-vis-control`: optional id of a `control-block` element used to drive area changes
 - `data-vis-boundaries`: `true`/`false` to show vice county boundaries (default: `false`)
 - `data-vis-expand`: `true`/`false` (optional)
 - `data-vis-width`: positive number in pixels (optional)
@@ -118,16 +127,27 @@ Supported attributes:
 <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/gh/biologicalrecordscentre/brc-atlas/dist/brcatlas.umd.css">
 
 <div
+  id="vc-control"
+  class="tanvis"
+  data-vis-type="control-block"
+  data-vis-area="vc-58"
+></div>
+
+<div
   class="tanvis"
   data-vis-type="slippy-map"
   data-vis-area="vc-58"
   data-vis-width="600"
-  data-vis-ctl="true"
+  data-vis-control="vc-control"
   data-vis-boundaries="true"
 ></div>
 ```
 
-When `data-vis-ctl="true"`, Tanvis shows the same radio controls (`vc58`, `vc59`, `vc60`, `all`) as static-map. The per-option handlers are currently placeholders.
+`control-block` elements must have an `id` attribute. Any visualization with `data-vis-control="<id>"` subscribes to that block.
+
+The control block currently renders VC selection controls plus a taxon-group dropdown populated from `taxon-groups`, with Scientific/Vernacular radio buttons that switch the dropdown labels between the `title` and `friendly` fields. The first dropdown option is `All groups`, and option values map to `external_key`.
+
+When a visualization is subscribed to a control block, the control block's current `data-vis-area` value takes precedence over the visualization's own `data-vis-area` both on initial render and on later control changes.
 
 The slippy map renderer calls `brcatlas.leafletMap(...)` and then `setIdentfier(...)` and `redrawMap()` when available.
 
@@ -164,7 +184,8 @@ Use `data-vis-type="increasing-species-table"`.
 Supported attributes:
 
 - `data-vis-top-n`: optional positive integer; defaults to `50` when omitted
-- `data-vis-source`: optional endpoint URL; defaults to `/api/species-stats/increasing`
+- `data-vis-source`: optional API base URL; defaults to `/api/v1`
+- `data-vis-control`: optional id of a `control-block`; when set, VC selections filter `taxon-stats` by `geographic_region_identifier[eq]`
 
 Include Tabulator before Tanvis when using this renderer.
 
@@ -179,6 +200,8 @@ Include Tabulator before Tanvis when using this renderer.
 ></div>
 ```
 
-Tanvis calls the configured endpoint with `topN` and renders the returned records in descending `frequencyTrendScore` order.
+Tanvis queries `taxon-stats`, ranks rows by the `frequency_trend` field, applies `data-vis-top-n`, then queries `taxon` with a `taxon_identifier[in]` filter to enrich results before rendering in descending `frequencyTrendScore` order.
 
-See `examples/static-map.html`, `examples/slippy-map.html`, `examples/new-species-table.html`, and `examples/increasing-species-table.html` for ready-to-run pages.
+When a subscribed control block selects `vc-58`, `vc-59`, or `vc-60`, Tanvis adds `geographic_region_identifier[eq]=58|59|60` to the `taxon-stats` request. When `all` is selected, that filter is omitted.
+
+See `examples/static-map.html`, `examples/slippy-map.html`, `examples/shared-control-maps.html`, `examples/new-species-table.html`, and `examples/increasing-species-table.html` for ready-to-run pages.

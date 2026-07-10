@@ -24,10 +24,17 @@
     <p>This renders a BRC Atlas map using Tanvis.</p>
 
     <div
+      id="vc-control"
+      class="tanvis"
+      data-vis-type="control-block"
+      data-vis-area="vc-60"
+    ></div>
+
+    <div
       class="tanvis"
       data-vis-type="static-map"
       data-vis-area="vc-60"
-      data-vis-ctl="true"
+      data-vis-control="vc-control"
       data-vis-hectads="true"
       data-vis-expand="false"
       data-vis-width="600"
@@ -35,7 +42,10 @@
     ></div>
 
     <script src="../dist/tanvis.iife.js"></script>
-    <script>
+    <script type="module">
+      import { installTaxonGroupsMockApi } from './mock/taxonGroupsMockApi.js';
+
+      installTaxonGroupsMockApi({ baseUrl: '/api', latencyMs: 150 });
       window.Tanvis.init();
     </script>
   </body>

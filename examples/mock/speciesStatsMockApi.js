@@ -1,125 +1,171 @@
 const DEFAULT_BASE_URL = '/api';
 
-const speciesStatsRows = {
-  "1001": {
-    speciesId: 1001,
-    vcNumber: 58,
-    totalRecords: 1842,
-    occupiedGridSquares: 237,
-    rarityCategory: 'Local',
-    firstRecordDate: '1978-06-14',
-    firstRecordRecorderName: 'J. Whitaker',
-    lastRecordDate: '2026-05-11',
-    lastRecordRecorderName: 'R. Bell',
-    firstVerifiedRecordDate: '1980-07-02',
-    firstVerifiedRecordRecorderName: 'A. Shaw',
-    lastVerifiedRecordDate: '2026-05-20',
-    lastVerifiedRecordRecorderName: 'M. Turner',
-    frequencyTrendScore: 56
+const taxonStatsRows = [
+  {
+    uuid: '8a13ef57-9f2f-4ec9-91b5-9dc7d0531001',
+    taxon_identifier: '1001',
+    geographic_region_identifier: 58,
+    occurrences_count: 1842,
+    grid_square_count: 237,
+    first_record_date: '1978-06-14',
+    last_record_date: '2026-05-11',
+    first_recorder: 'J. Whitaker',
+    last_recorder: 'R. Bell',
+    first_verified_record_date: '1980-07-02',
+    last_verified_record_date: '2026-05-20',
+    first_verified_recorder: 'A. Shaw',
+    last_verified_recorder: 'M. Turner',
+    frequency_trend: 56
   },
-  "1002": {
-    speciesId: 1002,
-    vcNumber: null,
-    totalRecords: 923,
-    occupiedGridSquares: 88,
-    rarityCategory: 'Nationally Scarce',
-    firstRecordDate: '1964-08-22',
-    firstRecordRecorderName: 'P. Stokes',
-    lastRecordDate: '2025-09-04',
-    lastRecordRecorderName: 'L. Ahmed',
-    firstVerifiedRecordDate: '1971-05-30',
-    firstVerifiedRecordRecorderName: 'C. Gibbons',
-    lastVerifiedRecordDate: '2025-09-10',
-    lastVerifiedRecordRecorderName: 'K. Doyle',
-    frequencyTrendScore: 41
+  {
+    uuid: 'b1de346d-5c6a-40b8-87db-6cc8e04e1002',
+    taxon_identifier: '1002',
+    geographic_region_identifier: null,
+    occurrences_count: 923,
+    grid_square_count: 88,
+    first_record_date: '1964-08-22',
+    last_record_date: '2025-09-04',
+    first_recorder: 'P. Stokes',
+    last_recorder: 'L. Ahmed',
+    first_verified_record_date: '1971-05-30',
+    last_verified_record_date: '2025-09-10',
+    first_verified_recorder: 'C. Gibbons',
+    last_verified_recorder: 'K. Doyle',
+    frequency_trend: 41
   },
-  "1003": {
-    speciesId: 1003,
-    vcNumber: 60,
-    totalRecords: 12034,
-    occupiedGridSquares: 612,
-    rarityCategory: 'Common',
-    firstRecordDate: '1952-04-01',
-    firstRecordRecorderName: 'D. Mercer',
-    lastRecordDate: '2026-06-03',
-    lastRecordRecorderName: 'S. Evans',
-    firstVerifiedRecordDate: '1955-04-23',
-    firstVerifiedRecordRecorderName: 'B. Muir',
-    lastVerifiedRecordDate: '2026-06-07',
-    lastVerifiedRecordRecorderName: 'T. Brookes',
-    frequencyTrendScore: 67
+  {
+    uuid: 'cbf629cb-0434-44e8-bbe8-bf52f4cf1003',
+    taxon_identifier: '1003',
+    geographic_region_identifier: 60,
+    occurrences_count: 12034,
+    grid_square_count: 612,
+    first_record_date: '1952-04-01',
+    last_record_date: '2026-06-03',
+    first_recorder: 'D. Mercer',
+    last_recorder: 'S. Evans',
+    first_verified_record_date: '1955-04-23',
+    last_verified_record_date: '2026-06-07',
+    first_verified_recorder: 'B. Muir',
+    last_verified_recorder: 'T. Brookes',
+    frequency_trend: 67
+  },
+  {
+    uuid: 'b1da3705-31e6-4dc7-bec5-6f0a6a6a1004',
+    taxon_identifier: '1004',
+    geographic_region_identifier: 59,
+    occurrences_count: 510,
+    grid_square_count: 74,
+    first_record_date: '1988-07-18',
+    last_record_date: '2026-04-02',
+    first_recorder: 'H. Lowe',
+    last_recorder: 'G. Murphy',
+    first_verified_record_date: '1992-06-10',
+    last_verified_record_date: '2026-04-20',
+    first_verified_recorder: 'H. Lowe',
+    last_verified_recorder: 'G. Murphy',
+    frequency_trend: 73
+  },
+  {
+    uuid: '4ef4fa98-d8e6-4f49-80f8-eb924f5f1005',
+    taxon_identifier: '1005',
+    geographic_region_identifier: 58,
+    occurrences_count: 662,
+    grid_square_count: 93,
+    first_record_date: '1991-06-21',
+    last_record_date: '2026-03-16',
+    first_recorder: 'N. Winter',
+    last_recorder: 'C. Smith',
+    first_verified_record_date: '1993-05-12',
+    last_verified_record_date: '2026-03-18',
+    first_verified_recorder: 'N. Winter',
+    last_verified_recorder: 'C. Smith',
+    frequency_trend: 64
+  },
+  {
+    uuid: 'f7ab5296-c1f7-4bdb-9f6e-3ef5eec31006',
+    taxon_identifier: '1006',
+    geographic_region_identifier: 59,
+    occurrences_count: 411,
+    grid_square_count: 58,
+    first_record_date: '2002-04-03',
+    last_record_date: '2026-05-04',
+    first_recorder: 'K. Price',
+    last_recorder: 'H. Douglas',
+    first_verified_record_date: '2003-04-11',
+    last_verified_record_date: '2026-05-07',
+    first_verified_recorder: 'K. Price',
+    last_verified_recorder: 'H. Douglas',
+    frequency_trend: 52
+  },
+  {
+    uuid: '4dd8d208-d64b-49dc-b8bc-189f4d4a1007',
+    taxon_identifier: '1007',
+    geographic_region_identifier: 60,
+    occurrences_count: 734,
+    grid_square_count: 112,
+    first_record_date: '1985-08-16',
+    last_record_date: '2026-06-12',
+    first_recorder: 'T. Webb',
+    last_recorder: 'J. Marsh',
+    first_verified_record_date: '1987-07-18',
+    last_verified_record_date: '2026-06-15',
+    first_verified_recorder: 'T. Webb',
+    last_verified_recorder: 'J. Marsh',
+    frequency_trend: 61
   }
-};
+];
 
-const speciesStatsList = Object.values(speciesStatsRows);
-
-function extractTopNQuery(url, baseUrl) {
-  const trimmedBase = baseUrl.endsWith('/') ? baseUrl.slice(0, -1) : baseUrl;
-  const increasingPath = `${trimmedBase}/species-stats/increasing`;
-
-  if (url.pathname !== increasingPath) {
-    return null;
+const taxonRows = [
+  {
+    taxon_identifier: '1001',
+    scientific_name: 'Eristalis arbustorum',
+    vernacular_name: 'Marmalade Hoverfly',
+    vernacular_names: ['Marmalade Hoverfly'],
+    rarity_group_name: 'Local'
+  },
+  {
+    taxon_identifier: '1002',
+    scientific_name: 'Criorhina berberina',
+    vernacular_name: 'Hairy-eyed Hoverfly',
+    vernacular_names: ['Hairy-eyed Hoverfly'],
+    rarity_group_name: 'Nationally Scarce'
+  },
+  {
+    taxon_identifier: '1003',
+    scientific_name: 'Syritta pipiens',
+    vernacular_name: 'Thick-legged Hoverfly',
+    vernacular_names: ['Thick-legged Hoverfly'],
+    rarity_group_name: 'Common'
+  },
+  {
+    taxon_identifier: '1004',
+    scientific_name: 'Volucella zonaria',
+    vernacular_name: 'Hornet Mimic Hoverfly',
+    vernacular_names: ['Hornet Mimic Hoverfly'],
+    rarity_group_name: 'Local'
+  },
+  {
+    taxon_identifier: '1005',
+    scientific_name: 'Rhingia campestris',
+    vernacular_name: 'Humpbacked Hoverfly',
+    vernacular_names: ['Humpbacked Hoverfly'],
+    rarity_group_name: 'Local'
+  },
+  {
+    taxon_identifier: '1006',
+    scientific_name: 'Myathropa florea',
+    vernacular_name: 'Batman Hoverfly',
+    vernacular_names: ['Batman Hoverfly'],
+    rarity_group_name: 'Common'
+  },
+  {
+    taxon_identifier: '1007',
+    scientific_name: 'Merodon equestris',
+    vernacular_name: 'Narcissus Bulb Fly',
+    vernacular_names: ['Narcissus Bulb Fly'],
+    rarity_group_name: 'Local'
   }
-
-  return {
-    topN: url.searchParams.get('topN')
-  };
-}
-
-function extractSpeciesId(url, baseUrl) {
-  const trimmedBase = baseUrl.endsWith('/') ? baseUrl.slice(0, -1) : baseUrl;
-  const pathPrefix = `${trimmedBase}/species-stats`;
-
-  if (!url.pathname.startsWith(pathPrefix)) {
-    return null;
-  }
-
-  const pathRemainder = url.pathname.slice(pathPrefix.length);
-  if (pathRemainder.startsWith('/')) {
-    const pathId = pathRemainder.slice(1).trim();
-    return pathId || null;
-  }
-
-  return url.searchParams.get('speciesId');
-}
-
-function extractRangeQuery(url, baseUrl) {
-  const trimmedBase = baseUrl.endsWith('/') ? baseUrl.slice(0, -1) : baseUrl;
-  const pathPrefix = `${trimmedBase}/species-stats`;
-
-  if (!url.pathname.startsWith(pathPrefix)) {
-    return null;
-  }
-
-  const firstRecordDateFrom = url.searchParams.get('firstRecordDateFrom');
-  const firstRecordDateTo = url.searchParams.get('firstRecordDateTo');
-
-  if (!firstRecordDateFrom && !firstRecordDateTo) {
-    return null;
-  }
-
-  return {
-    firstRecordDateFrom,
-    firstRecordDateTo
-  };
-}
-
-function isIsoDate(value) {
-  return /^\d{4}-\d{2}-\d{2}$/.test(value);
-}
-
-function filterByFirstRecordDate(firstRecordDateFrom, firstRecordDateTo) {
-  return speciesStatsList.filter((row) => {
-    return row.firstRecordDate >= firstRecordDateFrom && row.firstRecordDate <= firstRecordDateTo;
-  });
-}
-
-function getIncreasingSpecies(topN) {
-  return speciesStatsList
-    .slice()
-    .sort((a, b) => b.frequencyTrendScore - a.frequencyTrendScore)
-    .slice(0, topN);
-}
+];
 
 function jsonResponse(status, payload) {
   return new Response(JSON.stringify(payload), {
@@ -130,6 +176,109 @@ function jsonResponse(status, payload) {
   });
 }
 
+function normaliseBase(baseUrl) {
+  return baseUrl.endsWith('/') ? baseUrl.slice(0, -1) : baseUrl;
+}
+
+function isTaxonStatsRequest(url, baseUrl) {
+  const trimmedBase = normaliseBase(baseUrl);
+  return url.pathname === `${trimmedBase}/v1/taxon-stats`;
+}
+
+function isTaxonRequest(url, baseUrl) {
+  const trimmedBase = normaliseBase(baseUrl);
+  return url.pathname === `${trimmedBase}/v1/taxon` || url.pathname === `${trimmedBase}/v1/taxa`;
+}
+
+function parsePositiveInteger(value, fallback) {
+  if (value === null || value === undefined || value === '') {
+    return fallback;
+  }
+
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed) || parsed < 0) {
+    return fallback;
+  }
+
+  return Math.floor(parsed);
+}
+
+function buildListResponse(url, data, total, limit, offset) {
+  const nextOffset = offset + limit;
+  const previousOffset = offset - limit;
+
+  const self = new URL(url.toString());
+  self.searchParams.set('limit', String(limit));
+  self.searchParams.set('offset', String(offset));
+
+  const next = nextOffset < total ? new URL(url.toString()) : null;
+  const prev = previousOffset >= 0 ? new URL(url.toString()) : null;
+
+  if (next) {
+    next.searchParams.set('limit', String(limit));
+    next.searchParams.set('offset', String(nextOffset));
+  }
+
+  if (prev) {
+    prev.searchParams.set('limit', String(limit));
+    prev.searchParams.set('offset', String(previousOffset));
+  }
+
+  return {
+    data,
+    meta: {
+      limit,
+      offset,
+      count: data.length,
+      total
+    },
+    links: {
+      self: `${self.pathname}${self.search}`,
+      next: next ? `${next.pathname}${next.search}` : null,
+      prev: prev ? `${prev.pathname}${prev.search}` : null
+    }
+  };
+}
+
+function handleTaxonStatsRequest(url) {
+  const geographicRegionFilter = url.searchParams.get('geographic_region_identifier[eq]');
+  const limit = parsePositiveInteger(url.searchParams.get('limit'), 1000);
+  const offset = parsePositiveInteger(url.searchParams.get('offset'), 0);
+  const filtered = taxonStatsRows.filter((row) => {
+    if (!geographicRegionFilter) {
+      return true;
+    }
+
+    const geographicRegionIdentifier = Number(geographicRegionFilter);
+    return Number.isFinite(geographicRegionIdentifier) && row.geographic_region_identifier === geographicRegionIdentifier;
+  });
+  const page = filtered.slice(offset, offset + limit);
+
+  return jsonResponse(200, buildListResponse(url, page, filtered.length, limit, offset));
+}
+
+function handleTaxonRequest(url) {
+  const inFilter = url.searchParams.get('taxon_identifier[in]');
+  let filtered = taxonRows;
+
+  if (inFilter) {
+    const identifiers = new Set(
+      inFilter
+        .split(',')
+        .map((value) => value.trim())
+        .filter(Boolean)
+    );
+
+    filtered = taxonRows.filter((row) => identifiers.has(row.taxon_identifier));
+  }
+
+  const limit = parsePositiveInteger(url.searchParams.get('limit'), 1000);
+  const offset = parsePositiveInteger(url.searchParams.get('offset'), 0);
+  const page = filtered.slice(offset, offset + limit);
+
+  return jsonResponse(200, buildListResponse(url, page, filtered.length, limit, offset));
+}
+
 export function installSpeciesStatsMockApi(options = {}) {
   const baseUrl = options.baseUrl || DEFAULT_BASE_URL;
   const latencyMs = Number.isFinite(options.latencyMs) ? options.latencyMs : 120;
@@ -137,11 +286,9 @@ export function installSpeciesStatsMockApi(options = {}) {
 
   window.fetch = async (input, init) => {
     const requestUrl = new URL(typeof input === 'string' ? input : input.url, window.location.origin);
-    const topNQuery = extractTopNQuery(requestUrl, baseUrl);
-    const speciesId = extractSpeciesId(requestUrl, baseUrl);
-    const rangeQuery = extractRangeQuery(requestUrl, baseUrl);
+    const isSupported = isTaxonStatsRequest(requestUrl, baseUrl) || isTaxonRequest(requestUrl, baseUrl);
 
-    if (topNQuery === null && speciesId === null && rangeQuery === null) {
+    if (!isSupported) {
       return originalFetch(input, init);
     }
 
@@ -149,61 +296,11 @@ export function installSpeciesStatsMockApi(options = {}) {
       await new Promise((resolve) => setTimeout(resolve, latencyMs));
     }
 
-    if (topNQuery !== null) {
-      const requestedTopN = Number(topNQuery.topN);
-      const topN = Number.isFinite(requestedTopN) && requestedTopN > 0 ? Math.floor(requestedTopN) : 50;
-      const records = getIncreasingSpecies(topN);
-
-      return jsonResponse(200, {
-        topN,
-        count: records.length,
-        records
-      });
+    if (isTaxonStatsRequest(requestUrl, baseUrl)) {
+      return handleTaxonStatsRequest(requestUrl);
     }
 
-    if (rangeQuery !== null) {
-      const { firstRecordDateFrom, firstRecordDateTo } = rangeQuery;
-
-      if (!firstRecordDateFrom || !firstRecordDateTo) {
-        return jsonResponse(400, {
-          error: 'firstRecordDateFrom and firstRecordDateTo are both required'
-        });
-      }
-
-      if (!isIsoDate(firstRecordDateFrom) || !isIsoDate(firstRecordDateTo)) {
-        return jsonResponse(400, {
-          error: 'Date range must use YYYY-MM-DD format'
-        });
-      }
-
-      if (firstRecordDateFrom > firstRecordDateTo) {
-        return jsonResponse(400, {
-          error: 'firstRecordDateFrom must be earlier than or equal to firstRecordDateTo'
-        });
-      }
-
-      return jsonResponse(200, {
-        firstRecordDateFrom,
-        firstRecordDateTo,
-        count: filterByFirstRecordDate(firstRecordDateFrom, firstRecordDateTo).length,
-        records: filterByFirstRecordDate(firstRecordDateFrom, firstRecordDateTo)
-      });
-    }
-
-    if (!speciesId) {
-      return jsonResponse(400, {
-        error: 'speciesId is required'
-      });
-    }
-
-    const row = speciesStatsRows[speciesId];
-    if (!row) {
-      return jsonResponse(404, {
-        error: `No species stats found for speciesId ${speciesId}`
-      });
-    }
-
-    return jsonResponse(200, row);
+    return handleTaxonRequest(requestUrl);
   };
 
   return function uninstallSpeciesStatsMockApi() {
@@ -212,5 +309,5 @@ export function installSpeciesStatsMockApi(options = {}) {
 }
 
 export function listMockSpeciesIds() {
-  return Object.keys(speciesStatsRows);
+  return taxonRows.map((row) => row.taxon_identifier);
 }

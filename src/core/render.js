@@ -6,7 +6,7 @@ import { warn } from '../utils/logger.js';
 
 export function render(element) {
   const config = parseOptions(element);
-  const errors = validateAttributes(config);
+  const errors = validateAttributes(config, element);
 
   if (errors.length > 0) {
     warn(errors[0]);

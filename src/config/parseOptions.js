@@ -8,6 +8,7 @@ export function parseOptions(element) {
   return {
     type: dataset.visType || 'table',
     source: dataset.visSource,
+    control: dataset.visControl,
     startDate: dataset.visStartDate,
     endDate: dataset.visEndDate,
     area: dataset.visArea || 'vc-58-59-60',

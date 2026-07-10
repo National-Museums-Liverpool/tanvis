@@ -21,17 +21,37 @@
     <p>This renders the top increasing species ranked by frequency trend score.</p>
 
     <div
+      id="vc-control"
+      class="tanvis"
+      data-vis-type="control-block"
+      data-vis-area="vc-58-59-60"
+    ></div>
+
+    <div
       class="tanvis"
       data-vis-type="increasing-species-table"
       data-vis-top-n="25"
+      data-vis-control="vc-control"
     ></div>
 
     <script src="https://unpkg.com/tabulator-tables@6.3.0/dist/js/tabulator.min.js"></script>
     <script src="../dist/tanvis.iife.js"></script>
     <script type="module">
+      import { installTaxonGroupsMockApi } from './mock/taxonGroupsMockApi.js';
       import { installSpeciesStatsMockApi } from './mock/speciesStatsMockApi.js';
 
+      installTaxonGroupsMockApi({ baseUrl: '/api', latencyMs: 150 });
       installSpeciesStatsMockApi({ baseUrl: '/api', latencyMs: 150 });
+      const originalFetch = window.fetch.bind(window);
+      window.fetch = async (input, init) => {
+        const requestUrl = new URL(typeof input === 'string' ? input : input.url, window.location.origin);
+        if (requestUrl.pathname === '/api/v1/taxon-stats' || requestUrl.pathname === '/api/v1/taxon' || requestUrl.pathname === '/api/v1/taxa') {
+          console.log('[increasing-species-table] API request:', `${requestUrl.pathname}${requestUrl.search}`);
+        }
+
+        return originalFetch(input, init);
+      };
+
       window.Tanvis.init();
     </script>
   </body>

@@ -123,6 +123,62 @@ const SHARED_STYLES = `
   opacity: 0.6;
   cursor: not-allowed;
 }
+
+.tanvis-controls-row {
+  display: flex;
+  align-items: stretch;
+  gap: 0;
+  flex-wrap: wrap;
+  margin-top: 0.5rem;
+}
+
+.tanvis-controls-field {
+  display: block;
+  margin: 0;
+}
+
+.tanvis-controls-field-inline {
+  display: inline-flex;
+  align-items: stretch;
+}
+
+.tanvis-controls-gap-top {
+  margin-top: 0.5rem;
+}
+
+.tanvis-controls-select {
+  min-width: 13rem;
+  min-height: 2.25rem;
+  padding: 0.45rem 0.9rem;
+  border: 1px solid #9ca3af;
+  border-radius: 0;
+  background: #f8fafc;
+  color: #1f2937;
+  font: 600 0.95rem/1.2 system-ui, sans-serif;
+  transition: background-color 160ms ease, border-color 160ms ease, color 160ms ease, box-shadow 160ms ease;
+}
+
+.tanvis-controls-select:hover {
+  border-color: #6b7280;
+  background: #f1f5f9;
+}
+
+.tanvis-controls-select:focus-visible {
+  outline: 0;
+  border-color: #6b7280;
+  box-shadow: 0 0 0 3px rgba(15, 118, 110, 0.18);
+}
+
+.tanvis-controls-select:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.tanvis-controls-help {
+  margin: 0.5rem 0 0;
+  color: #4b5563;
+  font: 500 0.85rem/1.3 system-ui, sans-serif;
+}
 `;
 
 export function ensureSharedStyles() {

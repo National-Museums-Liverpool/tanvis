@@ -21,17 +21,27 @@
     <p>This renders a table of species whose first record date falls within the requested date range.</p>
 
     <div
+      id="vc-control"
+      class="tanvis"
+      data-vis-type="control-block"
+      data-vis-area="vc-58-59-60"
+    ></div>
+
+    <div
       class="tanvis"
       data-vis-type="new-species-table"
       data-vis-start-date="2025-01-01"
       data-vis-end-date="2025-12-31"
+      data-vis-control="vc-control"
     ></div>
 
     <script src="https://unpkg.com/tabulator-tables@6.3.0/dist/js/tabulator.min.js"></script>
     <script src="../dist/tanvis.iife.js"></script>
     <script type="module">
+      import { installTaxonGroupsMockApi } from './mock/taxonGroupsMockApi.js';
       import { installNewSpeciesMockApi } from './mock/newSpeciesMockApi.js';
 
+      installTaxonGroupsMockApi({ baseUrl: '/api', latencyMs: 150 });
       installNewSpeciesMockApi({ baseUrl: '/api', latencyMs: 150 });
       window.Tanvis.init();
     </script>

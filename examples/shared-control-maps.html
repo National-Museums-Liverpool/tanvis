@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Tanvis Shared Map Control Example</title>
+    <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/biologicalrecordscentre/brc-atlas/dist/brcatlas.umd.js"></script>
+    <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/gh/biologicalrecordscentre/brc-atlas/dist/brcatlas.umd.css" />
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        margin: 20px;
+      }
+
+      .map-grid {
+        display: grid;
+        gap: 16px;
+        grid-template-columns: repeat(2, minmax(320px, 1fr));
+        align-items: start;
+      }
+
+      .map-panel {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+
+      .map-panel h2 {
+        font-size: 1rem;
+        margin: 0;
+      }
+
+      .map-panel .tanvis {
+        border: 1px solid #ccc;
+      }
+
+      .control-row {
+        margin-top: 16px;
+      }
+
+      @media (max-width: 900px) {
+        .map-grid {
+          grid-template-columns: 1fr;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Tanvis Shared Control for Two Maps</h1>
+    <p>The control block below updates both the static and slippy maps.</p>
+
+    <div class="map-grid">
+      <section class="map-panel">
+        <h2>Static map</h2>
+        <div
+          class="tanvis"
+          data-vis-type="static-map"
+          data-vis-area="vc-58-59-60"
+          data-vis-control="shared-vc-control"
+          data-vis-hectads="true"
+          data-vis-expand="true"
+        ></div>
+      </section>
+
+      <section class="map-panel">
+        <h2>Slippy map</h2>
+        <div
+          class="tanvis"
+          data-vis-type="slippy-map"
+          data-vis-area="vc-58-59-60"
+          data-vis-control="shared-vc-control"
+          data-vis-expand="true"
+          data-vis-height="420"
+          data-vis-boundaries="true"
+        ></div>
+      </section>
+    </div>
+
+    <div class="control-row">
+      <div
+        id="shared-vc-control"
+        class="tanvis"
+        data-vis-type="control-block"
+        data-vis-area="vc-58-59-60"
+      ></div>
+    </div>
+
+    <script src="../dist/tanvis.iife.js"></script>
+    <script type="module">
+      import { installTaxonGroupsMockApi } from './mock/taxonGroupsMockApi.js';
+
+      installTaxonGroupsMockApi({ baseUrl: '/api', latencyMs: 150 });
+      window.Tanvis.init();
+    </script>
+  </body>
+</html>
