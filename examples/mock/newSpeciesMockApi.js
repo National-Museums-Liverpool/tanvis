@@ -4,6 +4,17 @@ const taxonStatsRows = [
   {
     uuid: 'f4a4f72c-02d0-43a8-9b8f-7d3d205dc001',
     taxon_identifier: '2001',
+    scientific_name_identifier: 'TVK-2001',
+    scientific_name: 'Eristalis tenax',
+    scientific_name_authorship: 'Linnaeus, 1758',
+    vernacular_name: 'Drone Fly',
+    vernacular_names: ['Drone Fly'],
+    taxon_group_external_key: 'diptera',
+    id_difficulty: 1,
+    recording_scheme_external_key: 'ABCD1234EFGH5678',
+    conservation_status: 'LC',
+    taxon_remarks: null,
+    rarity_group_name: 'common',
     geographic_region_identifier: 58,
     occurrences_count: 14,
     grid_square_count: 8,
@@ -19,6 +30,17 @@ const taxonStatsRows = [
   {
     uuid: 'd5f1f981-5322-4da0-8f6c-5fa95e43f002',
     taxon_identifier: '2002',
+    scientific_name_identifier: 'TVK-2002',
+    scientific_name: 'Volucella pellucens',
+    scientific_name_authorship: 'Linnaeus, 1758',
+    vernacular_name: 'Pellucid Hoverfly',
+    vernacular_names: ['Pellucid Hoverfly'],
+    taxon_group_external_key: 'diptera',
+    id_difficulty: 2,
+    recording_scheme_external_key: 'ABCD1234EFGH5678',
+    conservation_status: 'LC',
+    taxon_remarks: null,
+    rarity_group_name: 'common',
     geographic_region_identifier: 59,
     occurrences_count: 9,
     grid_square_count: 6,
@@ -34,6 +56,17 @@ const taxonStatsRows = [
   {
     uuid: '9a14f59b-c190-4385-a779-5179186d3003',
     taxon_identifier: '2003',
+    scientific_name_identifier: 'TVK-2003',
+    scientific_name: 'Cheilosia illustrata',
+    scientific_name_authorship: 'Harris, 1780',
+    vernacular_name: 'Large Black Hoverfly',
+    vernacular_names: ['Large Black Hoverfly'],
+    taxon_group_external_key: 'diptera',
+    id_difficulty: 3,
+    recording_scheme_external_key: 'ABCD1234EFGH5678',
+    conservation_status: 'LC',
+    taxon_remarks: null,
+    rarity_group_name: 'scarce',
     geographic_region_identifier: 60,
     occurrences_count: 5,
     grid_square_count: 4,
@@ -49,6 +82,17 @@ const taxonStatsRows = [
   {
     uuid: 'c26a7818-95a7-4583-95b8-9e28ebf14004',
     taxon_identifier: '2004',
+    scientific_name_identifier: 'TVK-2004',
+    scientific_name: 'Helophilus pendulus',
+    scientific_name_authorship: 'Linnaeus, 1758',
+    vernacular_name: 'Sun Fly',
+    vernacular_names: ['Sun Fly'],
+    taxon_group_external_key: 'diptera',
+    id_difficulty: 2,
+    recording_scheme_external_key: 'ABCD1234EFGH5678',
+    conservation_status: 'LC',
+    taxon_remarks: null,
+    rarity_group_name: 'common',
     geographic_region_identifier: 60,
     occurrences_count: 11,
     grid_square_count: 7,
@@ -60,65 +104,6 @@ const taxonStatsRows = [
     last_verified_record_date: '2025-07-29',
     first_verified_recorder: 'R. Walker',
     last_verified_recorder: 'R. Walker'
-  }
-];
-
-const taxaRows = [
-  {
-    taxon_identifier: '2001',
-    scientific_name_identifier: 'TVK-2001',
-    scientific_name: 'Eristalis tenax',
-    scientific_name_authorship: 'Linnaeus, 1758',
-    vernacular_name: 'Drone Fly',
-    vernacular_names: ['Drone Fly'],
-    taxon_group_external_key: 'diptera',
-    id_difficulty: 1,
-    recording_scheme_external_key: 'ABCD1234EFGH5678',
-    conservation_status: 'LC',
-    taxon_remarks: null,
-    rarity_group_name: 'common'
-  },
-  {
-    taxon_identifier: '2002',
-    scientific_name_identifier: 'TVK-2002',
-    scientific_name: 'Volucella pellucens',
-    scientific_name_authorship: 'Linnaeus, 1758',
-    vernacular_name: 'Pellucid Hoverfly',
-    vernacular_names: ['Pellucid Hoverfly'],
-    taxon_group_external_key: 'diptera',
-    id_difficulty: 2,
-    recording_scheme_external_key: 'ABCD1234EFGH5678',
-    conservation_status: 'LC',
-    taxon_remarks: null,
-    rarity_group_name: 'common'
-  },
-  {
-    taxon_identifier: '2003',
-    scientific_name_identifier: 'TVK-2003',
-    scientific_name: 'Cheilosia illustrata',
-    scientific_name_authorship: 'Harris, 1780',
-    vernacular_name: 'Large Black Hoverfly',
-    vernacular_names: ['Large Black Hoverfly'],
-    taxon_group_external_key: 'diptera',
-    id_difficulty: 3,
-    recording_scheme_external_key: 'ABCD1234EFGH5678',
-    conservation_status: 'LC',
-    taxon_remarks: null,
-    rarity_group_name: 'scarce'
-  },
-  {
-    taxon_identifier: '2004',
-    scientific_name_identifier: 'TVK-2004',
-    scientific_name: 'Helophilus pendulus',
-    scientific_name_authorship: 'Linnaeus, 1758',
-    vernacular_name: 'Sun Fly',
-    vernacular_names: ['Sun Fly'],
-    taxon_group_external_key: 'diptera',
-    id_difficulty: 2,
-    recording_scheme_external_key: 'ABCD1234EFGH5678',
-    conservation_status: 'LC',
-    taxon_remarks: null,
-    rarity_group_name: 'common'
   }
 ];
 
@@ -143,11 +128,6 @@ function normaliseBase(baseUrl) {
 function isTaxonStatsRequest(url, baseUrl) {
   const trimmedBase = normaliseBase(baseUrl);
   return url.pathname === `${trimmedBase}/v1/taxon-stats`;
-}
-
-function isTaxaRequest(url, baseUrl) {
-  const trimmedBase = normaliseBase(baseUrl);
-  return url.pathname === `${trimmedBase}/v1/taxa`;
 }
 
 function parsePositiveInteger(value, fallback) {
@@ -237,28 +217,6 @@ function handleTaxonStatsRequest(url) {
   return jsonResponse(200, buildListResponse(url, page, filtered.length, limit, offset));
 }
 
-function handleTaxaRequest(url) {
-  const inFilter = url.searchParams.get('taxon_identifier[in]');
-  let filtered = taxaRows;
-
-  if (inFilter) {
-    const identifiers = new Set(
-      inFilter
-        .split(',')
-        .map((value) => value.trim())
-        .filter(Boolean)
-    );
-
-    filtered = taxaRows.filter((row) => identifiers.has(row.taxon_identifier));
-  }
-
-  const limit = parsePositiveInteger(url.searchParams.get('limit'), 1000);
-  const offset = parsePositiveInteger(url.searchParams.get('offset'), 0);
-  const page = filtered.slice(offset, offset + limit);
-
-  return jsonResponse(200, buildListResponse(url, page, filtered.length, limit, offset));
-}
-
 export function installNewSpeciesMockApi(options = {}) {
   const baseUrl = options.baseUrl || DEFAULT_BASE_URL;
   const latencyMs = Number.isFinite(options.latencyMs) ? options.latencyMs : 120;
@@ -267,7 +225,7 @@ export function installNewSpeciesMockApi(options = {}) {
   window.fetch = async (input, init) => {
     const requestUrl = new URL(typeof input === 'string' ? input : input.url, window.location.origin);
 
-    const isSupported = isTaxonStatsRequest(requestUrl, baseUrl) || isTaxaRequest(requestUrl, baseUrl);
+    const isSupported = isTaxonStatsRequest(requestUrl, baseUrl);
 
     if (!isSupported) {
       return originalFetch(input, init);
@@ -278,10 +236,9 @@ export function installNewSpeciesMockApi(options = {}) {
     }
 
     if (isTaxonStatsRequest(requestUrl, baseUrl)) {
+      console.log('[new-species-mock] API request:', `${requestUrl.pathname}${requestUrl.search}`);
       return handleTaxonStatsRequest(requestUrl);
     }
-
-    return handleTaxaRequest(requestUrl);
   };
 
   return function uninstallNewSpeciesMockApi() {

@@ -4,6 +4,10 @@ const taxonStatsRows = [
   {
     uuid: '8a13ef57-9f2f-4ec9-91b5-9dc7d0531001',
     taxon_identifier: '1001',
+    scientific_name: 'Eristalis arbustorum',
+    vernacular_name: 'Marmalade Hoverfly',
+    vernacular_names: ['Marmalade Hoverfly'],
+    rarity_group_name: 'Local',
     geographic_region_identifier: 58,
     occurrences_count: 1842,
     grid_square_count: 237,
@@ -20,6 +24,10 @@ const taxonStatsRows = [
   {
     uuid: 'b1de346d-5c6a-40b8-87db-6cc8e04e1002',
     taxon_identifier: '1002',
+    scientific_name: 'Criorhina berberina',
+    vernacular_name: 'Hairy-eyed Hoverfly',
+    vernacular_names: ['Hairy-eyed Hoverfly'],
+    rarity_group_name: 'Nationally Scarce',
     geographic_region_identifier: null,
     occurrences_count: 923,
     grid_square_count: 88,
@@ -36,6 +44,10 @@ const taxonStatsRows = [
   {
     uuid: 'cbf629cb-0434-44e8-bbe8-bf52f4cf1003',
     taxon_identifier: '1003',
+    scientific_name: 'Syritta pipiens',
+    vernacular_name: 'Thick-legged Hoverfly',
+    vernacular_names: ['Thick-legged Hoverfly'],
+    rarity_group_name: 'Common',
     geographic_region_identifier: 60,
     occurrences_count: 12034,
     grid_square_count: 612,
@@ -52,6 +64,10 @@ const taxonStatsRows = [
   {
     uuid: 'b1da3705-31e6-4dc7-bec5-6f0a6a6a1004',
     taxon_identifier: '1004',
+    scientific_name: 'Volucella zonaria',
+    vernacular_name: 'Hornet Mimic Hoverfly',
+    vernacular_names: ['Hornet Mimic Hoverfly'],
+    rarity_group_name: 'Local',
     geographic_region_identifier: 59,
     occurrences_count: 510,
     grid_square_count: 74,
@@ -68,6 +84,10 @@ const taxonStatsRows = [
   {
     uuid: '4ef4fa98-d8e6-4f49-80f8-eb924f5f1005',
     taxon_identifier: '1005',
+    scientific_name: 'Rhingia campestris',
+    vernacular_name: 'Humpbacked Hoverfly',
+    vernacular_names: ['Humpbacked Hoverfly'],
+    rarity_group_name: 'Local',
     geographic_region_identifier: 58,
     occurrences_count: 662,
     grid_square_count: 93,
@@ -84,6 +104,10 @@ const taxonStatsRows = [
   {
     uuid: 'f7ab5296-c1f7-4bdb-9f6e-3ef5eec31006',
     taxon_identifier: '1006',
+    scientific_name: 'Myathropa florea',
+    vernacular_name: 'Batman Hoverfly',
+    vernacular_names: ['Batman Hoverfly'],
+    rarity_group_name: 'Common',
     geographic_region_identifier: 59,
     occurrences_count: 411,
     grid_square_count: 58,
@@ -100,6 +124,10 @@ const taxonStatsRows = [
   {
     uuid: '4dd8d208-d64b-49dc-b8bc-189f4d4a1007',
     taxon_identifier: '1007',
+    scientific_name: 'Merodon equestris',
+    vernacular_name: 'Narcissus Bulb Fly',
+    vernacular_names: ['Narcissus Bulb Fly'],
+    rarity_group_name: 'Local',
     geographic_region_identifier: 60,
     occurrences_count: 734,
     grid_square_count: 112,
@@ -112,58 +140,6 @@ const taxonStatsRows = [
     first_verified_recorder: 'T. Webb',
     last_verified_recorder: 'J. Marsh',
     frequency_trend: 61
-  }
-];
-
-const taxonRows = [
-  {
-    taxon_identifier: '1001',
-    scientific_name: 'Eristalis arbustorum',
-    vernacular_name: 'Marmalade Hoverfly',
-    vernacular_names: ['Marmalade Hoverfly'],
-    rarity_group_name: 'Local'
-  },
-  {
-    taxon_identifier: '1002',
-    scientific_name: 'Criorhina berberina',
-    vernacular_name: 'Hairy-eyed Hoverfly',
-    vernacular_names: ['Hairy-eyed Hoverfly'],
-    rarity_group_name: 'Nationally Scarce'
-  },
-  {
-    taxon_identifier: '1003',
-    scientific_name: 'Syritta pipiens',
-    vernacular_name: 'Thick-legged Hoverfly',
-    vernacular_names: ['Thick-legged Hoverfly'],
-    rarity_group_name: 'Common'
-  },
-  {
-    taxon_identifier: '1004',
-    scientific_name: 'Volucella zonaria',
-    vernacular_name: 'Hornet Mimic Hoverfly',
-    vernacular_names: ['Hornet Mimic Hoverfly'],
-    rarity_group_name: 'Local'
-  },
-  {
-    taxon_identifier: '1005',
-    scientific_name: 'Rhingia campestris',
-    vernacular_name: 'Humpbacked Hoverfly',
-    vernacular_names: ['Humpbacked Hoverfly'],
-    rarity_group_name: 'Local'
-  },
-  {
-    taxon_identifier: '1006',
-    scientific_name: 'Myathropa florea',
-    vernacular_name: 'Batman Hoverfly',
-    vernacular_names: ['Batman Hoverfly'],
-    rarity_group_name: 'Common'
-  },
-  {
-    taxon_identifier: '1007',
-    scientific_name: 'Merodon equestris',
-    vernacular_name: 'Narcissus Bulb Fly',
-    vernacular_names: ['Narcissus Bulb Fly'],
-    rarity_group_name: 'Local'
   }
 ];
 
@@ -183,11 +159,6 @@ function normaliseBase(baseUrl) {
 function isTaxonStatsRequest(url, baseUrl) {
   const trimmedBase = normaliseBase(baseUrl);
   return url.pathname === `${trimmedBase}/v1/taxon-stats`;
-}
-
-function isTaxonRequest(url, baseUrl) {
-  const trimmedBase = normaliseBase(baseUrl);
-  return url.pathname === `${trimmedBase}/v1/taxon` || url.pathname === `${trimmedBase}/v1/taxa`;
 }
 
 function parsePositiveInteger(value, fallback) {
@@ -257,28 +228,6 @@ function handleTaxonStatsRequest(url) {
   return jsonResponse(200, buildListResponse(url, page, filtered.length, limit, offset));
 }
 
-function handleTaxonRequest(url) {
-  const inFilter = url.searchParams.get('taxon_identifier[in]');
-  let filtered = taxonRows;
-
-  if (inFilter) {
-    const identifiers = new Set(
-      inFilter
-        .split(',')
-        .map((value) => value.trim())
-        .filter(Boolean)
-    );
-
-    filtered = taxonRows.filter((row) => identifiers.has(row.taxon_identifier));
-  }
-
-  const limit = parsePositiveInteger(url.searchParams.get('limit'), 1000);
-  const offset = parsePositiveInteger(url.searchParams.get('offset'), 0);
-  const page = filtered.slice(offset, offset + limit);
-
-  return jsonResponse(200, buildListResponse(url, page, filtered.length, limit, offset));
-}
-
 export function installSpeciesStatsMockApi(options = {}) {
   const baseUrl = options.baseUrl || DEFAULT_BASE_URL;
   const latencyMs = Number.isFinite(options.latencyMs) ? options.latencyMs : 120;
@@ -286,7 +235,7 @@ export function installSpeciesStatsMockApi(options = {}) {
 
   window.fetch = async (input, init) => {
     const requestUrl = new URL(typeof input === 'string' ? input : input.url, window.location.origin);
-    const isSupported = isTaxonStatsRequest(requestUrl, baseUrl) || isTaxonRequest(requestUrl, baseUrl);
+    const isSupported = isTaxonStatsRequest(requestUrl, baseUrl);
 
     if (!isSupported) {
       return originalFetch(input, init);
@@ -297,10 +246,9 @@ export function installSpeciesStatsMockApi(options = {}) {
     }
 
     if (isTaxonStatsRequest(requestUrl, baseUrl)) {
+      console.log('[species-stats-mock] API request:', `${requestUrl.pathname}${requestUrl.search}`);
       return handleTaxonStatsRequest(requestUrl);
     }
-
-    return handleTaxonRequest(requestUrl);
   };
 
   return function uninstallSpeciesStatsMockApi() {
@@ -309,5 +257,5 @@ export function installSpeciesStatsMockApi(options = {}) {
 }
 
 export function listMockSpeciesIds() {
-  return taxonRows.map((row) => row.taxon_identifier);
+  return taxonStatsRows.map((row) => row.taxon_identifier);
 }

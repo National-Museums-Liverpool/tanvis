@@ -1,9 +1,10 @@
 import { describe, it, expect } from 'vitest';
 import { renderStaticMap } from '../../src/renderers/map.js';
 import { renderLeafletMap } from '../../src/renderers/leafletMap.js';
+import { publishControlEvent } from '../../src/controls/controlBus.js';
 
 describe('renderStaticMap', () => {
-  it('calls brc-atlas svgMap, renders controls, and updates area selection', () => {
+  it('calls brc-atlas svgMap and responds to control-block area changes', () => {
     const setIdentfierCalls = [];
     const redrawCalls = [];
     const svgMapCalls = [];
@@ -18,12 +19,17 @@ describe('renderStaticMap', () => {
       }
     };
 
+    const controlElement = document.createElement('div');
+    controlElement.id = 'vc-control-static';
+    controlElement.dataset.visArea = 'vc-58-59-60';
+    document.body.appendChild(controlElement);
+
     const element = document.createElement('div');
     const config = {
       type: 'map',
       area: 'vc-58-59-60',
       source: '/example.csv',
-      ctl: true
+      control: 'vc-control-static'
     };
 
     renderStaticMap(element, config);
@@ -37,35 +43,10 @@ describe('renderStaticMap', () => {
     expect(setIdentfierCalls).toEqual(['/example.csv']);
     expect(redrawCalls).toHaveLength(1);
 
-    expect(document.head.querySelector('#tanvis-shared-styles')).not.toBeNull();
-    expect(element.querySelector('.tanvis-controls')).not.toBeNull();
-    expect(element.querySelector('.tanvis-controls-toggle')).not.toBeNull();
-    expect(element.querySelector('.tanvis-controls-header')).not.toBeNull();
-    expect(element.querySelector('.tanvis-controls-group')).not.toBeNull();
-    const toggle = element.querySelector('.tanvis-controls-toggle');
-    const group = element.querySelector('.tanvis-controls-group');
-    expect(toggle.textContent).toContain('Data options');
-    expect(toggle.getAttribute('aria-expanded')).toBe('true');
-    expect(group.hidden).toBe(false);
-
-    toggle.click();
-    expect(toggle.getAttribute('aria-expanded')).toBe('false');
-    expect(group.hidden).toBe(true);
-
-    toggle.click();
-    expect(toggle.getAttribute('aria-expanded')).toBe('true');
-    expect(group.hidden).toBe(false);
-
-    const radios = Array.from(element.querySelectorAll('input[type="radio"]'));
-    expect(radios).toHaveLength(4);
-    expect(radios.map((radio) => radio.value)).toEqual(['vc-58', 'vc-59', 'vc-60', 'vc-58-59-60']);
-    expect(element.textContent).toContain('Data options');
-    expect(element.textContent).not.toContain('Area');
-    expect(radios.find((radio) => radio.value === 'vc-58-59-60')?.checked).toBe(true);
-
-    const vc59Radio = radios.find((radio) => radio.value === 'vc-59');
-    vc59Radio.checked = true;
-    vc59Radio.dispatchEvent(new Event('change'));
+    publishControlEvent('vc-control-static', {
+      type: 'area-change',
+      area: 'vc-59'
+    });
 
     expect(element.dataset.visArea).toBe('vc-59');
     expect(svgMapCalls).toHaveLength(2);
@@ -154,7 +135,7 @@ describe('renderStaticMap', () => {
 });
 
 describe('renderLeafletMap', () => {
-  it('renders data options controls and updates data-vis-area when ctl is true', () => {
+  it('responds to control-block area changes', () => {
     const leafletMapCalls = [];
     const setViewCalls = [];
 
@@ -170,45 +151,46 @@ describe('renderLeafletMap', () => {
       }
     };
 
+    const controlElement = document.createElement('div');
+    controlElement.id = 'vc-control-leaflet';
+    controlElement.dataset.visArea = 'vc-58-59-60';
+    document.body.appendChild(controlElement);
+
     const element = document.createElement('div');
     renderLeafletMap(element, {
       type: 'slippy-map',
       area: 'vc-58-59-60',
-      ctl: true
+      control: 'vc-control-leaflet'
     });
 
     expect(leafletMapCalls).toHaveLength(1);
-    expect(element.querySelector('.tanvis-controls')).not.toBeNull();
-    expect(element.querySelector('.tanvis-controls-toggle')).not.toBeNull();
-    expect(element.querySelector('.tanvis-controls-group')).not.toBeNull();
-
-    const radios = Array.from(element.querySelectorAll('input[type="radio"]'));
-    expect(radios).toHaveLength(4);
-    expect(radios.map((radio) => radio.value)).toEqual(['vc-58', 'vc-59', 'vc-60', 'vc-58-59-60']);
-    expect(radios.find((radio) => radio.value === 'vc-58-59-60')?.checked).toBe(true);
     expect(setViewCalls[0]).toEqual({ coords: [53.585317, -2.549048], zoom: 8 });
 
-    const vc59Radio = radios.find((radio) => radio.value === 'vc-59');
-    vc59Radio.checked = true;
-    vc59Radio.dispatchEvent(new Event('change'));
+    publishControlEvent('vc-control-leaflet', {
+      type: 'area-change',
+      area: 'vc-59'
+    });
 
     expect(element.dataset.visArea).toBe('vc-59');
     expect(leafletMapCalls).toHaveLength(1);
     expect(setViewCalls[1]).toEqual({ coords: [53.629982, -2.606334], zoom: 9 });
 
-    const vc58Radio = radios.find((radio) => radio.value === 'vc-58');
-    vc58Radio.checked = true;
-    vc58Radio.dispatchEvent(new Event('change'));
+    publishControlEvent('vc-control-leaflet', {
+      type: 'area-change',
+      area: 'vc-58'
+    });
     expect(setViewCalls[2]).toEqual({ coords: [53.225875, -2.525714], zoom: 9 });
 
-    const vc60Radio = radios.find((radio) => radio.value === 'vc-60');
-    vc60Radio.checked = true;
-    vc60Radio.dispatchEvent(new Event('change'));
+    publishControlEvent('vc-control-leaflet', {
+      type: 'area-change',
+      area: 'vc-60'
+    });
     expect(setViewCalls[3]).toEqual({ coords: [53.988606, -2.764047], zoom: 9 });
 
-    const allRadio = radios.find((radio) => radio.value === 'vc-58-59-60');
-    allRadio.checked = true;
-    allRadio.dispatchEvent(new Event('change'));
+    publishControlEvent('vc-control-leaflet', {
+      type: 'area-change',
+      area: 'vc-58-59-60'
+    });
     expect(setViewCalls[4]).toEqual({ coords: [53.585317, -2.549048], zoom: 8 });
   });
 

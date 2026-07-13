@@ -5,9 +5,7 @@ import { createVisStatusReporter } from '../utils/visStatus.js';
 
 const DEFAULT_API_BASE = '/api/v1';
 const TAXON_STATS_RESOURCE = 'taxon-stats';
-const TAXON_RESOURCE = 'taxon';
 const DEFAULT_PAGE_LIMIT = 1000;
-const TAXON_IN_FILTER_CHUNK_SIZE = 150;
 const DEFAULT_TOP_N = 50;
 const columns = [
   { title: 'Species ID', field: 'speciesId', sorter: 'string' },
@@ -39,29 +37,35 @@ export function createIncreasingSpeciesTableAdapter() {
       const topN = parseTopN(renderConfig.topN) ?? DEFAULT_TOP_N;
       const apiBase = renderConfig.source || DEFAULT_API_BASE;
       const geographicRegionIdentifier = areaToGeographicRegionIdentifier(renderConfig.area);
+      const taxonGroupExternalKey = getEffectiveTaxonGroup(renderConfig);
       const loadId = (element.__tanvisIncreasingLoadId || 0) + 1;
       element.__tanvisIncreasingLoadId = loadId;
       element.dataset.visArea = renderConfig.area;
+      element.dataset.visTaxonGroup = taxonGroupExternalKey;
 
       if (renderConfig.control) {
         element.__tanvisControlCleanup = subscribeToControl(renderConfig.control, (event) => {
-          if (event?.type !== 'area-change' || !event.area) {
+          if (!event || (event.type !== 'area-change' && event.type !== 'taxon-group-change')) {
             return;
           }
 
-          if (event.area === element.dataset.visArea) {
+          const nextArea = getEffectiveArea(renderConfig);
+          const nextTaxonGroupExternalKey = getEffectiveTaxonGroup(renderConfig);
+
+          if (nextArea === element.dataset.visArea && nextTaxonGroupExternalKey === (element.dataset.visTaxonGroup || '')) {
             return;
           }
 
-          element.dataset.visArea = event.area;
+          element.dataset.visArea = nextArea;
+          element.dataset.visTaxonGroup = nextTaxonGroupExternalKey;
           createIncreasingSpeciesTableAdapter().render(element, {
             ...renderConfig,
-            area: event.area
+            area: nextArea
           });
         });
       }
 
-      buildIncreasingSpeciesRecords({ apiBase, topN, geographicRegionIdentifier })
+      buildIncreasingSpeciesRecords({ apiBase, topN, geographicRegionIdentifier, taxonGroupExternalKey })
         .then((records) => {
           if (element.__tanvisIncreasingLoadId !== loadId) {
             return;
@@ -131,36 +135,29 @@ function getTabulatorGlobal() {
   return window.Tabulator || null;
 }
 
-async function buildIncreasingSpeciesRecords({ apiBase, topN, geographicRegionIdentifier }) {
-  const taxonStatsRows = await fetchTaxonStats({ apiBase, geographicRegionIdentifier });
+async function buildIncreasingSpeciesRecords({ apiBase, topN, geographicRegionIdentifier, taxonGroupExternalKey }) {
+  const taxonStatsRows = await fetchTaxonStats({ apiBase, geographicRegionIdentifier, taxonGroupExternalKey });
   const rankedRows = taxonStatsRows
     .slice()
     .sort((a, b) => Number(b?.frequency_trend || 0) - Number(a?.frequency_trend || 0))
     .slice(0, topN);
 
-  const taxaByIdentifier = await fetchTaxaByIdentifier({
-    apiBase,
-    taxonIdentifiers: rankedRows.map((row) => row.taxon_identifier)
-  });
-
   return rankedRows.map((row) => {
-    const taxon = taxaByIdentifier.get(row.taxon_identifier);
-
     return {
       speciesId: row.taxon_identifier,
       vcNumber: row.geographic_region_identifier,
-      rarityCategory: taxon?.rarity_group_name || '',
+      rarityCategory: row.rarity_group_name || '',
       firstRecordDate: row.first_record_date,
       totalRecords: row.occurrences_count,
       occupiedGridSquares: row.grid_square_count,
       frequencyTrendScore: row.frequency_trend,
-      scientificName: taxon?.scientific_name || '',
-      commonName: formatVernacularName(taxon)
+      scientificName: row.scientific_name || '',
+      commonName: formatVernacularName(row)
     };
   });
 }
 
-async function fetchTaxonStats({ apiBase, geographicRegionIdentifier }) {
+async function fetchTaxonStats({ apiBase, geographicRegionIdentifier, taxonGroupExternalKey }) {
   const resourceUrl = resolveResourceUrl(apiBase, TAXON_STATS_RESOURCE);
   const rows = [];
   let offset = 0;
@@ -169,6 +166,9 @@ async function fetchTaxonStats({ apiBase, geographicRegionIdentifier }) {
     const pageUrl = new URL(resourceUrl.toString());
     if (Number.isFinite(geographicRegionIdentifier)) {
       pageUrl.searchParams.set('geographic_region_identifier[eq]', String(geographicRegionIdentifier));
+    }
+    if (taxonGroupExternalKey) {
+      pageUrl.searchParams.set('taxon_group_external_key[eq]', taxonGroupExternalKey);
     }
     pageUrl.searchParams.set('limit', String(DEFAULT_PAGE_LIMIT));
     pageUrl.searchParams.set('offset', String(offset));
@@ -186,34 +186,6 @@ async function fetchTaxonStats({ apiBase, geographicRegionIdentifier }) {
 
   return rows;
 }
-
-async function fetchTaxaByIdentifier({ apiBase, taxonIdentifiers }) {
-  const uniqueIdentifiers = Array.from(new Set(taxonIdentifiers.filter(Boolean)));
-  const taxaByIdentifier = new Map();
-
-  if (uniqueIdentifiers.length === 0) {
-    return taxaByIdentifier;
-  }
-
-  const resourceUrl = resolveResourceUrl(apiBase, TAXON_RESOURCE);
-  const chunks = chunkArray(uniqueIdentifiers, TAXON_IN_FILTER_CHUNK_SIZE);
-  const payloads = await Promise.all(chunks.map((chunk) => {
-    const url = new URL(resourceUrl.toString());
-    url.searchParams.set('taxon_identifier[in]', chunk.join(','));
-    return fetchJson(url.toString(), 'Failed to load taxon data');
-  }));
-
-  payloads.forEach((payload) => {
-    getListData(payload).forEach((taxon) => {
-      if (taxon?.taxon_identifier) {
-        taxaByIdentifier.set(taxon.taxon_identifier, taxon);
-      }
-    });
-  });
-
-  return taxaByIdentifier;
-}
-
 function resolveResourceUrl(apiBase, resourceName) {
   const baseUrl = new URL(apiBase, window.location.origin);
   const pathname = baseUrl.pathname.endsWith('/') ? baseUrl.pathname : `${baseUrl.pathname}/`;
@@ -265,16 +237,6 @@ function formatVernacularName(taxon) {
   return taxon?.vernacular_name || '';
 }
 
-function chunkArray(items, size) {
-  const chunks = [];
-
-  for (let index = 0; index < items.length; index += size) {
-    chunks.push(items.slice(index, index + size));
-  }
-
-  return chunks;
-}
-
 function areaToGeographicRegionIdentifier(area) {
   if (area === 'vc-58') {
     return 58;
@@ -317,4 +279,13 @@ function getEffectiveArea(config) {
   const controlElement = document.getElementById(config.control);
   const controlArea = controlElement?.dataset?.visArea;
   return controlArea || config.area;
+}
+
+function getEffectiveTaxonGroup(config) {
+  if (!config.control || typeof document === 'undefined') {
+    return '';
+  }
+
+  const controlElement = document.getElementById(config.control);
+  return controlElement?.dataset?.visTaxonGroup || '';
 }

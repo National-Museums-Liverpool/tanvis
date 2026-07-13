@@ -200,7 +200,7 @@ Include Tabulator before Tanvis when using this renderer.
 ></div>
 ```
 
-Tanvis queries `taxon-stats`, ranks rows by the `frequency_trend` field, applies `data-vis-top-n`, then queries `taxon` with a `taxon_identifier[in]` filter to enrich results before rendering in descending `frequencyTrendScore` order.
+Tanvis queries `taxon-stats`, reads the joined taxonomic fields from each row, ranks rows by the `frequency_trend` field, applies `data-vis-top-n`, and renders the result in descending `frequencyTrendScore` order.
 
 When a subscribed control block selects `vc-58`, `vc-59`, or `vc-60`, Tanvis adds `geographic_region_identifier[eq]=58|59|60` to the `taxon-stats` request. When `all` is selected, that filter is omitted.
 

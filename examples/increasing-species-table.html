@@ -45,7 +45,7 @@
       const originalFetch = window.fetch.bind(window);
       window.fetch = async (input, init) => {
         const requestUrl = new URL(typeof input === 'string' ? input : input.url, window.location.origin);
-        if (requestUrl.pathname === '/api/v1/taxon-stats' || requestUrl.pathname === '/api/v1/taxon' || requestUrl.pathname === '/api/v1/taxa') {
+        if (requestUrl.pathname === '/api/v1/taxon-stats') {
           console.log('[increasing-species-table] API request:', `${requestUrl.pathname}${requestUrl.search}`);
         }
 

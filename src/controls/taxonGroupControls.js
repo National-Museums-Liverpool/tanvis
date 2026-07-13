@@ -1,5 +1,6 @@
 import { createControlsPanel } from './panel.js';
 import { createRadioGroup } from './radioGroup.js';
+import { publishControlEvent } from './controlBus.js';
 import { createApiError, normalizeErrorMessage, parseJsonSafe } from '../utils/apiError.js';
 import { createVisStatusReporter } from '../utils/visStatus.js';
 
@@ -37,6 +38,7 @@ export function createTaxonGroupControls({ rootElement, apiBase, selectedValue =
   select.addEventListener('change', () => {
     state.selectedValue = select.value;
     syncRootDataset();
+    publishTaxonGroupChange();
   });
 
   selectField.appendChild(select);
@@ -121,6 +123,17 @@ export function createTaxonGroupControls({ rootElement, apiBase, selectedValue =
     rootElement.dataset.visTaxonGroup = state.selectedValue;
     rootElement.dataset.visTaxonGroupLabelMode = state.labelMode;
     rootElement.dataset.visTaxonGroupNameMode = state.labelMode;
+  }
+
+  function publishTaxonGroupChange() {
+    if (!rootElement?.id) {
+      return;
+    }
+
+    publishControlEvent(rootElement.id, {
+      type: 'taxon-group-change',
+      taxonGroup: state.selectedValue
+    });
   }
 
   function isCurrentLoad() {
