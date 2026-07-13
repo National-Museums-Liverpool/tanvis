@@ -1,32 +1,11 @@
 import { createControlsPanel } from './panel.js';
 import { createRadioGroup } from './radioGroup.js';
+import { createApiError, normalizeErrorMessage, parseJsonSafe } from '../utils/apiError.js';
+import { createVisStatusReporter } from '../utils/visStatus.js';
 
 const LABEL_MODE_OPTIONS = [
   { label: 'Scientific', value: 'scientific' },
   { label: 'Vernacular', value: 'vernacular' }
-];
-
-const FALLBACK_TAXON_GROUPS = [
-  { external_key: 'lepidoptera', title: 'Lepidoptera', friendly: 'Butterflies and moths' },
-  { external_key: 'hymenoptera', title: 'Hymenoptera', friendly: 'Bees, wasps, ants and sawflies' },
-  { external_key: 'diptera', title: 'Diptera', friendly: 'True flies' },
-  { external_key: 'coleoptera', title: 'Coleoptera', friendly: 'Beetles' },
-  { external_key: 'hemiptera', title: 'Hemiptera', friendly: 'True bugs' },
-  { external_key: 'odonata', title: 'Odonata', friendly: 'Dragonflies and damselflies' },
-  { external_key: 'orthoptera', title: 'Orthoptera', friendly: 'Grasshoppers and crickets' },
-  { external_key: 'araneae', title: 'Araneae', friendly: 'Spiders' },
-  { external_key: 'opiliones', title: 'Opiliones', friendly: 'Harvestmen' },
-  { external_key: 'acari', title: 'Acari', friendly: 'Ticks and mites' },
-  { external_key: 'pseudoscorpiones', title: 'Pseudoscorpiones', friendly: 'Pseudoscorpions' },
-  { external_key: 'gastropoda', title: 'Gastropoda', friendly: 'Slugs and snails' },
-  { external_key: 'bivalvia', title: 'Bivalvia', friendly: 'Bivalves' },
-  { external_key: 'isopoda', title: 'Isopoda', friendly: 'Woodlice' },
-  { external_key: 'chilopoda', title: 'Chilopoda', friendly: 'Centipedes' },
-  { external_key: 'diplopoda', title: 'Diplopoda', friendly: 'Millipedes' },
-  { external_key: 'oligochaeta', title: 'Oligochaeta', friendly: 'Earthworms' },
-  { external_key: 'hirudinea', title: 'Hirudinea', friendly: 'Leeches' },
-  { external_key: 'cnidaria', title: 'Cnidaria', friendly: 'Sea anemones, corals and jellyfish' },
-  { external_key: 'echinodermata', title: 'Echinodermata', friendly: 'Starfish, sea urchins and sea cucumbers' }
 ];
 
 export function createTaxonGroupControls({ rootElement, apiBase, selectedValue = '', labelMode = 'scientific', loadToken, body }) {
@@ -40,7 +19,7 @@ export function createTaxonGroupControls({ rootElement, apiBase, selectedValue =
   }
 
   const state = {
-    groups: FALLBACK_TAXON_GROUPS.slice(),
+    groups: [],
     selectedValue,
     labelMode
   };
@@ -66,11 +45,8 @@ export function createTaxonGroupControls({ rootElement, apiBase, selectedValue =
   const labelModeField = document.createElement('div');
   labelModeField.className = 'tanvis-controls-field tanvis-controls-gap-top';
   targetBody.appendChild(labelModeField);
-
-  const status = document.createElement('p');
-  status.className = 'tanvis-controls-help';
-  status.textContent = 'Loading taxon groups...';
-  targetBody.appendChild(status);
+  const status = createVisStatusReporter(targetBody);
+  status.showInfo('Loading taxon groups...');
 
   const radioGroup = createRadioGroup({
     name: `${rootElement?.id || 'tanvis'}-taxon-group-label-mode`,
@@ -92,17 +68,19 @@ export function createTaxonGroupControls({ rootElement, apiBase, selectedValue =
         return;
       }
 
-      state.groups = groups.length > 0 ? groups : FALLBACK_TAXON_GROUPS.slice();
-      status.hidden = true;
+      state.groups = groups;
+      status.clear();
       select.disabled = false;
       renderOptions();
     })
-    .catch(() => {
+    .catch((error) => {
       if (!isCurrentLoad()) {
         return;
       }
 
-      status.textContent = 'Using built-in taxon group list';
+      state.groups = [];
+      state.selectedValue = '';
+      status.showError(`${normalizeErrorMessage(error, 'Unable to load taxon groups')}. Showing All groups only.`);
       select.disabled = false;
       renderOptions();
     });
@@ -170,14 +148,20 @@ function resolveResourceUrl(apiBase, resourceName) {
 }
 
 async function fetchJson(url, defaultErrorMessage) {
-  const response = await fetch(url);
-  const payload = await response.json();
-
-  if (!response.ok) {
-    throw new Error(payload?.detail || payload?.error || defaultErrorMessage);
+  let response;
+  try {
+    response = await fetch(url);
+  } catch (cause) {
+    throw createApiError({ defaultMessage: defaultErrorMessage, cause });
   }
 
-  return payload;
+  const payload = await parseJsonSafe(response);
+
+  if (!response.ok) {
+    throw createApiError({ response, payload, defaultMessage: defaultErrorMessage });
+  }
+
+  return payload || {};
 }
 
 function getListData(payload) {

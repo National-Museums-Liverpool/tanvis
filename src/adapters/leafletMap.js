@@ -1,6 +1,8 @@
 import { clearElement } from '../utils/dom.js';
 import { transOptsSel } from './transOptsSel.js';
 import { getLatestControlEvent, subscribeToControl } from '../controls/controlBus.js';
+import { normalizeErrorMessage } from '../utils/apiError.js';
+import { createVisStatusReporter } from '../utils/visStatus.js';
 
 // Wrapper to adapt BRC Atlas Leaflet maps for use in Tanvis.
 // This allows users to specify Leaflet/slippy maps as a visualization 
@@ -12,67 +14,76 @@ export function createLeafletMapAdapter() {
   return {
     name: 'leaflet-map',
     render(element, config) {
-      const brcAtlas = getBrcAtlasGlobal();
-
-      if (!brcAtlas || typeof brcAtlas.leafletMap !== 'function') {
-        throw new Error('BRC Atlas is not available. Include brcatlas.umd.js before Tanvis.');
-      }
-
-      if (!element.id) {
-        mapIdCounter += 1;
-        element.id = `tanvis-leaflet-map-${mapIdCounter}`;
-      }
-
       // Clean up any previously attached expand listeners before re-rendering this element.
       clearExpandResizeHandlers(element);
       clearControlSubscription(element);
+      const status = createVisStatusReporter(element);
       clearElement(element);
+      status.showInfo('Loading...');
 
-      const effectiveArea = getEffectiveArea(config);
-      const renderConfig = effectiveArea === config.area
-        ? config
-        : {
-            ...config,
-            area: effectiveArea
-          };
+      try {
+        const brcAtlas = getBrcAtlasGlobal();
 
-      element.dataset.visArea = renderConfig.area;
+        if (!brcAtlas || typeof brcAtlas.leafletMap !== 'function') {
+          throw new Error('BRC Atlas is not available. Include brcatlas.umd.js before Tanvis.');
+        }
 
-      console.log('Creating BRC Atlas Leaflet map with config:', renderConfig);
+        if (!element.id) {
+          mapIdCounter += 1;
+          element.id = `tanvis-leaflet-map-${mapIdCounter}`;
+        }
 
-      const map = brcAtlas.leafletMap(createMapOptions(element, renderConfig));
+        const effectiveArea = getEffectiveArea(config);
+        const renderConfig = effectiveArea === config.area
+          ? config
+          : {
+              ...config,
+              area: effectiveArea
+            };
 
-      if (renderConfig.expand === true) {
-        // Expand is handled locally for slippy maps: watch parent/container resize and sync map size.
-        attachExpandResizeHandlers(element, renderConfig, map);
+        element.dataset.visArea = renderConfig.area;
+
+        console.log('Creating BRC Atlas Leaflet map with config:', renderConfig);
+
+        const map = brcAtlas.leafletMap(createMapOptions(element, renderConfig));
+
+        if (renderConfig.expand === true) {
+          // Expand is handled locally for slippy maps: watch parent/container resize and sync map size.
+          attachExpandResizeHandlers(element, renderConfig, map);
+        }
+
+        panToAreaCentroid(renderConfig.area, map);
+
+        if (map && typeof map.setIdentfier === 'function' && renderConfig.source) {
+          map.setIdentfier(renderConfig.source);
+        }
+
+        if (map && typeof map.redrawMap === 'function') {
+          map.redrawMap();
+        }
+
+        if (renderConfig.control) {
+          element.__tanvisControlCleanup = subscribeToControl(renderConfig.control, (event) => {
+            if (event?.type !== 'area-change' || !event.area) {
+              return;
+            }
+
+            if (event.area === element.dataset.visArea) {
+              return;
+            }
+
+            element.dataset.visArea = event.area;
+            handleAreaSelection(event.area, element, renderConfig, map);
+          });
+        }
+
+        status.clear();
+        return map;
+      } catch (error) {
+        clearElement(element);
+        status.showError(normalizeErrorMessage(error, 'Failed to render slippy map'));
+        return null;
       }
-
-      panToAreaCentroid(renderConfig.area, map);
-
-      if (map && typeof map.setIdentfier === 'function' && renderConfig.source) {
-        map.setIdentfier(renderConfig.source);
-      }
-
-      if (map && typeof map.redrawMap === 'function') {
-        map.redrawMap();
-      }
-
-      if (renderConfig.control) {
-        element.__tanvisControlCleanup = subscribeToControl(renderConfig.control, (event) => {
-          if (event?.type !== 'area-change' || !event.area) {
-            return;
-          }
-
-          if (event.area === element.dataset.visArea) {
-            return;
-          }
-
-          element.dataset.visArea = event.area;
-          handleAreaSelection(event.area, element, renderConfig, map);
-        });
-      }
-
-      return map;
     }
   };
 }

@@ -1,5 +1,7 @@
 import { clearElement } from '../utils/dom.js';
 import { getLatestControlEvent, subscribeToControl } from '../controls/controlBus.js';
+import { normalizeErrorMessage } from '../utils/apiError.js';
+import { createVisStatusReporter } from '../utils/visStatus.js';
 import { transOptsSel } from './transOptsSel.js';
 
 // Wrapper to adapt BRC Atlas maps for use in Tanvis.
@@ -12,61 +14,70 @@ export function createBrcAtlasAdapter() {
   return {
     name: 'static-map',
     render(element, config) {
-      const brcAtlas = getBrcAtlasGlobal();
-
-      if (!brcAtlas || typeof brcAtlas.svgMap !== 'function') {
-        throw new Error('BRC Atlas is not available. Include brcatlas.umd.js before Tanvis.');
-      }
-
-      if (!element.id) {
-        mapIdCounter += 1;
-        element.id = `tanvis-map-${mapIdCounter}`;
-      }
-
       clearControlSubscription(element);
+      const status = createVisStatusReporter(element);
       clearElement(element);
+      status.showInfo('Loading...');
 
-      const effectiveArea = getEffectiveArea(config);
-      const renderConfig = effectiveArea === config.area
-        ? config
-        : {
-            ...config,
-            area: effectiveArea
-          };
+      try {
+        const brcAtlas = getBrcAtlasGlobal();
 
-      element.dataset.visArea = renderConfig.area;
+        if (!brcAtlas || typeof brcAtlas.svgMap !== 'function') {
+          throw new Error('BRC Atlas is not available. Include brcatlas.umd.js before Tanvis.');
+        }
 
-      console.log('Creating BRC Atlas map with config:', renderConfig);
+        if (!element.id) {
+          mapIdCounter += 1;
+          element.id = `tanvis-map-${mapIdCounter}`;
+        }
 
-      const map = brcAtlas.svgMap(createMapOptions(element, renderConfig));
+        const effectiveArea = getEffectiveArea(config);
+        const renderConfig = effectiveArea === config.area
+          ? config
+          : {
+              ...config,
+              area: effectiveArea
+            };
 
-      if (map && typeof map.setIdentfier === 'function' && renderConfig.source) {
-        map.setIdentfier(renderConfig.source);
-      }
+        element.dataset.visArea = renderConfig.area;
 
-      if (map && typeof map.redrawMap === 'function') {
-        map.redrawMap();
-      }
+        console.log('Creating BRC Atlas map with config:', renderConfig);
 
-      if (renderConfig.control) {
-        element.__tanvisControlCleanup = subscribeToControl(renderConfig.control, (event) => {
-          if (event?.type !== 'area-change' || !event.area) {
-            return;
-          }
+        const map = brcAtlas.svgMap(createMapOptions(element, renderConfig));
 
-          if (event.area === element.dataset.visArea) {
-            return;
-          }
+        if (map && typeof map.setIdentfier === 'function' && renderConfig.source) {
+          map.setIdentfier(renderConfig.source);
+        }
 
-          element.dataset.visArea = event.area;
-          createBrcAtlasAdapter().render(element, {
-            ...renderConfig,
-            area: event.area
+        if (map && typeof map.redrawMap === 'function') {
+          map.redrawMap();
+        }
+
+        if (renderConfig.control) {
+          element.__tanvisControlCleanup = subscribeToControl(renderConfig.control, (event) => {
+            if (event?.type !== 'area-change' || !event.area) {
+              return;
+            }
+
+            if (event.area === element.dataset.visArea) {
+              return;
+            }
+
+            element.dataset.visArea = event.area;
+            createBrcAtlasAdapter().render(element, {
+              ...renderConfig,
+              area: event.area
+            });
           });
-        });
-      }
+        }
 
-      return map;
+        status.clear();
+        return map;
+      } catch (error) {
+        clearElement(element);
+        status.showError(normalizeErrorMessage(error, 'Failed to render static map'));
+        return null;
+      }
     }
   };
 }

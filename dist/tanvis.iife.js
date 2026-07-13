@@ -244,6 +244,139 @@ var Tanvis = (function (exports) {
     return latestEventByControlId.get(controlId);
   }
 
+  function getPayloadMessage(payload) {
+    if (!payload || typeof payload !== 'object') {
+      return '';
+    }
+
+    if (typeof payload.detail === 'string' && payload.detail.trim()) {
+      return payload.detail.trim();
+    }
+
+    if (typeof payload.error === 'string' && payload.error.trim()) {
+      return payload.error.trim();
+    }
+
+    if (typeof payload.message === 'string' && payload.message.trim()) {
+      return payload.message.trim();
+    }
+
+    return '';
+  }
+
+  async function parseJsonSafe(response) {
+    try {
+      return await response.json();
+    } catch {
+      return null;
+    }
+  }
+
+  function createApiError({ response, payload, defaultMessage, cause } = {}) {
+    const payloadMessage = getPayloadMessage(payload);
+    const causeMessage = typeof cause?.message === 'string' ? cause.message.trim() : '';
+    const fallbackMessage = defaultMessage || 'Request failed';
+    const message = payloadMessage || causeMessage || fallbackMessage;
+
+    const error = new Error(message);
+    error.name = 'ApiError';
+    error.isApiError = true;
+
+    if (Number.isFinite(response?.status)) {
+      error.status = response.status;
+    }
+
+    if (typeof cause !== 'undefined') {
+      error.cause = cause;
+    }
+
+    return error;
+  }
+
+  function normalizeErrorMessage(error, fallbackMessage = 'An unexpected error occurred') {
+    const message = typeof error?.message === 'string' && error.message.trim()
+      ? error.message.trim()
+      : fallbackMessage;
+
+    if (error?.isApiError) {
+      return `API error: ${message}`;
+    }
+
+    return message;
+  }
+
+  const VIS_STATUS_CLASS = 'tanvis-vis-status';
+  const VIS_STATUS_STYLES_ID = 'tanvis-vis-status-styles';
+  const VIS_STATUS_STYLES = `
+.${VIS_STATUS_CLASS} {
+  margin: 0.5rem 0 0;
+  color: #4b5563;
+  font: 500 0.85rem/1.3 system-ui, sans-serif;
+}
+
+.${VIS_STATUS_CLASS}.is-error {
+  color: #9f1239;
+}
+`;
+
+  function createVisStatusReporter(container) {
+    ensureVisStatusStyles();
+
+    return {
+      showInfo(message) {
+        showStatus(container, message, 'info');
+      },
+      showError(message) {
+        showStatus(container, message, 'error');
+      },
+      clear() {
+        clearStatus(container);
+      }
+    };
+  }
+
+  function showStatus(container, message, tone) {
+    const status = ensureStatusElement(container);
+    status.className = tone === 'error' ? `${VIS_STATUS_CLASS} is-error` : VIS_STATUS_CLASS;
+    status.textContent = message || '';
+  }
+
+  function ensureStatusElement(container) {
+    if (container.__tanvisVisStatusElement && container.__tanvisVisStatusElement.isConnected) {
+      return container.__tanvisVisStatusElement;
+    }
+
+    const status = document.createElement('p');
+    status.className = VIS_STATUS_CLASS;
+    container.appendChild(status);
+    container.__tanvisVisStatusElement = status;
+    return status;
+  }
+
+  function clearStatus(container) {
+    const status = container.__tanvisVisStatusElement;
+    if (status?.parentNode) {
+      status.parentNode.removeChild(status);
+    }
+
+    delete container.__tanvisVisStatusElement;
+  }
+
+  function ensureVisStatusStyles() {
+    if (typeof document === 'undefined') {
+      return;
+    }
+
+    if (document.getElementById(VIS_STATUS_STYLES_ID)) {
+      return;
+    }
+
+    const style = document.createElement('style');
+    style.id = VIS_STATUS_STYLES_ID;
+    style.textContent = VIS_STATUS_STYLES;
+    document.head.appendChild(style);
+  }
+
   const transOptsSel = {
     // Different views for the three VCs in the Cheshire/Lancashire area
     // and a combined view for all of them together.
@@ -319,61 +452,70 @@ var Tanvis = (function (exports) {
     return {
       name: 'static-map',
       render(element, config) {
-        const brcAtlas = getBrcAtlasGlobal$1();
-
-        if (!brcAtlas || typeof brcAtlas.svgMap !== 'function') {
-          throw new Error('BRC Atlas is not available. Include brcatlas.umd.js before Tanvis.');
-        }
-
-        if (!element.id) {
-          mapIdCounter$1 += 1;
-          element.id = `tanvis-map-${mapIdCounter$1}`;
-        }
-
         clearControlSubscription$3(element);
+        const status = createVisStatusReporter(element);
         clearElement(element);
+        status.showInfo('Loading...');
 
-        const effectiveArea = getEffectiveArea$3(config);
-        const renderConfig = effectiveArea === config.area
-          ? config
-          : {
-              ...config,
-              area: effectiveArea
-            };
+        try {
+          const brcAtlas = getBrcAtlasGlobal$1();
 
-        element.dataset.visArea = renderConfig.area;
+          if (!brcAtlas || typeof brcAtlas.svgMap !== 'function') {
+            throw new Error('BRC Atlas is not available. Include brcatlas.umd.js before Tanvis.');
+          }
 
-        console.log('Creating BRC Atlas map with config:', renderConfig);
+          if (!element.id) {
+            mapIdCounter$1 += 1;
+            element.id = `tanvis-map-${mapIdCounter$1}`;
+          }
 
-        const map = brcAtlas.svgMap(createMapOptions$1(element, renderConfig));
+          const effectiveArea = getEffectiveArea$3(config);
+          const renderConfig = effectiveArea === config.area
+            ? config
+            : {
+                ...config,
+                area: effectiveArea
+              };
 
-        if (map && typeof map.setIdentfier === 'function' && renderConfig.source) {
-          map.setIdentfier(renderConfig.source);
-        }
+          element.dataset.visArea = renderConfig.area;
 
-        if (map && typeof map.redrawMap === 'function') {
-          map.redrawMap();
-        }
+          console.log('Creating BRC Atlas map with config:', renderConfig);
 
-        if (renderConfig.control) {
-          element.__tanvisControlCleanup = subscribeToControl(renderConfig.control, (event) => {
-            if (event?.type !== 'area-change' || !event.area) {
-              return;
-            }
+          const map = brcAtlas.svgMap(createMapOptions$1(element, renderConfig));
 
-            if (event.area === element.dataset.visArea) {
-              return;
-            }
+          if (map && typeof map.setIdentfier === 'function' && renderConfig.source) {
+            map.setIdentfier(renderConfig.source);
+          }
 
-            element.dataset.visArea = event.area;
-            createBrcAtlasAdapter().render(element, {
-              ...renderConfig,
-              area: event.area
+          if (map && typeof map.redrawMap === 'function') {
+            map.redrawMap();
+          }
+
+          if (renderConfig.control) {
+            element.__tanvisControlCleanup = subscribeToControl(renderConfig.control, (event) => {
+              if (event?.type !== 'area-change' || !event.area) {
+                return;
+              }
+
+              if (event.area === element.dataset.visArea) {
+                return;
+              }
+
+              element.dataset.visArea = event.area;
+              createBrcAtlasAdapter().render(element, {
+                ...renderConfig,
+                area: event.area
+              });
             });
-          });
-        }
+          }
 
-        return map;
+          status.clear();
+          return map;
+        } catch (error) {
+          clearElement(element);
+          status.showError(normalizeErrorMessage(error, 'Failed to render static map'));
+          return null;
+        }
       }
     };
   }
@@ -485,67 +627,76 @@ var Tanvis = (function (exports) {
     return {
       name: 'leaflet-map',
       render(element, config) {
-        const brcAtlas = getBrcAtlasGlobal();
-
-        if (!brcAtlas || typeof brcAtlas.leafletMap !== 'function') {
-          throw new Error('BRC Atlas is not available. Include brcatlas.umd.js before Tanvis.');
-        }
-
-        if (!element.id) {
-          mapIdCounter += 1;
-          element.id = `tanvis-leaflet-map-${mapIdCounter}`;
-        }
-
         // Clean up any previously attached expand listeners before re-rendering this element.
         clearExpandResizeHandlers(element);
         clearControlSubscription$2(element);
+        const status = createVisStatusReporter(element);
         clearElement(element);
+        status.showInfo('Loading...');
 
-        const effectiveArea = getEffectiveArea$2(config);
-        const renderConfig = effectiveArea === config.area
-          ? config
-          : {
-              ...config,
-              area: effectiveArea
-            };
+        try {
+          const brcAtlas = getBrcAtlasGlobal();
 
-        element.dataset.visArea = renderConfig.area;
+          if (!brcAtlas || typeof brcAtlas.leafletMap !== 'function') {
+            throw new Error('BRC Atlas is not available. Include brcatlas.umd.js before Tanvis.');
+          }
 
-        console.log('Creating BRC Atlas Leaflet map with config:', renderConfig);
+          if (!element.id) {
+            mapIdCounter += 1;
+            element.id = `tanvis-leaflet-map-${mapIdCounter}`;
+          }
 
-        const map = brcAtlas.leafletMap(createMapOptions(element, renderConfig));
+          const effectiveArea = getEffectiveArea$2(config);
+          const renderConfig = effectiveArea === config.area
+            ? config
+            : {
+                ...config,
+                area: effectiveArea
+              };
 
-        if (renderConfig.expand === true) {
-          // Expand is handled locally for slippy maps: watch parent/container resize and sync map size.
-          attachExpandResizeHandlers(element, renderConfig, map);
+          element.dataset.visArea = renderConfig.area;
+
+          console.log('Creating BRC Atlas Leaflet map with config:', renderConfig);
+
+          const map = brcAtlas.leafletMap(createMapOptions(element, renderConfig));
+
+          if (renderConfig.expand === true) {
+            // Expand is handled locally for slippy maps: watch parent/container resize and sync map size.
+            attachExpandResizeHandlers(element, renderConfig, map);
+          }
+
+          panToAreaCentroid(renderConfig.area, map);
+
+          if (map && typeof map.setIdentfier === 'function' && renderConfig.source) {
+            map.setIdentfier(renderConfig.source);
+          }
+
+          if (map && typeof map.redrawMap === 'function') {
+            map.redrawMap();
+          }
+
+          if (renderConfig.control) {
+            element.__tanvisControlCleanup = subscribeToControl(renderConfig.control, (event) => {
+              if (event?.type !== 'area-change' || !event.area) {
+                return;
+              }
+
+              if (event.area === element.dataset.visArea) {
+                return;
+              }
+
+              element.dataset.visArea = event.area;
+              handleAreaSelection(event.area, element, renderConfig, map);
+            });
+          }
+
+          status.clear();
+          return map;
+        } catch (error) {
+          clearElement(element);
+          status.showError(normalizeErrorMessage(error, 'Failed to render slippy map'));
+          return null;
         }
-
-        panToAreaCentroid(renderConfig.area, map);
-
-        if (map && typeof map.setIdentfier === 'function' && renderConfig.source) {
-          map.setIdentfier(renderConfig.source);
-        }
-
-        if (map && typeof map.redrawMap === 'function') {
-          map.redrawMap();
-        }
-
-        if (renderConfig.control) {
-          element.__tanvisControlCleanup = subscribeToControl(renderConfig.control, (event) => {
-            if (event?.type !== 'area-change' || !event.area) {
-              return;
-            }
-
-            if (event.area === element.dataset.visArea) {
-              return;
-            }
-
-            element.dataset.visArea = event.area;
-            handleAreaSelection(event.area, element, renderConfig, map);
-          });
-        }
-
-        return map;
       }
     };
   }
@@ -1083,29 +1234,6 @@ var Tanvis = (function (exports) {
     { label: 'Vernacular', value: 'vernacular' }
   ];
 
-  const FALLBACK_TAXON_GROUPS = [
-    { external_key: 'lepidoptera', title: 'Lepidoptera', friendly: 'Butterflies and moths' },
-    { external_key: 'hymenoptera', title: 'Hymenoptera', friendly: 'Bees, wasps, ants and sawflies' },
-    { external_key: 'diptera', title: 'Diptera', friendly: 'True flies' },
-    { external_key: 'coleoptera', title: 'Coleoptera', friendly: 'Beetles' },
-    { external_key: 'hemiptera', title: 'Hemiptera', friendly: 'True bugs' },
-    { external_key: 'odonata', title: 'Odonata', friendly: 'Dragonflies and damselflies' },
-    { external_key: 'orthoptera', title: 'Orthoptera', friendly: 'Grasshoppers and crickets' },
-    { external_key: 'araneae', title: 'Araneae', friendly: 'Spiders' },
-    { external_key: 'opiliones', title: 'Opiliones', friendly: 'Harvestmen' },
-    { external_key: 'acari', title: 'Acari', friendly: 'Ticks and mites' },
-    { external_key: 'pseudoscorpiones', title: 'Pseudoscorpiones', friendly: 'Pseudoscorpions' },
-    { external_key: 'gastropoda', title: 'Gastropoda', friendly: 'Slugs and snails' },
-    { external_key: 'bivalvia', title: 'Bivalvia', friendly: 'Bivalves' },
-    { external_key: 'isopoda', title: 'Isopoda', friendly: 'Woodlice' },
-    { external_key: 'chilopoda', title: 'Chilopoda', friendly: 'Centipedes' },
-    { external_key: 'diplopoda', title: 'Diplopoda', friendly: 'Millipedes' },
-    { external_key: 'oligochaeta', title: 'Oligochaeta', friendly: 'Earthworms' },
-    { external_key: 'hirudinea', title: 'Hirudinea', friendly: 'Leeches' },
-    { external_key: 'cnidaria', title: 'Cnidaria', friendly: 'Sea anemones, corals and jellyfish' },
-    { external_key: 'echinodermata', title: 'Echinodermata', friendly: 'Starfish, sea urchins and sea cucumbers' }
-  ];
-
   function createTaxonGroupControls({ rootElement, apiBase, selectedValue = '', labelMode = 'scientific', loadToken, body }) {
     const targetBody = body || createControlsPanel({
       label: 'Taxon groups',
@@ -1117,7 +1245,7 @@ var Tanvis = (function (exports) {
     }
 
     const state = {
-      groups: FALLBACK_TAXON_GROUPS.slice(),
+      groups: [],
       selectedValue,
       labelMode
     };
@@ -1143,11 +1271,8 @@ var Tanvis = (function (exports) {
     const labelModeField = document.createElement('div');
     labelModeField.className = 'tanvis-controls-field tanvis-controls-gap-top';
     targetBody.appendChild(labelModeField);
-
-    const status = document.createElement('p');
-    status.className = 'tanvis-controls-help';
-    status.textContent = 'Loading taxon groups...';
-    targetBody.appendChild(status);
+    const status = createVisStatusReporter(targetBody);
+    status.showInfo('Loading taxon groups...');
 
     const radioGroup = createRadioGroup({
       name: `${rootElement?.id || 'tanvis'}-taxon-group-label-mode`,
@@ -1169,17 +1294,19 @@ var Tanvis = (function (exports) {
           return;
         }
 
-        state.groups = groups.length > 0 ? groups : FALLBACK_TAXON_GROUPS.slice();
-        status.hidden = true;
+        state.groups = groups;
+        status.clear();
         select.disabled = false;
         renderOptions();
       })
-      .catch(() => {
+      .catch((error) => {
         if (!isCurrentLoad()) {
           return;
         }
 
-        status.textContent = 'Using built-in taxon group list';
+        state.groups = [];
+        state.selectedValue = '';
+        status.showError(`${normalizeErrorMessage(error, 'Unable to load taxon groups')}. Showing All groups only.`);
         select.disabled = false;
         renderOptions();
       });
@@ -1247,14 +1374,20 @@ var Tanvis = (function (exports) {
   }
 
   async function fetchJson$2(url, defaultErrorMessage) {
-    const response = await fetch(url);
-    const payload = await response.json();
-
-    if (!response.ok) {
-      throw new Error(payload?.detail || payload?.error || defaultErrorMessage);
+    let response;
+    try {
+      response = await fetch(url);
+    } catch (cause) {
+      throw createApiError({ defaultMessage: defaultErrorMessage, cause });
     }
 
-    return payload;
+    const payload = await parseJsonSafe(response);
+
+    if (!response.ok) {
+      throw createApiError({ response, payload, defaultMessage: defaultErrorMessage });
+    }
+
+    return payload || {};
   }
 
   function getListData$2(payload) {
@@ -1342,8 +1475,9 @@ var Tanvis = (function (exports) {
       name: 'new-species-table',
       render(element, config) {
         clearControlSubscription$1(element);
+        const status = createVisStatusReporter(element);
         clearElement(element);
-        element.textContent = 'Loading...';
+        status.showInfo('Loading...');
 
         const effectiveArea = getEffectiveArea$1(config);
         const renderConfig = effectiveArea === config.area
@@ -1394,6 +1528,7 @@ var Tanvis = (function (exports) {
             clearElement(element);
             element.appendChild(createSummary$1(startDate, endDate, records.length));
             element.appendChild(createTableContainer$1(records, Tabulator));
+            status.clear();
           })
           .catch((error) => {
             if (element.__tanvisNewSpeciesLoadId !== loadId) {
@@ -1401,7 +1536,7 @@ var Tanvis = (function (exports) {
             }
 
             clearElement(element);
-            element.textContent = error.message;
+            status.showError(normalizeErrorMessage(error, 'Failed to render new species table'));
           });
       }
     };
@@ -1523,14 +1658,20 @@ var Tanvis = (function (exports) {
   }
 
   async function fetchJson$1(url, defaultErrorMessage) {
-    const response = await fetch(url);
-    const payload = await response.json();
-
-    if (!response.ok) {
-      throw new Error(payload?.detail || payload?.error || defaultErrorMessage);
+    let response;
+    try {
+      response = await fetch(url);
+    } catch (cause) {
+      throw createApiError({ defaultMessage: defaultErrorMessage, cause });
     }
 
-    return payload;
+    const payload = await parseJsonSafe(response);
+
+    if (!response.ok) {
+      throw createApiError({ response, payload, defaultMessage: defaultErrorMessage });
+    }
+
+    return payload || {};
   }
 
   function getListData$1(payload) {
@@ -1649,8 +1790,9 @@ var Tanvis = (function (exports) {
       name: 'increasing-species-table',
       render(element, config) {
         clearControlSubscription(element);
+        const status = createVisStatusReporter(element);
         clearElement(element);
-        element.textContent = 'Loading...';
+        status.showInfo('Loading...');
 
         const effectiveArea = getEffectiveArea(config);
         const renderConfig = effectiveArea === config.area
@@ -1700,6 +1842,7 @@ var Tanvis = (function (exports) {
             clearElement(element);
             element.appendChild(createSummary(topN, records.length));
             element.appendChild(createTableContainer(records, Tabulator));
+            status.clear();
           })
           .catch((error) => {
             if (element.__tanvisIncreasingLoadId !== loadId) {
@@ -1707,7 +1850,7 @@ var Tanvis = (function (exports) {
             }
 
             clearElement(element);
-            element.textContent = error.message;
+            status.showError(normalizeErrorMessage(error, 'Failed to render increasing species table'));
           });
       }
     };
@@ -1847,14 +1990,20 @@ var Tanvis = (function (exports) {
   }
 
   async function fetchJson(url, defaultErrorMessage) {
-    const response = await fetch(url);
-    const payload = await response.json();
-
-    if (!response.ok) {
-      throw new Error(payload?.detail || payload?.error || defaultErrorMessage);
+    let response;
+    try {
+      response = await fetch(url);
+    } catch (cause) {
+      throw createApiError({ defaultMessage: defaultErrorMessage, cause });
     }
 
-    return payload;
+    const payload = await parseJsonSafe(response);
+
+    if (!response.ok) {
+      throw createApiError({ response, payload, defaultMessage: defaultErrorMessage });
+    }
+
+    return payload || {};
   }
 
   function getListData(payload) {

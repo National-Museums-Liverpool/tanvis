@@ -1,5 +1,7 @@
 import { clearElement } from '../utils/dom.js';
 import { getLatestControlEvent, subscribeToControl } from '../controls/controlBus.js';
+import { createApiError, normalizeErrorMessage, parseJsonSafe } from '../utils/apiError.js';
+import { createVisStatusReporter } from '../utils/visStatus.js';
 
 const DEFAULT_API_BASE = '/api/v1';
 const TAXON_STATS_RESOURCE = 'taxon-stats';
@@ -22,8 +24,9 @@ export function createIncreasingSpeciesTableAdapter() {
     name: 'increasing-species-table',
     render(element, config) {
       clearControlSubscription(element);
+      const status = createVisStatusReporter(element);
       clearElement(element);
-      element.textContent = 'Loading...';
+      status.showInfo('Loading...');
 
       const effectiveArea = getEffectiveArea(config);
       const renderConfig = effectiveArea === config.area
@@ -73,6 +76,7 @@ export function createIncreasingSpeciesTableAdapter() {
           clearElement(element);
           element.appendChild(createSummary(topN, records.length));
           element.appendChild(createTableContainer(records, Tabulator));
+          status.clear();
         })
         .catch((error) => {
           if (element.__tanvisIncreasingLoadId !== loadId) {
@@ -80,7 +84,7 @@ export function createIncreasingSpeciesTableAdapter() {
           }
 
           clearElement(element);
-          element.textContent = error.message;
+          status.showError(normalizeErrorMessage(error, 'Failed to render increasing species table'));
         });
     }
   };
@@ -220,14 +224,20 @@ function resolveResourceUrl(apiBase, resourceName) {
 }
 
 async function fetchJson(url, defaultErrorMessage) {
-  const response = await fetch(url);
-  const payload = await response.json();
-
-  if (!response.ok) {
-    throw new Error(payload?.detail || payload?.error || defaultErrorMessage);
+  let response;
+  try {
+    response = await fetch(url);
+  } catch (cause) {
+    throw createApiError({ defaultMessage: defaultErrorMessage, cause });
   }
 
-  return payload;
+  const payload = await parseJsonSafe(response);
+
+  if (!response.ok) {
+    throw createApiError({ response, payload, defaultMessage: defaultErrorMessage });
+  }
+
+  return payload || {};
 }
 
 function getListData(payload) {
