@@ -24,4 +24,14 @@ describe('render', () => {
       errors: ['Missing data-vis-start-date for new-species-table']
     });
   });
+
+  it('requires data-vis-taxonid for temporal-year-chart', () => {
+    const element = document.createElement('div');
+    element.dataset.visType = 'temporal-year-chart';
+
+    expect(render(element)).toEqual({
+      rendered: false,
+      errors: ['Missing data-vis-taxonid for temporal-year-chart']
+    });
+  });
 });

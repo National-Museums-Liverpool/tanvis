@@ -49,7 +49,7 @@ console.log(window.Tanvis.version);
 ```
 
 This snippet demonstrates the wiring pattern (`.tanvis` + `data-*` attributes + `init()`); the `table` renderer is currently scaffold-only.
-For working end-to-end examples, use `static-map`, `slippy-map`, `new-species-table`, or `increasing-species-table` (see `examples/static-map.html`, `examples/slippy-map.html`, `examples/new-species-table.html`, and `examples/increasing-species-table.html`).
+For working end-to-end examples, use `static-map`, `slippy-map`, `new-species-table`, `increasing-species-table`, or `temporal-year-chart` (see `examples/static-map.html`, `examples/slippy-map.html`, `examples/new-species-table.html`, `examples/increasing-species-table.html`, and `examples/temporal-year-chart.html`).
 
 To see a shared control block driving two map outputs together, open `examples/shared-control-maps.html`.
 
@@ -63,6 +63,7 @@ Tanvis currently registers these renderer types:
 - `slippy-map`
 - `new-species-table`
 - `increasing-species-table`
+- `temporal-year-chart`
 
 `table` and `chart` are scaffolded but their adapters are not implemented yet.
 
@@ -204,4 +205,32 @@ Tanvis queries `taxon-stats`, reads the joined taxonomic fields from each row, r
 
 When a subscribed control block selects `vc-58`, `vc-59`, or `vc-60`, Tanvis adds `geographic_region_identifier[eq]=58|59|60` to the `taxon-stats` request. When `all` is selected, that filter is omitted.
 
-See `examples/static-map.html`, `examples/slippy-map.html`, `examples/shared-control-maps.html`, `examples/new-species-table.html`, and `examples/increasing-species-table.html` for ready-to-run pages.
+### Temporal Year Chart Renderer
+
+Use `data-vis-type="temporal-year-chart"`.
+
+Supported attributes:
+
+- `data-vis-taxonid`: required taxon identifier string
+- `data-vis-start-year`: optional positive integer year
+- `data-vis-end-year`: optional positive integer year
+- `data-vis-source`: optional API base URL; defaults to `/api/v1`
+
+Include D3 and BRC Charts before Tanvis when using this renderer.
+
+```html
+<script src="https://d3js.org/d3.v5.min.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/biologicalrecordscentre/brc-charts/dist/brccharts.umd.js"></script>
+
+<div
+  class="tanvis"
+  data-vis-type="temporal-year-chart"
+  data-vis-taxonid="NHMSYS0001234567"
+  data-vis-start-year="1970"
+  data-vis-end-year="2024"
+></div>
+```
+
+Tanvis queries `taxon-year-stats` for the selected `taxon_identifier`, reshapes the returned rows for `brccharts.temporal`, and renders a two-line yearly chart for `occurrences_count` and `grid_square_count`.
+
+See `examples/static-map.html`, `examples/slippy-map.html`, `examples/shared-control-maps.html`, `examples/new-species-table.html`, `examples/increasing-species-table.html`, and `examples/temporal-year-chart.html` for ready-to-run pages.

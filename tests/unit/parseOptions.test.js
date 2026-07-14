@@ -130,4 +130,19 @@ describe('parseOptions', () => {
 
     expect(parseOptions(element).topN).toBe(25);
   });
+
+  it('reads taxon and year attributes for temporal-year-chart', () => {
+    const element = document.createElement('div');
+    element.dataset.visType = 'temporal-year-chart';
+    element.dataset.visTaxonid = 'NHMSYS0001234567';
+    element.dataset.visStartYear = '1970';
+    element.dataset.visEndYear = '2024';
+
+    expect(parseOptions(element)).toMatchObject({
+      type: 'temporal-year-chart',
+      taxonId: 'NHMSYS0001234567',
+      startYear: 1970,
+      endYear: 2024
+    });
+  });
 });

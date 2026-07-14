@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Tanvis Temporal Year Chart Example</title>
+    <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/gh/biologicalrecordscentre/brc-charts/dist/brccharts.umd.css" />
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        margin: 20px;
+      }
+
+      .tanvis {
+        margin-top: 1rem;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Tanvis Temporal Year Chart Example</h1>
+    <p>This renders a temporal year chart from mocked <code>taxon-year-stats</code> API data using <code>brccharts.temporal</code>.</p>
+
+    <div
+      class="tanvis"
+      data-vis-type="temporal-year-chart"
+      data-vis-taxonid="NHMSYS0001234567"
+      data-vis-start-year="2016"
+      data-vis-end-year="2025"
+    ></div>
+
+  <script src="https://d3js.org/d3.v5.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/biologicalrecordscentre/brc-charts/dist/brccharts.umd.js"></script>
+    <script src="../dist/tanvis.iife.js"></script>
+    <script type="module">
+      import { installTemporalYearChartMockApi } from './mock/temporalYearChartMockApi.js';
+
+      installTemporalYearChartMockApi({ baseUrl: '/api', latencyMs: 150 });
+      window.Tanvis.init();
+    </script>
+  </body>
+</html>

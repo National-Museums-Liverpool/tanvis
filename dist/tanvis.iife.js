@@ -15,11 +15,14 @@ var Tanvis = (function (exports) {
     const width = parseOptionalPositiveNumber$2(dataset.visWidth);
     const height = parseOptionalPositiveNumber$2(dataset.visHeight);
     const topN = parseOptionalPositiveInteger(dataset.visTopN);
+    const startYear = parseOptionalPositiveInteger(dataset.visStartYear);
+    const endYear = parseOptionalPositiveInteger(dataset.visEndYear);
 
     return {
       type: dataset.visType || 'table',
       source: dataset.visSource,
       control: dataset.visControl,
+      taxonId: dataset.visTaxonid,
       startDate: dataset.visStartDate,
       endDate: dataset.visEndDate,
       area: dataset.visArea || 'vc-58-59-60',
@@ -27,6 +30,8 @@ var Tanvis = (function (exports) {
       boundaries: parseBoolean(dataset.visBoundaries),
       hectads: parseBooleanDefaultTrue(dataset.visHectads),
       ...(topN !== undefined ? { topN } : {}),
+      ...(startYear !== undefined ? { startYear } : {}),
+      ...(endYear !== undefined ? { endYear } : {}),
       ...(expand !== undefined ? { expand } : {}),
       ...(width !== undefined ? { width } : {}),
       ...(height !== undefined ? { height } : {})
@@ -90,6 +95,10 @@ var Tanvis = (function (exports) {
 
     if (config.type === 'new-species-table' && !config.startDate) {
       return ['Missing data-vis-start-date for new-species-table'];
+    }
+
+    if (config.type === 'temporal-year-chart' && !config.taxonId) {
+      return ['Missing data-vis-taxonid for temporal-year-chart'];
     }
 
     return [];
@@ -162,86 +171,10 @@ var Tanvis = (function (exports) {
     tableAdapter.render(element, config);
   }
 
-  // Wrapper to adapt BRC Charts for use in Tanvis.
-  // This allows users to specify BRC Charts as a visualization 
-  // type in their HTML, and have them rendered using the BRC Charts library.
-
-  function createBrcChartsAdapter() {
-    return {
-      name: 'brc-charts',
-      render() {
-        throw new Error('BRC charts adapter not implemented yet');
-      }
-    };
-  }
-
-  const chartAdapter = createBrcChartsAdapter();
-
-  function renderChart(element, config) {
-    // Renderers are Tanvis-facing entry points keyed by data-vis-type.
-    // Adapters keep the implementation details for a specific library or API integration.
-    chartAdapter.render(element, config);
-  }
-
   function clearElement(element) {
     while (element.firstChild) {
       element.removeChild(element.firstChild);
     }
-  }
-
-  const listenersByControlId = new Map();
-  const latestEventByControlId = new Map();
-
-  function subscribeToControl(controlId, handler) {
-    if (!controlId || typeof handler !== 'function') {
-      return () => {};
-    }
-
-    let listeners = listenersByControlId.get(controlId);
-    if (!listeners) {
-      listeners = new Set();
-      listenersByControlId.set(controlId, listeners);
-    }
-
-    listeners.add(handler);
-
-    return () => {
-      const existing = listenersByControlId.get(controlId);
-      if (!existing) {
-        return;
-      }
-
-      existing.delete(handler);
-      if (existing.size === 0) {
-        listenersByControlId.delete(controlId);
-      }
-    };
-  }
-
-  function publishControlEvent(controlId, event) {
-    if (!controlId) {
-      return;
-    }
-
-    latestEventByControlId.set(controlId, event);
-
-    const listeners = listenersByControlId.get(controlId);
-    if (!listeners) {
-      return;
-    }
-
-    // Publish to a snapshot so subscribe/unsubscribe during a handler does not
-    // mutate the current dispatch cycle and cause re-entrant loops.
-    const snapshot = Array.from(listeners);
-    snapshot.forEach((handler) => handler(event));
-  }
-
-  function getLatestControlEvent(controlId) {
-    if (!controlId) {
-      return undefined;
-    }
-
-    return latestEventByControlId.get(controlId);
   }
 
   function getPayloadMessage(payload) {
@@ -375,6 +308,265 @@ var Tanvis = (function (exports) {
     style.id = VIS_STATUS_STYLES_ID;
     style.textContent = VIS_STATUS_STYLES;
     document.head.appendChild(style);
+  }
+
+  // Wrapper to adapt BRC Charts for use in Tanvis.
+  // This allows users to specify BRC Charts visualisations in HTML and
+  // have Tanvis perform the dependency checks and container setup.
+
+  const DEFAULT_API_BASE$3 = '/api/v1';
+  const TAXON_YEAR_STATS_RESOURCE = 'taxon-year-stats';
+  const DEFAULT_PAGE_LIMIT$2 = 1000;
+
+  let temporalYearChartIdCounter = 0;
+
+  function createBrcChartsAdapter(options = {}) {
+    return {
+      name: 'brc-charts',
+      render(element, config) {
+        if (options.rendererType !== 'temporal-year-chart') {
+          throw new Error('BRC charts adapter not implemented yet');
+        }
+
+        const status = createVisStatusReporter(element);
+        clearElement(element);
+        status.showInfo('Loading...');
+
+        loadTemporalYearChart(element, config)
+          .then(() => {
+            status.clear();
+          })
+          .catch((error) => {
+            clearElement(element);
+            status.showError(normalizeErrorMessage(error, 'Failed to render temporal year chart'));
+          });
+      }
+    };
+  }
+
+  async function loadTemporalYearChart(element, config) {
+    const brcCharts = getBrcChartsGlobal();
+
+    if (!brcCharts) {
+      throw new Error('BRC Charts is not available. Include brccharts.umd.js before Tanvis.');
+    }
+
+    if (typeof brcCharts.temporal !== 'function') {
+      throw new Error('BRC Charts temporal chart is not available. Include a compatible brccharts.umd.js bundle.');
+    }
+
+    const chartRecords = await fetchTaxonYearStats({
+      apiBase: config.source || DEFAULT_API_BASE$3,
+      taxonIdentifier: config.taxonId,
+      startYear: config.startYear,
+      endYear: config.endYear
+    });
+
+    const chartTaxonLabel = getChartTaxonLabel(chartRecords, config.taxonId);
+    const chartContainer = createTemporalYearChartContainer(element);
+    const chartOptions = createTemporalYearChartOptions({
+      config,
+      chartContainer,
+      chartTaxonLabel,
+      chartRecords
+    });
+
+    clearElement(element);
+    element.appendChild(chartContainer);
+    brcCharts.temporal(chartOptions);
+  }
+
+  async function fetchTaxonYearStats({ apiBase, taxonIdentifier, startYear, endYear }) {
+    const resourceUrl = resolveResourceUrl$3(apiBase, TAXON_YEAR_STATS_RESOURCE);
+    const rows = [];
+    let offset = 0;
+
+    while (true) {
+      const pageUrl = new URL(resourceUrl.toString());
+      pageUrl.searchParams.set('taxon_identifier[eq]', taxonIdentifier);
+
+      if (Number.isFinite(startYear)) {
+        pageUrl.searchParams.set('year[gte]', String(startYear));
+      }
+
+      if (Number.isFinite(endYear)) {
+        pageUrl.searchParams.set('year[lte]', String(endYear));
+      }
+
+      pageUrl.searchParams.set('limit', String(DEFAULT_PAGE_LIMIT$2));
+      pageUrl.searchParams.set('offset', String(offset));
+
+      const payload = await fetchJson$3(pageUrl.toString(), 'Failed to load taxon-year-stats');
+      const pageRows = getListData$3(payload);
+      rows.push(...pageRows);
+
+      if (pageRows.length < DEFAULT_PAGE_LIMIT$2) {
+        break;
+      }
+
+      offset += DEFAULT_PAGE_LIMIT$2;
+    }
+
+    return rows;
+  }
+
+  function createTemporalYearChartContainer(element) {
+    const container = document.createElement('div');
+    container.dataset.tanvisTemporalYearChart = 'chart';
+
+    if (!element.id) {
+      temporalYearChartIdCounter += 1;
+      element.id = `tanvis-temporal-year-chart-${temporalYearChartIdCounter}`;
+    }
+
+    container.id = `${element.id}__chart`;
+    return container;
+  }
+
+  function createTemporalYearChartOptions({ config, chartContainer, chartTaxonLabel, chartRecords }) {
+    return {
+      selector: `#${chartContainer.id}`,
+      data: chartRecords.map((row) => ({
+        taxon: chartTaxonLabel,
+        period: Number(row.year),
+        occurrences_count: Number(row.occurrences_count || 0),
+        grid_square_count: Number(row.grid_square_count || 0)
+      })),
+      taxa: [chartTaxonLabel],
+      metrics: [
+        { prop: 'occurrences_count', label: 'Occurrences', colour: '#c2410c' },
+        { prop: 'grid_square_count', label: 'Grid squares', colour: '#1d4ed8' }
+      ],
+      periodType: 'year',
+      chartStyle: 'line',
+      lineInterpolator: 'curveMonotoneX',
+      showLegend: true,
+      interactivity: 'mousemove',
+      minY: 0,
+      ...(Number.isFinite(config.startYear) ? { minPeriod: config.startYear } : {}),
+      ...(Number.isFinite(config.endYear) ? { maxPeriod: config.endYear } : {}),
+      ...(config.expand !== undefined ? { expand: config.expand } : {}),
+      ...(config.width !== undefined ? { width: config.width } : {}),
+      ...(config.height !== undefined ? { height: config.height } : {})
+    };
+  }
+
+  function getChartTaxonLabel(chartRecords, fallback) {
+    const firstNamedRecord = chartRecords.find((row) => typeof row?.scientific_name === 'string' && row.scientific_name.trim());
+    return firstNamedRecord?.scientific_name?.trim() || fallback;
+  }
+
+  function resolveResourceUrl$3(apiBase, resourceName) {
+    const baseUrl = new URL(apiBase, window.location.origin);
+    const pathname = baseUrl.pathname.endsWith('/') ? baseUrl.pathname : `${baseUrl.pathname}/`;
+    baseUrl.pathname = `${pathname}${resourceName}`;
+    baseUrl.search = '';
+    baseUrl.hash = '';
+    return baseUrl;
+  }
+
+  async function fetchJson$3(url, defaultErrorMessage) {
+    let response;
+    try {
+      response = await fetch(url);
+    } catch (cause) {
+      throw createApiError({ defaultMessage: defaultErrorMessage, cause });
+    }
+
+    const payload = await parseJsonSafe(response);
+
+    if (!response.ok) {
+      throw createApiError({ response, payload, defaultMessage: defaultErrorMessage });
+    }
+
+    return payload || {};
+  }
+
+  function getListData$3(payload) {
+    if (Array.isArray(payload)) {
+      return payload;
+    }
+
+    if (Array.isArray(payload?.data)) {
+      return payload.data;
+    }
+
+    if (Array.isArray(payload?.records)) {
+      return payload.records;
+    }
+
+    return [];
+  }
+
+  function getBrcChartsGlobal() {
+    if (typeof window === 'undefined') {
+      return null;
+    }
+
+    return window.brccharts || null;
+  }
+
+  const chartAdapter = createBrcChartsAdapter();
+
+  function renderChart(element, config) {
+    // Renderers are Tanvis-facing entry points keyed by data-vis-type.
+    // Adapters keep the implementation details for a specific library or API integration.
+    chartAdapter.render(element, config);
+  }
+
+  const listenersByControlId = new Map();
+  const latestEventByControlId = new Map();
+
+  function subscribeToControl(controlId, handler) {
+    if (!controlId || typeof handler !== 'function') {
+      return () => {};
+    }
+
+    let listeners = listenersByControlId.get(controlId);
+    if (!listeners) {
+      listeners = new Set();
+      listenersByControlId.set(controlId, listeners);
+    }
+
+    listeners.add(handler);
+
+    return () => {
+      const existing = listenersByControlId.get(controlId);
+      if (!existing) {
+        return;
+      }
+
+      existing.delete(handler);
+      if (existing.size === 0) {
+        listenersByControlId.delete(controlId);
+      }
+    };
+  }
+
+  function publishControlEvent(controlId, event) {
+    if (!controlId) {
+      return;
+    }
+
+    latestEventByControlId.set(controlId, event);
+
+    const listeners = listenersByControlId.get(controlId);
+    if (!listeners) {
+      return;
+    }
+
+    // Publish to a snapshot so subscribe/unsubscribe during a handler does not
+    // mutate the current dispatch cycle and cause re-entrant loops.
+    const snapshot = Array.from(listeners);
+    snapshot.forEach((handler) => handler(event));
+  }
+
+  function getLatestControlEvent(controlId) {
+    if (!controlId) {
+      return undefined;
+    }
+
+    return latestEventByControlId.get(controlId);
   }
 
   const transOptsSel = {
@@ -2049,6 +2241,12 @@ var Tanvis = (function (exports) {
     increasingSpeciesTableAdapter.render(element, config);
   }
 
+  const temporalYearChartAdapter = createBrcChartsAdapter({ rendererType: 'temporal-year-chart' });
+
+  function renderTemporalYearChart(element, config) {
+    temporalYearChartAdapter.render(element, config);
+  }
+
   // Makes initialization idempotent so calling init() repeatedly 
   // does not keep re-registering the same renderers.
 
@@ -2068,6 +2266,7 @@ var Tanvis = (function (exports) {
     registerRenderer('control-bock', renderControlBlock);
     registerRenderer('new-species-table', renderNewSpeciesTable);
     registerRenderer('increasing-species-table', renderIncreasingSpeciesTable);
+    registerRenderer('temporal-year-chart', renderTemporalYearChart);
     defaultsRegistered = true;
   }
 

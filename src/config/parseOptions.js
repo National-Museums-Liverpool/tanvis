@@ -4,11 +4,14 @@ export function parseOptions(element) {
   const width = parseOptionalPositiveNumber(dataset.visWidth);
   const height = parseOptionalPositiveNumber(dataset.visHeight);
   const topN = parseOptionalPositiveInteger(dataset.visTopN);
+  const startYear = parseOptionalPositiveInteger(dataset.visStartYear);
+  const endYear = parseOptionalPositiveInteger(dataset.visEndYear);
 
   return {
     type: dataset.visType || 'table',
     source: dataset.visSource,
     control: dataset.visControl,
+    taxonId: dataset.visTaxonid,
     startDate: dataset.visStartDate,
     endDate: dataset.visEndDate,
     area: dataset.visArea || 'vc-58-59-60',
@@ -16,6 +19,8 @@ export function parseOptions(element) {
     boundaries: parseBoolean(dataset.visBoundaries),
     hectads: parseBooleanDefaultTrue(dataset.visHectads),
     ...(topN !== undefined ? { topN } : {}),
+    ...(startYear !== undefined ? { startYear } : {}),
+    ...(endYear !== undefined ? { endYear } : {}),
     ...(expand !== undefined ? { expand } : {}),
     ...(width !== undefined ? { width } : {}),
     ...(height !== undefined ? { height } : {})
