@@ -53,6 +53,11 @@
       };
 
       window.Tanvis.init();
+
+      document.addEventListener("species-row-selected", function(e) {
+        const speciesId = e.detail.id;
+        console.log(`Row clicked: ${speciesId}`);
+      });
     </script>
   </body>
 </html>

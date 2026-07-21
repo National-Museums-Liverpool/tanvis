@@ -103,7 +103,7 @@ function createSummary(topN, count) {
 function createTableContainer(records, Tabulator) {
   const container = document.createElement('div');
 
-  new Tabulator(container, {
+  const table = new Tabulator(container, {
     data: records,
     columns,
     layout: 'fitColumns',
@@ -112,7 +112,24 @@ function createTableContainer(records, Tabulator) {
     initialSort: [
       { column: 'frequencyTrendScore', dir: 'desc' }
     ],
-    placeholder: 'No records found'
+    placeholder: 'No records found',
+  });
+
+  table.on("rowClick", function(e, row) {
+    //console.log('rowClick:', row.getData());
+    // Triggered whenever a user clicks a row
+    const rowData = row.getData();
+    const speciesId = rowData.speciesId; 
+
+    // Create a custom event containing the ID in the 'detail' property
+    const rowSelectedEvent = new CustomEvent("species-row-selected", {
+        detail: { id: speciesId },
+        bubbles: true, // Allows the event to bubble up the DOM tree
+        cancelable: true
+    });
+
+    // Dispatch the event from the table element (or window / document)
+    container.dispatchEvent(rowSelectedEvent);
   });
 
   return container;

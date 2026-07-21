@@ -1822,7 +1822,7 @@ var Tanvis = (function (exports) {
   function createTableContainer(records, Tabulator) {
     const container = document.createElement('div');
 
-    new Tabulator(container, {
+    const table = new Tabulator(container, {
       data: records,
       columns,
       layout: 'fitColumns',
@@ -1831,7 +1831,24 @@ var Tanvis = (function (exports) {
       initialSort: [
         { column: 'frequencyTrendScore', dir: 'desc' }
       ],
-      placeholder: 'No records found'
+      placeholder: 'No records found',
+    });
+
+    table.on("rowClick", function(e, row) {
+      //console.log('rowClick:', row.getData());
+      // Triggered whenever a user clicks a row
+      const rowData = row.getData();
+      const speciesId = rowData.speciesId; 
+
+      // Create a custom event containing the ID in the 'detail' property
+      const rowSelectedEvent = new CustomEvent("species-row-selected", {
+          detail: { id: speciesId },
+          bubbles: true, // Allows the event to bubble up the DOM tree
+          cancelable: true
+      });
+
+      // Dispatch the event from the table element (or window / document)
+      container.dispatchEvent(rowSelectedEvent);
     });
 
     return container;
@@ -2049,8 +2066,10 @@ var Tanvis = (function (exports) {
 
   async function loadTemporalYearChart(element, config) {
 
+    // If not taxonId is provided, we cannot load any data, 
+    // so we just return early without rendering anything.
     if (!config.taxonId) return;
-    
+
     const brcCharts = getBrcChartsGlobal();
 
     if (!brcCharts) {
