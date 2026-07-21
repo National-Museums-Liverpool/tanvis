@@ -44,7 +44,7 @@ describe('renderIncreasingSpeciesTable', () => {
     await new Promise((resolve) => setTimeout(resolve, 0));
 
     expect(fetchMock).toHaveBeenCalledTimes(1);
-    expect(String(fetchMock.mock.calls[0][0])).toContain('/api/v1/taxon-stats?limit=1000&offset=0');
+    expect(String(fetchMock.mock.calls[0][0])).toContain('/api/v1/taxon-stats?include=taxon&limit=1000&offset=0');
     expect(tabulatorCalls).toHaveLength(1);
     expect(tabulatorCalls[0].options.initialSort).toEqual([{ column: 'frequencyTrendScore', dir: 'desc' }]);
     expect(tabulatorCalls[0].options.data).toEqual([
@@ -78,7 +78,7 @@ describe('renderIncreasingSpeciesTable', () => {
 
     await new Promise((resolve) => setTimeout(resolve, 0));
 
-    expect(String(fetchMock.mock.calls[0][0])).toContain('/api/v1/taxon-stats?limit=1000&offset=0');
+    expect(String(fetchMock.mock.calls[0][0])).toContain('/api/v1/taxon-stats?include=taxon&limit=1000&offset=0');
   });
 
   it('refetches with a taxon-group filter when the subscribed control changes group', async () => {
@@ -113,5 +113,6 @@ describe('renderIncreasingSpeciesTable', () => {
 
     expect(fetchMock).toHaveBeenCalledTimes(2);
     expect(String(fetchMock.mock.calls[1][0])).toContain('taxon_group_external_key%5Beq%5D=diptera');
+    expect(String(fetchMock.mock.calls[1][0])).toContain('include=taxon');
   });
 });

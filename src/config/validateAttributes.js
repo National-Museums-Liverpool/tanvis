@@ -3,7 +3,7 @@ export function validateAttributes(config, element) {
     return ['Missing data-vis-type'];
   }
 
-  if ((config.type === 'control-block' || config.type === 'control-bock') && !element?.id) {
+  if (config.type === 'control-block' && !element?.id) {
     return ['Missing id attribute for control-block'];
   }
 
@@ -11,9 +11,9 @@ export function validateAttributes(config, element) {
     return ['Missing data-vis-start-date for new-species-table'];
   }
 
-  if (config.type === 'temporal-year-chart' && !config.taxonId) {
-    return ['Missing data-vis-taxonid for temporal-year-chart'];
-  }
+  // if (config.type === 'temporal-year-chart' && !config.taxonId) {
+  //   return ['Missing data-vis-taxonid for temporal-year-chart'];
+  // }
 
   return [];
 }

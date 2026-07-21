@@ -146,6 +146,7 @@ async function fetchTaxonStatsInRange({ apiBase, startDate, endDate, geographicR
     const pageUrl = new URL(resourceUrl.toString());
     pageUrl.searchParams.set('first_record_date[gte]', startDate);
     pageUrl.searchParams.set('first_record_date[lte]', endDate);
+    pageUrl.searchParams.set('include', 'taxon');
     if (Number.isFinite(geographicRegionIdentifier)) {
       pageUrl.searchParams.set('geographic_region_identifier[eq]', String(geographicRegionIdentifier));
     }

@@ -1,6 +1,6 @@
-import { createBrcChartsAdapter } from '../adapters/brcCharts.js';
+import { createTemporalYearChartAdapter } from '../adapters/temporalYearChart.js';
 
-const temporalYearChartAdapter = createBrcChartsAdapter({ rendererType: 'temporal-year-chart' });
+const temporalYearChartAdapter = createTemporalYearChartAdapter();
 
 export function renderTemporalYearChart(element, config) {
   temporalYearChartAdapter.render(element, config);

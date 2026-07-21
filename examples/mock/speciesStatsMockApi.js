@@ -211,10 +211,32 @@ function buildListResponse(url, data, total, limit, offset) {
   };
 }
 
+function includeTaxonRequested(url) {
+  const includeParams = url.searchParams.getAll('include');
+  return includeParams.some((value) => {
+    return value
+      .split(',')
+      .map((part) => part.trim().toLowerCase())
+      .includes('taxon');
+  });
+}
+
+function stripTaxonNameFields(row) {
+  const {
+    scientific_name,
+    vernacular_name,
+    vernacular_names,
+    ...rest
+  } = row;
+
+  return rest;
+}
+
 function handleTaxonStatsRequest(url) {
   const geographicRegionFilter = url.searchParams.get('geographic_region_identifier[eq]');
   const limit = parsePositiveInteger(url.searchParams.get('limit'), 1000);
   const offset = parsePositiveInteger(url.searchParams.get('offset'), 0);
+  const includeTaxon = includeTaxonRequested(url);
   const filtered = taxonStatsRows.filter((row) => {
     if (!geographicRegionFilter) {
       return true;
@@ -223,7 +245,9 @@ function handleTaxonStatsRequest(url) {
     const geographicRegionIdentifier = Number(geographicRegionFilter);
     return Number.isFinite(geographicRegionIdentifier) && row.geographic_region_identifier === geographicRegionIdentifier;
   });
-  const page = filtered.slice(offset, offset + limit);
+  const page = filtered
+    .slice(offset, offset + limit)
+    .map((row) => (includeTaxon ? row : stripTaxonNameFields(row)));
 
   return jsonResponse(200, buildListResponse(url, page, filtered.length, limit, offset));
 }

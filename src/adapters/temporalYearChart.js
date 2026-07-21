@@ -2,9 +2,8 @@ import { clearElement } from '../utils/dom.js';
 import { createApiError, normalizeErrorMessage, parseJsonSafe } from '../utils/apiError.js';
 import { createVisStatusReporter } from '../utils/visStatus.js';
 
-// Wrapper to adapt BRC Charts for use in Tanvis.
-// This allows users to specify BRC Charts visualisations in HTML and
-// have Tanvis perform the dependency checks and container setup.
+// Adapter for Tanvis temporal year charts backed by BRC Charts.
+// Keeps all dependency checks and data-loading in one place.
 
 const DEFAULT_API_BASE = '/api/v1';
 const TAXON_YEAR_STATS_RESOURCE = 'taxon-year-stats';
@@ -12,14 +11,10 @@ const DEFAULT_PAGE_LIMIT = 1000;
 
 let temporalYearChartIdCounter = 0;
 
-export function createBrcChartsAdapter(options = {}) {
+export function createTemporalYearChartAdapter() {
   return {
-    name: 'brc-charts',
+    name: 'temporal-year-chart',
     render(element, config) {
-      if (options.rendererType !== 'temporal-year-chart') {
-        throw new Error('BRC charts adapter not implemented yet');
-      }
-
       const status = createVisStatusReporter(element);
       clearElement(element);
       status.showInfo('Loading...');
@@ -37,6 +32,11 @@ export function createBrcChartsAdapter(options = {}) {
 }
 
 async function loadTemporalYearChart(element, config) {
+
+  // If not taxonId is provided, we cannot load any data, 
+  // so we just return early without rendering anything.
+  if (!config.taxonId) return;
+
   const brcCharts = getBrcChartsGlobal();
 
   if (!brcCharts) {
@@ -74,6 +74,10 @@ async function fetchTaxonYearStats({ apiBase, taxonIdentifier, startYear, endYea
   const resourceUrl = resolveResourceUrl(apiBase, TAXON_YEAR_STATS_RESOURCE);
   const rows = [];
   let offset = 0;
+
+  if (!taxonIdentifier) {
+    return rows;
+  }
 
   while (true) {
     const pageUrl = new URL(resourceUrl.toString());

@@ -40,7 +40,7 @@ describe('renderNewSpeciesTable', () => {
     await new Promise((resolve) => setTimeout(resolve, 0));
 
     expect(fetchMock).toHaveBeenCalledTimes(1);
-    expect(String(fetchMock.mock.calls[0][0])).toContain('/api/v1/taxon-stats?first_record_date%5Bgte%5D=2025-01-01&first_record_date%5Blte%5D=2025-12-31&limit=1000&offset=0');
+    expect(String(fetchMock.mock.calls[0][0])).toContain('/api/v1/taxon-stats?first_record_date%5Bgte%5D=2025-01-01&first_record_date%5Blte%5D=2025-12-31&include=taxon&limit=1000&offset=0');
     expect(tabulatorCalls).toHaveLength(1);
     expect(tabulatorCalls[0].options.pagination).toBe(true);
     expect(tabulatorCalls[0].options.columns).toHaveLength(5);
@@ -73,6 +73,7 @@ describe('renderNewSpeciesTable', () => {
 
     const today = new Date().toISOString().slice(0, 10);
     expect(String(fetchMock.mock.calls[0][0])).toContain(`first_record_date%5Blte%5D=${today}`);
+    expect(String(fetchMock.mock.calls[0][0])).toContain('include=taxon');
   });
 
   it('shows a clear error when Tabulator is not available', async () => {
@@ -119,5 +120,6 @@ describe('renderNewSpeciesTable', () => {
 
     expect(fetchMock).toHaveBeenCalledTimes(1);
     expect(String(fetchMock.mock.calls[0][0])).toContain('taxon_group_external_key%5Beq%5D=diptera');
+    expect(String(fetchMock.mock.calls[0][0])).toContain('include=taxon');
   });
 });

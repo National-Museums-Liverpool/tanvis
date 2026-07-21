@@ -160,7 +160,7 @@ Supported attributes:
 
 - `data-vis-start-date`: required start date in `YYYY-MM-DD` format
 - `data-vis-end-date`: optional end date in `YYYY-MM-DD` format; defaults to the current date when omitted
-- `data-vis-source`: optional endpoint URL; defaults to `/api/new-species`
+- `data-vis-source`: optional API base URL; defaults to `/api/v1`
 
 Include Tabulator before Tanvis when using this renderer.
 
@@ -176,7 +176,7 @@ Include Tabulator before Tanvis when using this renderer.
 ></div>
 ```
 
-Tanvis calls the configured endpoint with `startDate` and `endDate` query parameters and renders the returned records as an HTML table.
+Tanvis queries `taxon-stats` with `first_record_date[gte]`, `first_record_date[lte]`, and `include=taxon`, then renders the returned records as an HTML table.
 
 ### Increasing Species Table Renderer
 
@@ -201,7 +201,7 @@ Include Tabulator before Tanvis when using this renderer.
 ></div>
 ```
 
-Tanvis queries `taxon-stats`, reads the joined taxonomic fields from each row, ranks rows by the `frequency_trend` field, applies `data-vis-top-n`, and renders the result in descending `frequencyTrendScore` order.
+Tanvis queries `taxon-stats` with `include=taxon`, reads the joined taxonomic fields from each row, ranks rows by the `frequency_trend` field, applies `data-vis-top-n`, and renders the result in descending `frequencyTrendScore` order.
 
 When a subscribed control block selects `vc-58`, `vc-59`, or `vc-60`, Tanvis adds `geographic_region_identifier[eq]=58|59|60` to the `taxon-stats` request. When `all` is selected, that filter is omitted.
 
