@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Tanvis Species Absent Since Example</title>
+    <link rel="stylesheet" href="https://unpkg.com/tabulator-tables@6.3.0/dist/css/tabulator.min.css" />
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        margin: 20px;
+      }
+
+      .tanvis {
+        margin-top: 1rem;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Tanvis Species Absent Since Example</h1>
+    <p>This renders species whose last record date is on or before the selected year.</p>
+
+    <div
+      id="vc-control"
+      class="tanvis"
+      data-vis-type="control-block"
+      data-vis-area="vc-58-59-60"
+    ></div>
+
+    <div
+      id="absent-since-table"
+      class="tanvis"
+      data-vis-type="species-absent-since"
+      data-vis-year="2024"
+      data-vis-control="vc-control"
+    ></div>
+
+    <script src="https://unpkg.com/tabulator-tables@6.3.0/dist/js/tabulator.min.js"></script>
+    <script src="../dist/tanvis.iife.js"></script>
+    <script type="module">
+      import { installTaxonGroupsMockApi } from './mock/taxonGroupsMockApi.js';
+      import { installSpeciesAbsentSinceMockApi } from './mock/speciesAbsentSinceMockApi.js';
+
+      installTaxonGroupsMockApi({ baseUrl: '/api', latencyMs: 150 });
+      installSpeciesAbsentSinceMockApi({ baseUrl: '/api', latencyMs: 150 });
+      window.Tanvis.init();
+
+      document.addEventListener('species-row-selected', (event) => {
+        console.log('Row clicked:', event.detail);
+      });
+    </script>
+  </body>
+</html>

@@ -156,4 +156,15 @@ describe('parseOptions', () => {
       linkedTable: 'increasing-table'
     });
   });
+
+  it('reads data-vis-year for species-absent-since', () => {
+    const element = document.createElement('div');
+    element.dataset.visType = 'species-absent-since';
+    element.dataset.visYear = '2024';
+
+    expect(parseOptions(element)).toMatchObject({
+      type: 'species-absent-since',
+      year: 2024
+    });
+  });
 });

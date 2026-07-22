@@ -4,6 +4,7 @@ export function parseOptions(element) {
   const width = parseOptionalPositiveNumber(dataset.visWidth);
   const height = parseOptionalPositiveNumber(dataset.visHeight);
   const topN = parseOptionalPositiveInteger(dataset.visTopN);
+  const year = parseOptionalPositiveInteger(dataset.visYear);
   const startYear = parseOptionalPositiveInteger(dataset.visStartYear);
   const endYear = parseOptionalPositiveInteger(dataset.visEndYear);
 
@@ -20,6 +21,7 @@ export function parseOptions(element) {
     boundaries: parseBoolean(dataset.visBoundaries),
     hectads: parseBooleanDefaultTrue(dataset.visHectads),
     ...(topN !== undefined ? { topN } : {}),
+    ...(year !== undefined ? { year } : {}),
     ...(startYear !== undefined ? { startYear } : {}),
     ...(endYear !== undefined ? { endYear } : {}),
     ...(expand !== undefined ? { expand } : {}),

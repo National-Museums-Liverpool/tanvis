@@ -11,6 +11,10 @@ export function validateAttributes(config, element) {
     return ['Missing data-vis-start-date for new-species-table'];
   }
 
+  if (config.type === 'species-absent-since' && !Number.isFinite(config.year)) {
+    return ['Missing data-vis-year for species-absent-since'];
+  }
+
   // if (config.type === 'temporal-year-chart' && !config.taxonId) {
   //   return ['Missing data-vis-taxonid for temporal-year-chart'];
   // }

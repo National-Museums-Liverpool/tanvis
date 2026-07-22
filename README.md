@@ -49,7 +49,7 @@ console.log(window.Tanvis.version);
 ```
 
 This snippet demonstrates the wiring pattern (`.tanvis` + `data-*` attributes + `init()`); the `table` renderer is currently scaffold-only.
-For working end-to-end examples, use `static-map`, `slippy-map`, `new-species-table`, `increasing-species-table`, or `temporal-year-chart` (see `examples/static-map.html`, `examples/slippy-map.html`, `examples/new-species-table.html`, `examples/increasing-species-table.html`, and `examples/temporal-year-chart.html`).
+For working end-to-end examples, use `static-map`, `slippy-map`, `new-species-table`, `increasing-species-table`, `species-absent-since`, or `temporal-year-chart` (see `examples/static-map.html`, `examples/slippy-map.html`, `examples/new-species-table.html`, `examples/increasing-species-table.html`, `examples/species-absent-since.html`, and `examples/temporal-year-chart.html`).
 
 To see a shared control block driving two map outputs together, open `examples/shared-control-maps.html`.
 
@@ -63,6 +63,7 @@ Tanvis currently registers these renderer types:
 - `slippy-map`
 - `new-species-table`
 - `increasing-species-table`
+- `species-absent-since`
 - `temporal-year-chart`
 
 `table` and `chart` are scaffolded but their adapters are not implemented yet.
@@ -205,6 +206,33 @@ Tanvis queries `taxon-stats` with `include=taxon`, reads the joined taxonomic fi
 
 When a subscribed control block selects `vc-58`, `vc-59`, or `vc-60`, Tanvis adds `geographic_region_identifier[eq]=58|59|60` to the `taxon-stats` request. When `all` is selected, that filter is omitted.
 
+### Species Absent Since Table Renderer
+
+Use `data-vis-type="species-absent-since"`.
+
+Supported attributes:
+
+- `data-vis-year`: required cutoff year. Species with `last_record_date` in or before this year are returned.
+- `data-vis-source`: optional API base URL; defaults to `/api/v1`
+- `data-vis-control`: optional id of a `control-block`; when set, VC selections filter `taxon-stats` by `geographic_region_identifier[eq]`
+
+Include Tabulator before Tanvis when using this renderer.
+
+```html
+<link rel="stylesheet" href="https://unpkg.com/tabulator-tables@6.3.0/dist/css/tabulator.min.css" />
+<script src="https://unpkg.com/tabulator-tables@6.3.0/dist/js/tabulator.min.js"></script>
+
+<div
+  class="tanvis"
+  data-vis-type="species-absent-since"
+  data-vis-year="2024"
+></div>
+```
+
+Tanvis queries `taxon-stats` with `last_record_date[lte]=YYYY-12-31` and `include=taxon`, then renders the returned records as an HTML table.
+
+Rows emit a `species-row-selected` event with `detail.speciesId` when clicked.
+
 ### Temporal Year Chart Renderer
 
 Use `data-vis-type="temporal-year-chart"`.
@@ -236,4 +264,4 @@ Tanvis queries `taxon-year-stats` for the selected `taxon_identifier`, reshapes 
 
 When `data-vis-linked-table` is set, Tanvis listens for `species-row-selected` events on that element and rerenders the chart using the emitted `detail.speciesId`.
 
-See `examples/static-map.html`, `examples/slippy-map.html`, `examples/shared-control-maps.html`, `examples/new-species-table.html`, `examples/increasing-species-table.html`, and `examples/temporal-year-chart.html` for ready-to-run pages.
+See `examples/static-map.html`, `examples/slippy-map.html`, `examples/shared-control-maps.html`, `examples/new-species-table.html`, `examples/increasing-species-table.html`, `examples/species-absent-since.html`, and `examples/temporal-year-chart.html` for ready-to-run pages.
