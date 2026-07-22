@@ -22,6 +22,7 @@ var Tanvis = (function (exports) {
       type: dataset.visType || 'table',
       source: dataset.visSource,
       control: dataset.visControl,
+      linkedTable: dataset.visLinkedTable,
       taxonId: dataset.visTaxonid,
       startDate: dataset.visStartDate,
       endDate: dataset.visEndDate,
@@ -1543,6 +1544,31 @@ var Tanvis = (function (exports) {
       placeholder: 'No records found'
     });
 
+    const table = new Tabulator(container, {
+      data: records,
+      columns: columns$1,
+      layout: 'fitColumns',
+      pagination: true,
+      paginationSize: 10,
+      placeholder: 'No records found'
+    });
+
+    table.on("rowClick", function(e, row) {
+      // Triggered whenever a user clicks a row
+      const rowData = row.getData();
+      const speciesId = rowData.speciesId; 
+
+      // Create a custom event containing the ID in the 'detail' property
+      const rowSelectedEvent = new CustomEvent("species-row-selected", {
+          detail: { speciesId: speciesId },
+          bubbles: true, // Allows the event to bubble up the DOM tree
+          cancelable: true
+      });
+
+      // Dispatch the event from the table element (or window / document)
+      container.dispatchEvent(rowSelectedEvent);
+    });
+
     return container;
   }
 
@@ -1740,6 +1766,7 @@ var Tanvis = (function (exports) {
     return {
       name: 'increasing-species-table',
       render(element, config) {
+        console.log('element', element);
         clearControlSubscription(element);
         const status = createVisStatusReporter(element);
         clearElement(element);
@@ -1835,14 +1862,13 @@ var Tanvis = (function (exports) {
     });
 
     table.on("rowClick", function(e, row) {
-      //console.log('rowClick:', row.getData());
       // Triggered whenever a user clicks a row
       const rowData = row.getData();
       const speciesId = rowData.speciesId; 
 
       // Create a custom event containing the ID in the 'detail' property
       const rowSelectedEvent = new CustomEvent("species-row-selected", {
-          detail: { id: speciesId },
+          detail: { speciesId: speciesId },
           bubbles: true, // Allows the event to bubble up the DOM tree
           cancelable: true
       });
@@ -2048,20 +2074,81 @@ var Tanvis = (function (exports) {
     return {
       name: 'temporal-year-chart',
       render(element, config) {
+        clearLinkedTableSubscription(element);
+        const renderConfig = { ...config };
+
+        if (renderConfig.linkedTable) {
+          element.__tanvisLinkedTableCleanup = subscribeToLinkedTable(renderConfig.linkedTable, (speciesId) => {
+            if (!speciesId || speciesId === element.dataset.visTaxonid) {
+              return;
+            }
+
+            createTemporalYearChartAdapter().render(element, {
+              ...renderConfig,
+              taxonId: speciesId
+            });
+          });
+        }
+
+        const loadId = (element.__tanvisTemporalYearLoadId || 0) + 1;
+        element.__tanvisTemporalYearLoadId = loadId;
+        element.dataset.visTaxonid = renderConfig.taxonId || '';
         const status = createVisStatusReporter(element);
         clearElement(element);
         status.showInfo('Loading...');
 
-        loadTemporalYearChart(element, config)
+        loadTemporalYearChart(element, renderConfig)
           .then(() => {
+            if (element.__tanvisTemporalYearLoadId !== loadId) {
+              return;
+            }
+
             status.clear();
           })
           .catch((error) => {
+            if (element.__tanvisTemporalYearLoadId !== loadId) {
+              return;
+            }
+
             clearElement(element);
             status.showError(normalizeErrorMessage(error, 'Failed to render temporal year chart'));
           });
       }
     };
+  }
+
+  function subscribeToLinkedTable(linkedTableId, onSpeciesSelected) {
+    if (typeof document === 'undefined') {
+      return undefined;
+    }
+
+    const linkedTableElement = document.getElementById(linkedTableId);
+    if (!linkedTableElement) {
+      return undefined;
+    }
+
+    const onRowSelected = (event) => {
+      const speciesId = event?.detail?.speciesId;
+      if (typeof speciesId !== 'string' || !speciesId.trim()) {
+        return;
+      }
+
+      onSpeciesSelected(speciesId.trim());
+    };
+
+    linkedTableElement.addEventListener('species-row-selected', onRowSelected);
+    return () => {
+      linkedTableElement.removeEventListener('species-row-selected', onRowSelected);
+    };
+  }
+
+  function clearLinkedTableSubscription(element) {
+    const cleanup = element?.__tanvisLinkedTableCleanup;
+    if (typeof cleanup === 'function') {
+      cleanup();
+    }
+
+    delete element.__tanvisLinkedTableCleanup;
   }
 
   async function loadTemporalYearChart(element, config) {
@@ -2100,6 +2187,7 @@ var Tanvis = (function (exports) {
 
     clearElement(element);
     element.appendChild(chartContainer);
+    console.log('Rendering temporal year chart with options:', chartOptions);
     brcCharts.temporal(chartOptions);
   }
 

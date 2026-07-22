@@ -215,6 +215,7 @@ Supported attributes:
 - `data-vis-start-year`: optional positive integer year
 - `data-vis-end-year`: optional positive integer year
 - `data-vis-source`: optional API base URL; defaults to `/api/v1`
+- `data-vis-linked-table`: optional id of a linked table element that emits `species-row-selected` events with `detail.speciesId`
 
 Include D3 and BRC Charts before Tanvis when using this renderer.
 
@@ -232,5 +233,7 @@ Include D3 and BRC Charts before Tanvis when using this renderer.
 ```
 
 Tanvis queries `taxon-year-stats` for the selected `taxon_identifier`, reshapes the returned rows for `brccharts.temporal`, and renders a two-line yearly chart for `occurrences_count` and `grid_square_count`.
+
+When `data-vis-linked-table` is set, Tanvis listens for `species-row-selected` events on that element and rerenders the chart using the emitted `detail.speciesId`.
 
 See `examples/static-map.html`, `examples/slippy-map.html`, `examples/shared-control-maps.html`, `examples/new-species-table.html`, `examples/increasing-species-table.html`, and `examples/temporal-year-chart.html` for ready-to-run pages.

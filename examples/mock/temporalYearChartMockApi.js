@@ -1,84 +1,47 @@
 const DEFAULT_BASE_URL = '/api';
 
-const taxonYearStatsRows = [
-  {
-    uuid: 'a7feecf0-0f5d-4332-8df9-100000000001',
-    taxon_identifier: 'NHMSYS0001234567',
-    year: 2016,
-    occurrences_count: 14,
-    grid_square_count: 8
-  },
-  {
-    uuid: 'a7feecf0-0f5d-4332-8df9-100000000002',
-    taxon_identifier: 'NHMSYS0001234567',
-    year: 2017,
-    occurrences_count: 21,
-    grid_square_count: 13
-  },
-  {
-    uuid: 'a7feecf0-0f5d-4332-8df9-100000000003',
-    taxon_identifier: 'NHMSYS0001234567',
-    year: 2018,
-    occurrences_count: 19,
-    grid_square_count: 11
-  },
-  {
-    uuid: 'a7feecf0-0f5d-4332-8df9-100000000004',
-    taxon_identifier: 'NHMSYS0001234567',
-    year: 2019,
-    occurrences_count: 32,
-    grid_square_count: 18
-  },
-  {
-    uuid: 'a7feecf0-0f5d-4332-8df9-100000000005',
-    taxon_identifier: 'NHMSYS0001234567',
-    year: 2020,
-    occurrences_count: 28,
-    grid_square_count: 17
-  },
-  {
-    uuid: 'a7feecf0-0f5d-4332-8df9-100000000006',
-    taxon_identifier: 'NHMSYS0001234567',
-    year: 2021,
-    occurrences_count: 35,
-    grid_square_count: 20
-  },
-  {
-    uuid: 'a7feecf0-0f5d-4332-8df9-100000000007',
-    taxon_identifier: 'NHMSYS0001234567',
-    year: 2022,
-    occurrences_count: 41,
-    grid_square_count: 23
-  },
-  {
-    uuid: 'a7feecf0-0f5d-4332-8df9-100000000008',
-    taxon_identifier: 'NHMSYS0001234567',
-    year: 2023,
-    occurrences_count: 38,
-    grid_square_count: 22
-  },
-  {
-    uuid: 'a7feecf0-0f5d-4332-8df9-100000000009',
-    taxon_identifier: 'NHMSYS0001234567',
-    year: 2024,
-    occurrences_count: 44,
-    grid_square_count: 25
-  },
-  {
-    uuid: 'a7feecf0-0f5d-4332-8df9-100000000010',
-    taxon_identifier: 'NHMSYS0001234567',
-    year: 2025,
-    occurrences_count: 47,
-    grid_square_count: 26
-  },
-  {
-    uuid: 'a7feecf0-0f5d-4332-8df9-100000000011',
-    taxon_identifier: 'NHMSYS0007654321',
-    year: 2023,
-    occurrences_count: 12,
-    grid_square_count: 6
-  }
+const START_YEAR = 2016;
+const END_YEAR = 2026;
+
+const taxonSeriesProfiles = [
+  { taxon_identifier: 'NHMSYS0001234567', baseOccurrences: 14, yearlyOccurrencesStep: 3, baseGridSquares: 8, yearlyGridStep: 2 },
+  { taxon_identifier: 'NHMSYS0007654321', baseOccurrences: 10, yearlyOccurrencesStep: 2, baseGridSquares: 5, yearlyGridStep: 1 },
+  { taxon_identifier: 'NHMSYS0000001001', baseOccurrences: 24, yearlyOccurrencesStep: 2, baseGridSquares: 10, yearlyGridStep: 1 },
+  { taxon_identifier: 'NHMSYS0000001002', baseOccurrences: 12, yearlyOccurrencesStep: 2, baseGridSquares: 6, yearlyGridStep: 1 },
+  { taxon_identifier: 'NHMSYS0000001003', baseOccurrences: 32, yearlyOccurrencesStep: 3, baseGridSquares: 14, yearlyGridStep: 1 },
+  { taxon_identifier: 'NHMSYS0000001004', baseOccurrences: 16, yearlyOccurrencesStep: 2, baseGridSquares: 8, yearlyGridStep: 1 },
+  { taxon_identifier: 'NHMSYS0000001005', baseOccurrences: 15, yearlyOccurrencesStep: 2, baseGridSquares: 7, yearlyGridStep: 1 },
+  { taxon_identifier: 'NHMSYS0000001006', baseOccurrences: 9, yearlyOccurrencesStep: 1, baseGridSquares: 4, yearlyGridStep: 1 },
+  { taxon_identifier: 'NHMSYS0000001007', baseOccurrences: 19, yearlyOccurrencesStep: 2, baseGridSquares: 9, yearlyGridStep: 1 },
+  { taxon_identifier: 'NHMSYS0000002001', baseOccurrences: 6, yearlyOccurrencesStep: 1, baseGridSquares: 3, yearlyGridStep: 1 },
+  { taxon_identifier: 'NHMSYS0000002002', baseOccurrences: 4, yearlyOccurrencesStep: 1, baseGridSquares: 2, yearlyGridStep: 1 },
+  { taxon_identifier: 'NHMSYS0000002003', baseOccurrences: 3, yearlyOccurrencesStep: 1, baseGridSquares: 1, yearlyGridStep: 1 },
+  { taxon_identifier: 'NHMSYS0000002004', baseOccurrences: 5, yearlyOccurrencesStep: 1, baseGridSquares: 2, yearlyGridStep: 1 }
 ];
+
+const taxonYearStatsRows = taxonSeriesProfiles.flatMap((profile, profileIndex) => {
+  return buildTaxonYearSeries(profile, profileIndex);
+});
+
+function buildTaxonYearSeries(profile, profileIndex) {
+  const rows = [];
+
+  for (let year = START_YEAR; year <= END_YEAR; year += 1) {
+    const yearOffset = year - START_YEAR;
+    const seasonalWobble = yearOffset % 3 === 1 ? 1 : 0;
+    const rowIndex = profileIndex * (END_YEAR - START_YEAR + 1) + yearOffset + 1;
+
+    rows.push({
+      uuid: `a7feecf0-0f5d-4332-8df9-${String(rowIndex).padStart(12, '0')}`,
+      taxon_identifier: profile.taxon_identifier,
+      year,
+      occurrences_count: profile.baseOccurrences + (profile.yearlyOccurrencesStep * yearOffset) + seasonalWobble,
+      grid_square_count: profile.baseGridSquares + (profile.yearlyGridStep * yearOffset)
+    });
+  }
+
+  return rows;
+}
 
 function jsonResponse(status, payload) {
   return new Response(JSON.stringify(payload), {

@@ -28,6 +28,7 @@
     ></div>
 
     <div
+      id="my-increasing-species-table"
       class="tanvis"
       data-vis-type="increasing-species-table"
       data-vis-top-n="25"
@@ -42,21 +43,11 @@
 
       installTaxonGroupsMockApi({ baseUrl: '/api', latencyMs: 150 });
       installSpeciesStatsMockApi({ baseUrl: '/api', latencyMs: 150 });
-      const originalFetch = window.fetch.bind(window);
-      window.fetch = async (input, init) => {
-        const requestUrl = new URL(typeof input === 'string' ? input : input.url, window.location.origin);
-        if (requestUrl.pathname === '/api/v1/taxon-stats') {
-          console.log('[increasing-species-table] API request:', `${requestUrl.pathname}${requestUrl.search}`);
-        }
-
-        return originalFetch(input, init);
-      };
-
+      
       window.Tanvis.init();
 
       document.addEventListener("species-row-selected", function(e) {
-        const speciesId = e.detail.id;
-        console.log(`Row clicked: ${speciesId}`);
+        console.log(`Row clicked:`, e.detail);
       });
     </script>
   </body>

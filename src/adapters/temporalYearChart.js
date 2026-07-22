@@ -15,20 +15,81 @@ export function createTemporalYearChartAdapter() {
   return {
     name: 'temporal-year-chart',
     render(element, config) {
+      clearLinkedTableSubscription(element);
+      const renderConfig = { ...config };
+
+      if (renderConfig.linkedTable) {
+        element.__tanvisLinkedTableCleanup = subscribeToLinkedTable(renderConfig.linkedTable, (speciesId) => {
+          if (!speciesId || speciesId === element.dataset.visTaxonid) {
+            return;
+          }
+
+          createTemporalYearChartAdapter().render(element, {
+            ...renderConfig,
+            taxonId: speciesId
+          });
+        });
+      }
+
+      const loadId = (element.__tanvisTemporalYearLoadId || 0) + 1;
+      element.__tanvisTemporalYearLoadId = loadId;
+      element.dataset.visTaxonid = renderConfig.taxonId || '';
       const status = createVisStatusReporter(element);
       clearElement(element);
       status.showInfo('Loading...');
 
-      loadTemporalYearChart(element, config)
+      loadTemporalYearChart(element, renderConfig)
         .then(() => {
+          if (element.__tanvisTemporalYearLoadId !== loadId) {
+            return;
+          }
+
           status.clear();
         })
         .catch((error) => {
+          if (element.__tanvisTemporalYearLoadId !== loadId) {
+            return;
+          }
+
           clearElement(element);
           status.showError(normalizeErrorMessage(error, 'Failed to render temporal year chart'));
         });
     }
   };
+}
+
+function subscribeToLinkedTable(linkedTableId, onSpeciesSelected) {
+  if (typeof document === 'undefined') {
+    return undefined;
+  }
+
+  const linkedTableElement = document.getElementById(linkedTableId);
+  if (!linkedTableElement) {
+    return undefined;
+  }
+
+  const onRowSelected = (event) => {
+    const speciesId = event?.detail?.speciesId;
+    if (typeof speciesId !== 'string' || !speciesId.trim()) {
+      return;
+    }
+
+    onSpeciesSelected(speciesId.trim());
+  };
+
+  linkedTableElement.addEventListener('species-row-selected', onRowSelected);
+  return () => {
+    linkedTableElement.removeEventListener('species-row-selected', onRowSelected);
+  };
+}
+
+function clearLinkedTableSubscription(element) {
+  const cleanup = element?.__tanvisLinkedTableCleanup;
+  if (typeof cleanup === 'function') {
+    cleanup();
+  }
+
+  delete element.__tanvisLinkedTableCleanup;
 }
 
 async function loadTemporalYearChart(element, config) {
@@ -67,6 +128,7 @@ async function loadTemporalYearChart(element, config) {
 
   clearElement(element);
   element.appendChild(chartContainer);
+  console.log('Rendering temporal year chart with options:', chartOptions);
   brcCharts.temporal(chartOptions);
 }
 

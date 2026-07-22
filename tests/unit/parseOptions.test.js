@@ -145,4 +145,15 @@ describe('parseOptions', () => {
       endYear: 2024
     });
   });
+
+  it('reads data-vis-linked-table for temporal-year-chart', () => {
+    const element = document.createElement('div');
+    element.dataset.visType = 'temporal-year-chart';
+    element.dataset.visLinkedTable = 'increasing-table';
+
+    expect(parseOptions(element)).toMatchObject({
+      type: 'temporal-year-chart',
+      linkedTable: 'increasing-table'
+    });
+  });
 });

@@ -11,6 +11,7 @@ export function parseOptions(element) {
     type: dataset.visType || 'table',
     source: dataset.visSource,
     control: dataset.visControl,
+    linkedTable: dataset.visLinkedTable,
     taxonId: dataset.visTaxonid,
     startDate: dataset.visStartDate,
     endDate: dataset.visEndDate,

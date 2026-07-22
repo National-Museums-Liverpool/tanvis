@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Tanvis Temporal Year Chart Example</title>
+    <link rel="stylesheet" href="https://unpkg.com/tabulator-tables@6.3.0/dist/css/tabulator.min.css" />
+    <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/gh/biologicalrecordscentre/brc-charts/dist/brccharts.umd.css" />
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        margin: 20px;
+      }
+
+      .tanvis {
+        margin-top: 1rem;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Linked Table and Temporal Year Chart Example</h1>
+
+    <p>This renders a table of species whose first record 
+      date falls within the requested date range and a table
+      for the top increasing species ranked by 
+      frequency trend score. Both can be linked to a 
+      temporal year chart from 
+      mocked <code>taxon-year-stats</code> API 
+      data using <code>brccharts.temporal</code>.</p>
+
+    <div
+      id="my-new-species-table"
+      class="tanvis"
+      data-vis-type="new-species-table"
+      data-vis-start-date="2025-01-01"
+      data-vis-end-date="2025-12-31"
+      data-vis-control="vc-control"
+    ></div>
+
+    <div
+      id="my-increasing-species-table"
+      class="tanvis"
+      data-vis-type="increasing-species-table"
+      data-vis-top-n="25"
+      data-vis-control="vc-control"
+    ></div>
+
+    <div
+      class="tanvis"
+      data-vis-linked-table="my-increasing-species-table"
+      data-vis-type="temporal-year-chart"
+      data-vis-taxonid="NHMSYS0001234567"
+      data-vis-start-year="2016"
+      data-vis-end-year="2025"
+    ></div>
+
+  <script src="https://d3js.org/d3.v5.min.js"></script>
+    <script src="https://unpkg.com/tabulator-tables@6.3.0/dist/js/tabulator.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/biologicalrecordscentre/brc-charts/dist/brccharts.umd.js"></script>
+    <script src="../dist/tanvis.iife.js"></script>
+    <script type="module">
+      import { installTaxonGroupsMockApi } from './mock/taxonGroupsMockApi.js';
+      import { installNewSpeciesMockApi } from './mock/newSpeciesMockApi.js';
+      import { installSpeciesStatsMockApi } from './mock/speciesStatsMockApi.js';
+      import { installTemporalYearChartMockApi } from './mock/temporalYearChartMockApi.js';
+
+      installTaxonGroupsMockApi({ baseUrl: '/api', latencyMs: 150 });
+      installNewSpeciesMockApi({ baseUrl: '/api', latencyMs: 150 });
+      installSpeciesStatsMockApi({ baseUrl: '/api', latencyMs: 150 });
+      installTemporalYearChartMockApi({ baseUrl: '/api', latencyMs: 150 });
+      window.Tanvis.init();
+    </script>
+  </body>
+</html>

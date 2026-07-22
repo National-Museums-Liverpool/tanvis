@@ -28,6 +28,7 @@
     ></div>
 
     <div
+      id="my-new-species-table"
       class="tanvis"
       data-vis-type="new-species-table"
       data-vis-start-date="2025-01-01"
@@ -44,6 +45,10 @@
       installTaxonGroupsMockApi({ baseUrl: '/api', latencyMs: 150 });
       installNewSpeciesMockApi({ baseUrl: '/api', latencyMs: 150 });
       window.Tanvis.init();
+
+      document.addEventListener("species-row-selected", function(e) {
+        console.log(`Row clicked:`, e.detail);
+      });
     </script>
   </body>
 </html>

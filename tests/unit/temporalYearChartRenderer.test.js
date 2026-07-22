@@ -127,4 +127,53 @@ describe('renderTemporalYearChart', () => {
 
     expect(element.textContent).toContain('API error: year range is invalid');
   });
+
+  it('listens to linked table species-row-selected events and rerenders with the selected speciesId', async () => {
+    const temporalCalls = [];
+    window.d3 = {};
+    window.brccharts = {
+      temporal: (options) => {
+        temporalCalls.push(options);
+        return {};
+      }
+    };
+
+    const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        data: [
+          {
+            year: 2020,
+            occurrences_count: 4,
+            grid_square_count: 2
+          }
+        ]
+      })
+    });
+
+    const linkedTable = document.createElement('div');
+    linkedTable.id = 'linked-table';
+    document.body.appendChild(linkedTable);
+
+    const element = document.createElement('div');
+    renderTemporalYearChart(element, {
+      type: 'temporal-year-chart',
+      taxonId: 'NHMSYS0001234567',
+      linkedTable: 'linked-table'
+    });
+
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    linkedTable.dispatchEvent(new CustomEvent('species-row-selected', {
+      detail: {
+        speciesId: 'NHMSYS0007654321'
+      }
+    }));
+
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(String(fetchMock.mock.calls[1][0])).toContain('taxon_identifier%5Beq%5D=NHMSYS0007654321');
+    expect(temporalCalls).toHaveLength(2);
+  });
 });

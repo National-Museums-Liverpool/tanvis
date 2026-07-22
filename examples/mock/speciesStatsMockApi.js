@@ -3,7 +3,7 @@ const DEFAULT_BASE_URL = '/api';
 const taxonStatsRows = [
   {
     uuid: '8a13ef57-9f2f-4ec9-91b5-9dc7d0531001',
-    taxon_identifier: '1001',
+    taxon_identifier: 'NHMSYS0000001001',
     scientific_name: 'Eristalis arbustorum',
     vernacular_name: 'Marmalade Hoverfly',
     vernacular_names: ['Marmalade Hoverfly'],
@@ -23,7 +23,7 @@ const taxonStatsRows = [
   },
   {
     uuid: 'b1de346d-5c6a-40b8-87db-6cc8e04e1002',
-    taxon_identifier: '1002',
+    taxon_identifier: 'NHMSYS0000001002',
     scientific_name: 'Criorhina berberina',
     vernacular_name: 'Hairy-eyed Hoverfly',
     vernacular_names: ['Hairy-eyed Hoverfly'],
@@ -43,7 +43,7 @@ const taxonStatsRows = [
   },
   {
     uuid: 'cbf629cb-0434-44e8-bbe8-bf52f4cf1003',
-    taxon_identifier: '1003',
+    taxon_identifier: 'NHMSYS0000001003',
     scientific_name: 'Syritta pipiens',
     vernacular_name: 'Thick-legged Hoverfly',
     vernacular_names: ['Thick-legged Hoverfly'],
@@ -63,7 +63,7 @@ const taxonStatsRows = [
   },
   {
     uuid: 'b1da3705-31e6-4dc7-bec5-6f0a6a6a1004',
-    taxon_identifier: '1004',
+    taxon_identifier: 'NHMSYS0000001004',
     scientific_name: 'Volucella zonaria',
     vernacular_name: 'Hornet Mimic Hoverfly',
     vernacular_names: ['Hornet Mimic Hoverfly'],
@@ -83,7 +83,7 @@ const taxonStatsRows = [
   },
   {
     uuid: '4ef4fa98-d8e6-4f49-80f8-eb924f5f1005',
-    taxon_identifier: '1005',
+    taxon_identifier: 'NHMSYS0000001005',
     scientific_name: 'Rhingia campestris',
     vernacular_name: 'Humpbacked Hoverfly',
     vernacular_names: ['Humpbacked Hoverfly'],
@@ -103,7 +103,7 @@ const taxonStatsRows = [
   },
   {
     uuid: 'f7ab5296-c1f7-4bdb-9f6e-3ef5eec31006',
-    taxon_identifier: '1006',
+    taxon_identifier: 'NHMSYS0000001006',
     scientific_name: 'Myathropa florea',
     vernacular_name: 'Batman Hoverfly',
     vernacular_names: ['Batman Hoverfly'],
@@ -123,7 +123,7 @@ const taxonStatsRows = [
   },
   {
     uuid: '4dd8d208-d64b-49dc-b8bc-189f4d4a1007',
-    taxon_identifier: '1007',
+    taxon_identifier: 'NHMSYS0000001007',
     scientific_name: 'Merodon equestris',
     vernacular_name: 'Narcissus Bulb Fly',
     vernacular_names: ['Narcissus Bulb Fly'],

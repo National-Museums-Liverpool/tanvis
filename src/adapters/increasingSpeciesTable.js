@@ -21,6 +21,7 @@ export function createIncreasingSpeciesTableAdapter() {
   return {
     name: 'increasing-species-table',
     render(element, config) {
+      console.log('element', element);
       clearControlSubscription(element);
       const status = createVisStatusReporter(element);
       clearElement(element);
@@ -116,14 +117,13 @@ function createTableContainer(records, Tabulator) {
   });
 
   table.on("rowClick", function(e, row) {
-    //console.log('rowClick:', row.getData());
     // Triggered whenever a user clicks a row
     const rowData = row.getData();
     const speciesId = rowData.speciesId; 
 
     // Create a custom event containing the ID in the 'detail' property
     const rowSelectedEvent = new CustomEvent("species-row-selected", {
-        detail: { id: speciesId },
+        detail: { speciesId: speciesId },
         bubbles: true, // Allows the event to bubble up the DOM tree
         cancelable: true
     });

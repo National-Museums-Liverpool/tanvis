@@ -3,7 +3,7 @@ const DEFAULT_BASE_URL = '/api';
 const taxonStatsRows = [
   {
     uuid: 'f4a4f72c-02d0-43a8-9b8f-7d3d205dc001',
-    taxon_identifier: '2001',
+    taxon_identifier: 'NHMSYS0000002001',
     scientific_name_identifier: 'TVK-2001',
     scientific_name: 'Eristalis tenax',
     scientific_name_authorship: 'Linnaeus, 1758',
@@ -29,7 +29,7 @@ const taxonStatsRows = [
   },
   {
     uuid: 'd5f1f981-5322-4da0-8f6c-5fa95e43f002',
-    taxon_identifier: '2002',
+    taxon_identifier: 'NHMSYS0000002002',
     scientific_name_identifier: 'TVK-2002',
     scientific_name: 'Volucella pellucens',
     scientific_name_authorship: 'Linnaeus, 1758',
@@ -55,7 +55,7 @@ const taxonStatsRows = [
   },
   {
     uuid: '9a14f59b-c190-4385-a779-5179186d3003',
-    taxon_identifier: '2003',
+    taxon_identifier: 'NHMSYS0000002003',
     scientific_name_identifier: 'TVK-2003',
     scientific_name: 'Cheilosia illustrata',
     scientific_name_authorship: 'Harris, 1780',
@@ -81,7 +81,7 @@ const taxonStatsRows = [
   },
   {
     uuid: 'c26a7818-95a7-4583-95b8-9e28ebf14004',
-    taxon_identifier: '2004',
+    taxon_identifier: 'NHMSYS0000002004',
     scientific_name_identifier: 'TVK-2004',
     scientific_name: 'Helophilus pendulus',
     scientific_name_authorship: 'Linnaeus, 1758',
