@@ -1,9 +1,8 @@
-import { createLeafletMapAdapter } from '../adapters/leafletMap.js';
-
-const leafletMapAdapter = createLeafletMapAdapter();
+import { renderLeafletAtlasMap } from '../adapters/map/leafletBackend.js';
 
 export function renderLeafletMap(element, config) {
-  // Renderers are Tanvis-facing entry points keyed by data-vis-type.
-  // Adapters keep the implementation details for a specific library or API integration.
-  leafletMapAdapter.render(element, config);
+  renderLeafletAtlasMap(element, config, {
+    idPrefix: 'tanvis-leaflet-map',
+    errorMessage: 'Failed to render slippy map'
+  });
 }

@@ -25,13 +25,25 @@ describe('render', () => {
     });
   });
 
-  it('requires data-vis-taxonid for temporal-year-chart', () => {
+  it('renders temporal-year-chart when registered', () => {
+    registerRenderer('temporal-year-chart', () => {});
+
     const element = document.createElement('div');
     element.dataset.visType = 'temporal-year-chart';
 
     expect(render(element)).toEqual({
+      rendered: true,
+      errors: []
+    });
+  });
+
+  it('requires data-vis-year for species-map', () => {
+    const element = document.createElement('div');
+    element.dataset.visType = 'species-map';
+
+    expect(render(element)).toEqual({
       rendered: false,
-      errors: ['Missing data-vis-taxonid for temporal-year-chart']
+      errors: ['Missing data-vis-year for species-map and grid-stats-map']
     });
   });
 });

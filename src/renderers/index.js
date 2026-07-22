@@ -1,7 +1,9 @@
-export { renderStaticMap } from './map.js';
+export { renderStaticMap } from './staticMap.js';
 export { renderLeafletMap } from './leafletMap.js';
 export { renderControlBlock } from './controlBlock.js';
 export { renderNewSpeciesTable } from './newSpeciesTable.js';
 export { renderIncreasingSpeciesTable } from './increasingSpeciesTable.js';
 export { renderSpeciesAbsentSince } from './speciesAbsentSince.js';
+export { renderSpeciesMap } from './speciesMap.js';
+export { renderGridStatsMap } from './gridStatsMap.js';
 export { renderTemporalYearChart } from './temporalYearChart.js';

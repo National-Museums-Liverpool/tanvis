@@ -153,6 +153,35 @@ When a visualization is subscribed to a control block, the control block's curre
 
 The slippy map renderer calls `brcatlas.leafletMap(...)` and then `setIdentfier(...)` and `redrawMap()` when available.
 
+### Species Map / Grid Stats Map Renderers
+
+Use `data-vis-type="species-map"` or `data-vis-type="grid-stats-map"`.
+
+Supported attributes:
+
+- `data-vis-year`: required cutoff year; rows with `last_record_date` on or before this year are included
+- `data-vis-map-type`: optional map backend selector; use `static` or `leaflet` (defaults to `static`)
+- `data-vis-source`: optional API base URL; defaults to `/api/v1`
+- `data-vis-control`: optional id of a `control-block`; when set, VC selections filter `taxon-stats` by `geographic_region_identifier[eq]`
+
+Include Tabulator before Tanvis when using these renderers.
+
+```html
+<link rel="stylesheet" href="https://unpkg.com/tabulator-tables@6.3.0/dist/css/tabulator.min.css" />
+<script src="https://unpkg.com/tabulator-tables@6.3.0/dist/js/tabulator.min.js"></script>
+
+<div
+  class="tanvis"
+  data-vis-type="species-map"
+  data-vis-year="2024"
+  data-vis-map-type="leaflet"
+></div>
+```
+
+Tanvis queries `taxon-stats` with `last_record_date[lte]` and `include=taxon`, renders the returned records in a table, and draws the map using the backend selected by `data-vis-map-type`.
+
+Rows emit `species-row-selected` events with `detail.speciesId` when clicked.
+
 ### New Species Table Renderer
 
 Use `data-vis-type="new-species-table"`.
@@ -264,4 +293,4 @@ Tanvis queries `taxon-year-stats` for the selected `taxon_identifier`, reshapes 
 
 When `data-vis-linked-table` is set, Tanvis listens for `species-row-selected` events on that element and rerenders the chart using the emitted `detail.speciesId`.
 
-See `examples/static-map.html`, `examples/slippy-map.html`, `examples/shared-control-maps.html`, `examples/new-species-table.html`, `examples/increasing-species-table.html`, `examples/species-absent-since.html`, and `examples/temporal-year-chart.html` for ready-to-run pages.
+See `examples/static-map.html`, `examples/slippy-map.html`, `examples/shared-control-maps.html`, `examples/new-species-table.html`, `examples/increasing-species-table.html`, `examples/species-absent-since.html`, `examples/species-map.html`, `examples/grid-stats-map.html`, and `examples/temporal-year-chart.html` for ready-to-run pages.

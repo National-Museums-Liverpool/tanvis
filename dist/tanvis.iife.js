@@ -12,10 +12,11 @@ var Tanvis = (function (exports) {
   function parseOptions(element) {
     const dataset = element?.dataset || {};
     const expand = parseOptionalBoolean(dataset.visExpand);
-    const width = parseOptionalPositiveNumber$2(dataset.visWidth);
-    const height = parseOptionalPositiveNumber$2(dataset.visHeight);
+    const width = parseOptionalPositiveNumber$1(dataset.visWidth);
+    const height = parseOptionalPositiveNumber$1(dataset.visHeight);
     const topN = parseOptionalPositiveInteger(dataset.visTopN);
     const year = parseOptionalPositiveInteger(dataset.visYear);
+    const mapType = dataset.visMapType;
     const startYear = parseOptionalPositiveInteger(dataset.visStartYear);
     const endYear = parseOptionalPositiveInteger(dataset.visEndYear);
 
@@ -24,6 +25,7 @@ var Tanvis = (function (exports) {
       source: dataset.visSource,
       control: dataset.visControl,
       linkedTable: dataset.visLinkedTable,
+      mapType,
       taxonId: dataset.visTaxonid,
       startDate: dataset.visStartDate,
       endDate: dataset.visEndDate,
@@ -61,7 +63,7 @@ var Tanvis = (function (exports) {
     return String(value).toLowerCase() === 'true';
   }
 
-  function parseOptionalPositiveNumber$2(value) {
+  function parseOptionalPositiveNumber$1(value) {
     if (value === undefined || value === null || value === '') {
       return undefined;
     }
@@ -161,61 +163,6 @@ var Tanvis = (function (exports) {
     while (element.firstChild) {
       element.removeChild(element.firstChild);
     }
-  }
-
-  const listenersByControlId = new Map();
-  const latestEventByControlId = new Map();
-
-  function subscribeToControl(controlId, handler) {
-    if (!controlId || typeof handler !== 'function') {
-      return () => {};
-    }
-
-    let listeners = listenersByControlId.get(controlId);
-    if (!listeners) {
-      listeners = new Set();
-      listenersByControlId.set(controlId, listeners);
-    }
-
-    listeners.add(handler);
-
-    return () => {
-      const existing = listenersByControlId.get(controlId);
-      if (!existing) {
-        return;
-      }
-
-      existing.delete(handler);
-      if (existing.size === 0) {
-        listenersByControlId.delete(controlId);
-      }
-    };
-  }
-
-  function publishControlEvent(controlId, event) {
-    if (!controlId) {
-      return;
-    }
-
-    latestEventByControlId.set(controlId, event);
-
-    const listeners = listenersByControlId.get(controlId);
-    if (!listeners) {
-      return;
-    }
-
-    // Publish to a snapshot so subscribe/unsubscribe during a handler does not
-    // mutate the current dispatch cycle and cause re-entrant loops.
-    const snapshot = Array.from(listeners);
-    snapshot.forEach((handler) => handler(event));
-  }
-
-  function getLatestControlEvent(controlId) {
-    if (!controlId) {
-      return undefined;
-    }
-
-    return latestEventByControlId.get(controlId);
   }
 
   function getPayloadMessage(payload) {
@@ -351,6 +298,61 @@ var Tanvis = (function (exports) {
     document.head.appendChild(style);
   }
 
+  const listenersByControlId = new Map();
+  const latestEventByControlId = new Map();
+
+  function subscribeToControl(controlId, handler) {
+    if (!controlId || typeof handler !== 'function') {
+      return () => {};
+    }
+
+    let listeners = listenersByControlId.get(controlId);
+    if (!listeners) {
+      listeners = new Set();
+      listenersByControlId.set(controlId, listeners);
+    }
+
+    listeners.add(handler);
+
+    return () => {
+      const existing = listenersByControlId.get(controlId);
+      if (!existing) {
+        return;
+      }
+
+      existing.delete(handler);
+      if (existing.size === 0) {
+        listenersByControlId.delete(controlId);
+      }
+    };
+  }
+
+  function publishControlEvent(controlId, event) {
+    if (!controlId) {
+      return;
+    }
+
+    latestEventByControlId.set(controlId, event);
+
+    const listeners = listenersByControlId.get(controlId);
+    if (!listeners) {
+      return;
+    }
+
+    // Publish to a snapshot so subscribe/unsubscribe during a handler does not
+    // mutate the current dispatch cycle and cause re-entrant loops.
+    const snapshot = Array.from(listeners);
+    snapshot.forEach((handler) => handler(event));
+  }
+
+  function getLatestControlEvent(controlId) {
+    if (!controlId) {
+      return undefined;
+    }
+
+    return latestEventByControlId.get(controlId);
+  }
+
   const transOptsSel = {
     // Different views for the three VCs in the Cheshire/Lancashire area
     // and a combined view for all of them together.
@@ -416,85 +418,39 @@ var Tanvis = (function (exports) {
     }
   };
 
-  // Wrapper to adapt BRC Atlas maps for use in Tanvis.
-  // This allows users to specify BRC Atlas maps as a visualization 
-  // type in their HTML, and have them rendered using the BRC Atlas library.
+  const elementIdCounters = new Map();
 
-  let mapIdCounter$1 = 0;
+  function assignElementId(element, prefix) {
+    if (element?.id) {
+      return element.id;
+    }
 
-  function createBrcAtlasAdapter() {
-    return {
-      name: 'static-map',
-      render(element, config) {
-        clearControlSubscription$4(element);
-        const status = createVisStatusReporter(element);
-        clearElement(element);
-        status.showInfo('Loading...');
-
-        try {
-          const brcAtlas = getBrcAtlasGlobal$1();
-
-          if (!brcAtlas || typeof brcAtlas.svgMap !== 'function') {
-            throw new Error('BRC Atlas is not available. Include brcatlas.umd.js before Tanvis.');
-          }
-
-          if (!element.id) {
-            mapIdCounter$1 += 1;
-            element.id = `tanvis-map-${mapIdCounter$1}`;
-          }
-
-          const effectiveArea = getEffectiveArea$4(config);
-          const renderConfig = effectiveArea === config.area
-            ? config
-            : {
-                ...config,
-                area: effectiveArea
-              };
-
-          element.dataset.visArea = renderConfig.area;
-
-          console.log('Creating BRC Atlas map with config:', renderConfig);
-
-          const map = brcAtlas.svgMap(createMapOptions$1(element, renderConfig));
-
-          if (map && typeof map.setIdentfier === 'function' && renderConfig.source) {
-            map.setIdentfier(renderConfig.source);
-          }
-
-          if (map && typeof map.redrawMap === 'function') {
-            map.redrawMap();
-          }
-
-          if (renderConfig.control) {
-            element.__tanvisControlCleanup = subscribeToControl(renderConfig.control, (event) => {
-              if (event?.type !== 'area-change' || !event.area) {
-                return;
-              }
-
-              if (event.area === element.dataset.visArea) {
-                return;
-              }
-
-              element.dataset.visArea = event.area;
-              createBrcAtlasAdapter().render(element, {
-                ...renderConfig,
-                area: event.area
-              });
-            });
-          }
-
-          status.clear();
-          return map;
-        } catch (error) {
-          clearElement(element);
-          status.showError(normalizeErrorMessage(error, 'Failed to render static map'));
-          return null;
-        }
-      }
-    };
+    const current = elementIdCounters.get(prefix) || 0;
+    const next = current + 1;
+    elementIdCounters.set(prefix, next);
+    element.id = `${prefix}-${next}`;
+    return element.id;
   }
 
-  function getEffectiveArea$4(config) {
+  function clearControlSubscription$5(element) {
+    const cleanup = element?.__tanvisControlCleanup;
+    if (typeof cleanup === 'function') {
+      cleanup();
+    }
+
+    delete element.__tanvisControlCleanup;
+  }
+
+  function clearExpandResizeHandlers(element) {
+    const cleanup = element?.__tanvisExpandCleanup;
+    if (typeof cleanup === 'function') {
+      cleanup();
+    }
+
+    delete element.__tanvisExpandCleanup;
+  }
+
+  function getEffectiveArea$5(config) {
     if (!config.control) {
       return config.area;
     }
@@ -513,198 +469,14 @@ var Tanvis = (function (exports) {
     return controlArea || config.area;
   }
 
-  function clearControlSubscription$4(element) {
-    const cleanup = element?.__tanvisControlCleanup;
-    if (typeof cleanup === 'function') {
-      cleanup();
-    }
-
-    delete element.__tanvisControlCleanup;
-  }
-
-  function createMapOptions$1(element, config) {
-    const includeHectads = config.hectads !== false;
-    const shouldExpand = config.expand === true;
-    const width = parseOptionalPositiveNumber$1(config.width);
-    const explicitHeight = parseOptionalPositiveNumber$1(config.height);
-    const selectedBounds = transOptsSel[config.area]?.bounds;
-    // For static maps, width is derived from transOpts. If data-vis-height is provided,
-    // use it directly; otherwise fall back to calculating height from data-vis-width.
-    const height = explicitHeight ?? calculateHeightFromBounds$1(width, selectedBounds);
-
-    return {
-      selector: `#${element.id}`,
-      transOptsControl: config.ctl,
-      transOptsSel,
-      transOptsKey: config.area,
-      transOptsControl: false, // We create our own custom control for area selection, so disable the built-in one.
-      boundaryGjson: `/data/vcs/simp-100/${config.area}-100.geojson`, 
-      // Static map width is determined by the selected transOpts bounds, so only height is passed through.
-      ...(height !== undefined ? { height } : {}),
-      ...(shouldExpand ? { expand: true } : {}),
-      ...(includeHectads
-        ? { gridGjson: `/data/vcs/hectad-grids/${config.area}-hectads.geojson` }
-        : { gridLineStyle: 'none' })
-    };
-  }
-
-  function parseOptionalPositiveNumber$1(value) {
-    if (value === undefined || value === null || value === '') {
-      return undefined;
-    }
-
-    const parsed = Number(value);
-    if (!Number.isFinite(parsed) || parsed <= 0) {
-      return undefined;
-    }
-
-    return parsed;
-  }
-
-  function calculateHeightFromBounds$1(width, bounds) {
-    if (width === undefined || !bounds) {
-      return undefined;
-    }
-
-    const boxWidth = bounds.xmax - bounds.xmin;
-    const boxHeight = bounds.ymax - bounds.ymin;
-    if (boxWidth <= 0 || boxHeight <= 0) {
-      return undefined;
-    }
-
-    return Math.round(width * (boxHeight / boxWidth));
-  }
-
-  function getBrcAtlasGlobal$1() {
-    if (typeof window === 'undefined') {
-      return null;
-    }
-
-    return window.brcatlas || null;
-  }
-
-  const atlasAdapter = createBrcAtlasAdapter();
-
-  function renderStaticMap(element, config) {
-    // Renderers are Tanvis-facing entry points keyed by data-vis-type.
-    // Adapters keep the implementation details for a specific library or API integration.
-    atlasAdapter.render(element, config);
-  }
-
-  // Wrapper to adapt BRC Atlas Leaflet maps for use in Tanvis.
-  // This allows users to specify Leaflet/slippy maps as a visualization 
-  // type in their HTML, and have them rendered using the BRC Atlas library.
-
-  let mapIdCounter = 0;
-
-  function createLeafletMapAdapter() {
-    return {
-      name: 'leaflet-map',
-      render(element, config) {
-        // Clean up any previously attached expand listeners before re-rendering this element.
-        clearExpandResizeHandlers(element);
-        clearControlSubscription$3(element);
-        const status = createVisStatusReporter(element);
-        clearElement(element);
-        status.showInfo('Loading...');
-
-        try {
-          const brcAtlas = getBrcAtlasGlobal();
-
-          if (!brcAtlas || typeof brcAtlas.leafletMap !== 'function') {
-            throw new Error('BRC Atlas is not available. Include brcatlas.umd.js before Tanvis.');
-          }
-
-          if (!element.id) {
-            mapIdCounter += 1;
-            element.id = `tanvis-leaflet-map-${mapIdCounter}`;
-          }
-
-          const effectiveArea = getEffectiveArea$3(config);
-          const renderConfig = effectiveArea === config.area
-            ? config
-            : {
-                ...config,
-                area: effectiveArea
-              };
-
-          element.dataset.visArea = renderConfig.area;
-
-          console.log('Creating BRC Atlas Leaflet map with config:', renderConfig);
-
-          const map = brcAtlas.leafletMap(createMapOptions(element, renderConfig));
-
-          if (renderConfig.expand === true) {
-            // Expand is handled locally for slippy maps: watch parent/container resize and sync map size.
-            attachExpandResizeHandlers(element, renderConfig, map);
-          }
-
-          panToAreaCentroid(renderConfig.area, map);
-
-          if (map && typeof map.setIdentfier === 'function' && renderConfig.source) {
-            map.setIdentfier(renderConfig.source);
-          }
-
-          if (map && typeof map.redrawMap === 'function') {
-            map.redrawMap();
-          }
-
-          if (renderConfig.control) {
-            element.__tanvisControlCleanup = subscribeToControl(renderConfig.control, (event) => {
-              if (event?.type !== 'area-change' || !event.area) {
-                return;
-              }
-
-              if (event.area === element.dataset.visArea) {
-                return;
-              }
-
-              element.dataset.visArea = event.area;
-              handleAreaSelection(event.area, element, renderConfig, map);
-            });
-          }
-
-          status.clear();
-          return map;
-        } catch (error) {
-          clearElement(element);
-          status.showError(normalizeErrorMessage(error, 'Failed to render slippy map'));
-          return null;
-        }
+  function subscribeToAreaControl(controlId, handler) {
+    return subscribeToControl(controlId, (event) => {
+      if (!event || event.type !== 'area-change' || !event.area) {
+        return;
       }
-    };
-  }
 
-  function createMapOptions(element, config) {
-    const width = getConfiguredWidth(element, config);
-    const explicitHeight = parseOptionalPositiveNumber(config.height);
-    const selectedBounds = transOptsSel[config.area]?.bounds;
-    // For slippy maps, width and height can be specified independently.
-    // If data-vis-height is not provided, derive height from data-vis-width and selected bounds.
-    const height = explicitHeight ?? calculateHeightFromBounds(width, selectedBounds);
-    const showBoundaries = config.boundaries === true;
-
-    return {
-      selector: `#${element.id}`,
-      showVcs: showBoundaries,
-      ...(width !== undefined ? { width } : {}),
-      ...(height !== undefined ? { height } : {}),
-    };
-  }
-
-  function getConfiguredWidth(element, config) {
-    const configuredWidth = parseOptionalPositiveNumber(config.width);
-
-    if (config.expand !== true) {
-      return configuredWidth;
-    }
-
-    // When expand is enabled, prefer parent width and only fall back to configured width.
-    return getParentWidth(element) ?? configuredWidth;
-  }
-
-  function getParentWidth(element) {
-    return parseOptionalPositiveNumber(element?.parentElement?.clientWidth);
+      handler(event.area, event);
+    });
   }
 
   function parseOptionalPositiveNumber(value) {
@@ -734,21 +506,33 @@ var Tanvis = (function (exports) {
     return Math.round(width * (boxHeight / boxWidth));
   }
 
-  function attachExpandResizeHandlers(element, config, map) {
-    const onResize = () => {
-      resizeExpandedMap(element, config, map);
-    };
+  function getConfiguredWidth(element, config) {
+    const configuredWidth = parseOptionalPositiveNumber(config.width);
+
+    if (config.expand !== true) {
+      return configuredWidth;
+    }
+
+    return getParentWidth(element) ?? configuredWidth;
+  }
+
+  function getParentWidth(element) {
+    return parseOptionalPositiveNumber(element?.parentElement?.clientWidth);
+  }
+
+  function attachExpandResizeHandlers(element, config, map, onResize) {
+    const resizeAction = () => {
+          resizeExpandedMap(element, config, map);
+        };
 
     let resizeObserver;
     if (typeof ResizeObserver !== 'undefined' && element.parentElement) {
-      // Track parent-size changes directly when ResizeObserver is available.
-      resizeObserver = new ResizeObserver(onResize);
+      resizeObserver = new ResizeObserver(resizeAction);
       resizeObserver.observe(element.parentElement);
     }
 
     if (typeof window !== 'undefined') {
-      // Also listen to window resize as a broad fallback signal.
-      window.addEventListener('resize', onResize);
+      window.addEventListener('resize', resizeAction);
     }
 
     element.__tanvisExpandCleanup = () => {
@@ -757,46 +541,9 @@ var Tanvis = (function (exports) {
       }
 
       if (typeof window !== 'undefined') {
-        window.removeEventListener('resize', onResize);
+        window.removeEventListener('resize', resizeAction);
       }
     };
-  }
-
-  function clearExpandResizeHandlers(element) {
-    const cleanup = element?.__tanvisExpandCleanup;
-    if (typeof cleanup === 'function') {
-      cleanup();
-    }
-
-    delete element.__tanvisExpandCleanup;
-  }
-
-  function clearControlSubscription$3(element) {
-    const cleanup = element?.__tanvisControlCleanup;
-    if (typeof cleanup === 'function') {
-      cleanup();
-    }
-
-    delete element.__tanvisControlCleanup;
-  }
-
-  function getEffectiveArea$3(config) {
-    if (!config.control) {
-      return config.area;
-    }
-
-    const latestEvent = getLatestControlEvent(config.control);
-    if (latestEvent?.type === 'area-change' && latestEvent.area) {
-      return latestEvent.area;
-    }
-
-    if (typeof document === 'undefined') {
-      return config.area;
-    }
-
-    const controlElement = document.getElementById(config.control);
-    const controlArea = controlElement?.dataset?.visArea;
-    return controlArea || config.area;
   }
 
   function resizeExpandedMap(element, config, map) {
@@ -806,14 +553,13 @@ var Tanvis = (function (exports) {
 
     const width = getParentWidth(element);
     const explicitHeight = parseOptionalPositiveNumber(config.height);
-    const selectedBounds = transOptsSel[config.area]?.bounds;
-    const height = explicitHeight ?? calculateHeightFromBounds(width, selectedBounds);
+    const bounds = getAreaBounds(config.area);
+    const height = explicitHeight ?? calculateHeightFromBounds(width, bounds);
 
     if (width === undefined || height === undefined) {
       return;
     }
 
-    // Resize BRC Atlas map and then force a Leaflet refresh cycle.
     map.setSize(width, height);
 
     if (typeof map.invalidateSize === 'function') {
@@ -821,52 +567,16 @@ var Tanvis = (function (exports) {
     }
   }
 
-  function handleAreaSelection(value, element, config, map) {
-    if (value === 'vc-58') {
-      onSelectVc58(element, config, map);
-      return;
-    }
-
-    if (value === 'vc-59') {
-      onSelectVc59(element, config, map);
-      return;
-    }
-
-    if (value === 'vc-60') {
-      onSelectVc60(element, config, map);
-      return;
-    }
-
-    onSelectAll(element, config, map);
+  function getAreaBounds(area) {
+    return transOptsSel[area]?.bounds;
   }
 
-  function onSelectVc58(_element, _config, map) {
-    panToAreaCentroid('vc-58', map);
+  function getAreaCentroid(area) {
+    return transOptsSel[area]?.centroid;
   }
 
-  function onSelectVc59(_element, _config, map) {
-    panToAreaCentroid('vc-59', map);
-  }
-
-  function onSelectVc60(_element, _config, map) {
-    panToAreaCentroid('vc-60', map);
-  }
-
-  function onSelectAll(_element, _config, map) {
-    panToAreaCentroid('vc-58-59-60', map);
-  }
-
-  function panToAreaCentroid(areaKey, map) {
-    const areaConfig = transOptsSel[areaKey];
-    const centroid = areaConfig?.centroid;
-    const zoom = areaConfig?.initZoom ?? 10;
-    const leafletMap = map?.lmap;
-
-    if (!centroid || !leafletMap || typeof leafletMap.setView !== 'function') {
-      return;
-    }
-
-    leafletMap.setView([centroid.lat, centroid.lon], zoom);
+  function getAreaInitZoom(area) {
+    return transOptsSel[area]?.initZoom ?? 10;
   }
 
   function getBrcAtlasGlobal() {
@@ -877,12 +587,218 @@ var Tanvis = (function (exports) {
     return window.brcatlas || null;
   }
 
-  const leafletMapAdapter = createLeafletMapAdapter();
+  function renderStaticAtlasMap(element, config, options = {}) {
+    clearExpandResizeHandlers(element);
+    clearControlSubscription$5(element);
+
+    const status = createVisStatusReporter(element);
+    clearElement(element);
+    status.showInfo('Loading...');
+
+    try {
+      const brcAtlas = getBrcAtlasGlobal();
+
+      if (!brcAtlas || typeof brcAtlas.svgMap !== 'function') {
+        throw new Error('BRC Atlas is not available. Include brcatlas.umd.js before Tanvis.');
+      }
+
+      const idPrefix = options.idPrefix || 'tanvis-map';
+      assignElementId(element, idPrefix);
+
+      const effectiveArea = getEffectiveArea$5(config);
+      const renderConfig = effectiveArea === config.area
+        ? config
+        : {
+            ...config,
+            area: effectiveArea
+          };
+
+      element.dataset.visArea = renderConfig.area;
+
+      console.log('config', createStaticMapOptions(element, renderConfig, options));
+      const map = brcAtlas.svgMap(createStaticMapOptions(element, renderConfig, options));
+
+      if (map && typeof map.setIdentfier === 'function' && renderConfig.source) {
+        map.setIdentfier(renderConfig.source);
+      }
+
+      if (map && typeof map.redrawMap === 'function') {
+        console.log('redrawing map for area:', renderConfig.area);
+        map.redrawMap();
+      }
+
+      if (renderConfig.control) {
+        element.__tanvisControlCleanup = subscribeToAreaControl(renderConfig.control, (area) => {
+          if (area === element.dataset.visArea) {
+            return;
+          }
+
+          element.dataset.visArea = area;
+          renderStaticAtlasMap(element, {
+            ...renderConfig,
+            area
+          }, options);
+        });
+      }
+
+      status.clear();
+      return map;
+    } catch (error) {
+      clearElement(element);
+      status.showError(normalizeErrorMessage(error, options.errorMessage || 'Failed to render static map'));
+      return null;
+    }
+  }
+
+  function createStaticMapOptions(element, config, options) {
+    const includeHectads = config.hectads !== false;
+    const shouldExpand = config.expand === true;
+    const width = parseOptionalPositiveNumber(config.width);
+    const explicitHeight = parseOptionalPositiveNumber(config.height);
+    const selectedBounds = getAreaBounds(config.area);
+    const height = explicitHeight ?? calculateHeightFromBounds(width, selectedBounds);
+
+    return {
+      selector: `#${element.id}`,
+      transOptsControl: false,
+      transOptsSel,
+      transOptsKey: config.area,
+      boundaryGjson: `/data/vcs/simp-100/${config.area}-100.geojson`,
+      ...(height !== undefined ? { height } : {}),
+      ...(shouldExpand ? { expand: true } : {}),
+      ...(includeHectads
+        ? { gridGjson: `/data/vcs/hectad-grids/${config.area}-hectads.geojson` }
+        : { gridLineStyle: 'none' }),
+      mapTypesSel: options.mapTypesSel,
+      mapTypesKey: options.mapTypesKey,
+    };
+  }
+
+  function renderStaticMap(element, config) {
+    renderStaticAtlasMap(element, config, {
+      idPrefix: 'tanvis-map',
+      errorMessage: 'Failed to render static map'
+    });
+  }
+
+  function renderLeafletAtlasMap(element, config, options = {}) {
+    clearExpandResizeHandlers(element);
+    clearControlSubscription$5(element);
+
+    const status = createVisStatusReporter(element);
+    clearElement(element);
+    status.showInfo('Loading...');
+
+    try {
+      const brcAtlas = getBrcAtlasGlobal();
+
+      if (!brcAtlas || typeof brcAtlas.leafletMap !== 'function') {
+        throw new Error('BRC Atlas is not available. Include brcatlas.umd.js before Tanvis.');
+      }
+
+      const idPrefix = options.idPrefix || 'tanvis-leaflet-map';
+      assignElementId(element, idPrefix);
+
+      const effectiveArea = getEffectiveArea$5(config);
+      const renderConfig = effectiveArea === config.area
+        ? config
+        : {
+            ...config,
+            area: effectiveArea
+          };
+
+      element.dataset.visArea = renderConfig.area;
+
+      const map = brcAtlas.leafletMap(createLeafletMapOptions(element, renderConfig));
+
+      if (renderConfig.expand === true) {
+        attachExpandResizeHandlers(element, renderConfig, map);
+      }
+
+      panToAreaCentroid(renderConfig.area, map);
+
+      if (map && typeof map.setIdentfier === 'function' && renderConfig.source) {
+        map.setIdentfier(renderConfig.source);
+      }
+
+      if (map && typeof map.redrawMap === 'function') {
+        map.redrawMap();
+      }
+
+      if (renderConfig.control) {
+        element.__tanvisControlCleanup = subscribeToAreaControl(renderConfig.control, (area) => {
+          if (area === element.dataset.visArea) {
+            return;
+          }
+
+          element.dataset.visArea = area;
+          panToAreaCentroid(area, map);
+        });
+      }
+
+      status.clear();
+      return map;
+    } catch (error) {
+      clearElement(element);
+      status.showError(normalizeErrorMessage(error, options.errorMessage || 'Failed to render slippy map'));
+      return null;
+    }
+  }
+
+  function createLeafletMapOptions(element, config) {
+    const width = getConfiguredWidth(element, config);
+    const explicitHeight = parseOptionalPositiveNumber(config.height);
+    const selectedBounds = getAreaBounds(config.area);
+    const height = explicitHeight ?? calculateHeightFromBounds(width, selectedBounds);
+    const showBoundaries = config.boundaries === true;
+
+    return {
+      selector: `#${element.id}`,
+      showVcs: showBoundaries,
+      ...(width !== undefined ? { width } : {}),
+      ...(height !== undefined ? { height } : {}),
+      basemapConfigs: [
+        {
+          name: 'OpenStreetMap',
+          type: 'tileLayer',
+          selected: true,
+          url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+          opts: {
+            maxZoom: 19,
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+          }
+        },
+        {
+          name: 'OpenTopoMap',
+          type: 'tileLayer',
+          selected: false,
+          url: 'https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png',
+          opts: {
+            maxZoom: 17,
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors, <a href="http://viewfinderpanoramas.org">SRTM</a> | Map style: &copy; <a href="https://opentopomap.org">OpenTopoMap</a> (<a href="https://creativecommons.org/licenses/by-sa/3.0/">CC-BY-SA</a>)'
+          }
+        }
+      ]
+    };
+  }
+
+  function panToAreaCentroid(areaKey, map) {
+    const centroid = getAreaCentroid(areaKey);
+    const zoom = getAreaInitZoom(areaKey);
+    const leafletMap = map?.lmap;
+
+    if (!centroid || !leafletMap || typeof leafletMap.setView !== 'function') {
+      return;
+    }
+
+    leafletMap.setView([centroid.lat, centroid.lon], zoom);
+  }
 
   function renderLeafletMap(element, config) {
-    // Renderers are Tanvis-facing entry points keyed by data-vis-type.
-    // Adapters keep the implementation details for a specific library or API integration.
-    leafletMapAdapter.render(element, config);
+    renderLeafletAtlasMap(element, config, {
+      idPrefix: 'tanvis-leaflet-map',
+      errorMessage: 'Failed to render slippy map'
+    });
   }
 
   const SHARED_STYLES_ID = 'tanvis-shared-styles';
@@ -1345,12 +1261,12 @@ var Tanvis = (function (exports) {
   }
 
   async function fetchTaxonGroups(apiBase) {
-    const resourceUrl = resolveResourceUrl$4(apiBase, 'taxon-groups');
-    const payload = await fetchJson$4(resourceUrl.toString(), 'Failed to load taxon groups');
-    return getListData$4(payload);
+    const resourceUrl = resolveResourceUrl$6(apiBase, 'taxon-groups');
+    const payload = await fetchJson$6(resourceUrl.toString(), 'Failed to load taxon groups');
+    return getListData$6(payload);
   }
 
-  function resolveResourceUrl$4(apiBase, resourceName) {
+  function resolveResourceUrl$6(apiBase, resourceName) {
     const baseUrl = new URL(apiBase, window.location.origin);
     const pathname = baseUrl.pathname.endsWith('/') ? baseUrl.pathname : `${baseUrl.pathname}/`;
     baseUrl.pathname = `${pathname}${resourceName}`;
@@ -1359,7 +1275,7 @@ var Tanvis = (function (exports) {
     return baseUrl;
   }
 
-  async function fetchJson$4(url, defaultErrorMessage) {
+  async function fetchJson$6(url, defaultErrorMessage) {
     let response;
     try {
       response = await fetch(url);
@@ -1376,7 +1292,7 @@ var Tanvis = (function (exports) {
     return payload || {};
   }
 
-  function getListData$4(payload) {
+  function getListData$6(payload) {
     if (Array.isArray(payload)) {
       return payload;
     }
@@ -1392,7 +1308,7 @@ var Tanvis = (function (exports) {
     return [];
   }
 
-  const DEFAULT_API_BASE$4 = '/api/v1';
+  const DEFAULT_API_BASE$6 = '/api/v1';
 
   function createControlBlockAdapter() {
     return {
@@ -1424,7 +1340,7 @@ var Tanvis = (function (exports) {
 
         element.appendChild(createTaxonGroupControls({
           rootElement: element,
-          apiBase: config.source || DEFAULT_API_BASE$4,
+          apiBase: config.source || DEFAULT_API_BASE$6,
           body,
           loadToken
         }));
@@ -1443,10 +1359,10 @@ var Tanvis = (function (exports) {
     controlBlockAdapter.render(element, config);
   }
 
-  const DEFAULT_API_BASE$3 = '/api/v1';
-  const TAXON_STATS_RESOURCE$2 = 'taxon-stats';
-  const DEFAULT_PAGE_LIMIT$3 = 1000;
-  const columns$2 = [
+  const DEFAULT_API_BASE$5 = '/api/v1';
+  const TAXON_STATS_RESOURCE$3 = 'taxon-stats';
+  const DEFAULT_PAGE_LIMIT$5 = 1000;
+  const columns$3 = [
     { title: 'Species ID', field: 'speciesId', sorter: 'string' },
     { title: 'Scientific name', field: 'scientificName', sorter: 'string' },
     { title: 'Common name', field: 'commonName', sorter: 'string' },
@@ -1458,12 +1374,12 @@ var Tanvis = (function (exports) {
     return {
       name: 'new-species-table',
       render(element, config) {
-        clearControlSubscription$2(element);
+        clearControlSubscription$4(element);
         const status = createVisStatusReporter(element);
         clearElement(element);
         status.showInfo('Loading...');
 
-        const effectiveArea = getEffectiveArea$2(config);
+        const effectiveArea = getEffectiveArea$4(config);
         const renderConfig = effectiveArea === config.area
           ? config
           : {
@@ -1473,9 +1389,9 @@ var Tanvis = (function (exports) {
 
         const startDate = renderConfig.startDate;
         const endDate = renderConfig.endDate || getCurrentIsoDate();
-        const apiBase = renderConfig.source || DEFAULT_API_BASE$3;
-        const geographicRegionIdentifier = areaToGeographicRegionIdentifier$2(renderConfig.area);
-        const taxonGroupExternalKey = getEffectiveTaxonGroup$2(renderConfig);
+        const apiBase = renderConfig.source || DEFAULT_API_BASE$5;
+        const geographicRegionIdentifier = areaToGeographicRegionIdentifier$4(renderConfig.area);
+        const taxonGroupExternalKey = getEffectiveTaxonGroup$3(renderConfig);
         const loadId = (element.__tanvisNewSpeciesLoadId || 0) + 1;
         element.__tanvisNewSpeciesLoadId = loadId;
         element.dataset.visArea = renderConfig.area;
@@ -1487,8 +1403,8 @@ var Tanvis = (function (exports) {
               return;
             }
 
-            const nextArea = getEffectiveArea$2(renderConfig);
-            const nextTaxonGroupExternalKey = getEffectiveTaxonGroup$2(renderConfig);
+            const nextArea = getEffectiveArea$4(renderConfig);
+            const nextTaxonGroupExternalKey = getEffectiveTaxonGroup$3(renderConfig);
 
             if (nextArea === element.dataset.visArea && nextTaxonGroupExternalKey === (element.dataset.visTaxonGroup || '')) {
               return;
@@ -1509,15 +1425,15 @@ var Tanvis = (function (exports) {
               return;
             }
 
-            const Tabulator = getTabulatorGlobal$2();
+            const Tabulator = getTabulatorGlobal$3();
 
             if (!Tabulator) {
               throw new Error('Tabulator is not available. Include the Tabulator script before Tanvis.');
             }
 
             clearElement(element);
-            element.appendChild(createSummary$2(startDate, endDate, records.length));
-            element.appendChild(createTableContainer$2(records, Tabulator));
+            element.appendChild(createSummary$4(startDate, endDate, records.length));
+            element.appendChild(createTableContainer$3(records, Tabulator));
             status.clear();
           })
           .catch((error) => {
@@ -1532,18 +1448,18 @@ var Tanvis = (function (exports) {
     };
   }
 
-  function createSummary$2(startDate, endDate, count) {
+  function createSummary$4(startDate, endDate, count) {
     const summary = document.createElement('p');
     summary.textContent = `${count} new species between ${startDate} and ${endDate}`;
     return summary;
   }
 
-  function createTableContainer$2(records, Tabulator) {
+  function createTableContainer$3(records, Tabulator) {
     const container = document.createElement('div');
 
     new Tabulator(container, {
       data: records,
-      columns: columns$2,
+      columns: columns$3,
       layout: 'fitColumns',
       pagination: true,
       paginationSize: 10,
@@ -1552,7 +1468,7 @@ var Tanvis = (function (exports) {
 
     const table = new Tabulator(container, {
       data: records,
-      columns: columns$2,
+      columns: columns$3,
       layout: 'fitColumns',
       pagination: true,
       paginationSize: 10,
@@ -1595,7 +1511,7 @@ var Tanvis = (function (exports) {
       return {
         speciesId: row.taxon_identifier,
         scientificName: row.scientific_name || '',
-        commonName: formatVernacularName$2(row),
+        commonName: formatVernacularName$3(row),
         firstRecordDate: row.first_record_date,
         vcNumber: row.geographic_region_identifier
       };
@@ -1603,7 +1519,7 @@ var Tanvis = (function (exports) {
   }
 
   async function fetchTaxonStatsInRange({ apiBase, startDate, endDate, geographicRegionIdentifier, taxonGroupExternalKey }) {
-    const resourceUrl = resolveResourceUrl$3(apiBase, TAXON_STATS_RESOURCE$2);
+    const resourceUrl = resolveResourceUrl$5(apiBase, TAXON_STATS_RESOURCE$3);
     const rows = [];
     let offset = 0;
 
@@ -1611,6 +1527,619 @@ var Tanvis = (function (exports) {
       const pageUrl = new URL(resourceUrl.toString());
       pageUrl.searchParams.set('first_record_date[gte]', startDate);
       pageUrl.searchParams.set('first_record_date[lte]', endDate);
+      pageUrl.searchParams.set('include', 'taxon');
+      if (Number.isFinite(geographicRegionIdentifier)) {
+        pageUrl.searchParams.set('geographic_region_identifier[eq]', String(geographicRegionIdentifier));
+      }
+      if (taxonGroupExternalKey) {
+        pageUrl.searchParams.set('taxon_group_external_key[eq]', taxonGroupExternalKey);
+      }
+      pageUrl.searchParams.set('limit', String(DEFAULT_PAGE_LIMIT$5));
+      pageUrl.searchParams.set('offset', String(offset));
+
+      const payload = await fetchJson$5(pageUrl.toString(), 'Failed to load taxon-stats');
+      const pageRows = getListData$5(payload);
+      rows.push(...pageRows);
+
+      if (pageRows.length < DEFAULT_PAGE_LIMIT$5) {
+        break;
+      }
+
+      offset += DEFAULT_PAGE_LIMIT$5;
+    }
+
+    return rows;
+  }
+  function resolveResourceUrl$5(apiBase, resourceName) {
+    const baseUrl = new URL(apiBase, window.location.origin);
+    const pathname = baseUrl.pathname.endsWith('/') ? baseUrl.pathname : `${baseUrl.pathname}/`;
+    baseUrl.pathname = `${pathname}${resourceName}`;
+    baseUrl.search = '';
+    baseUrl.hash = '';
+    return baseUrl;
+  }
+
+  async function fetchJson$5(url, defaultErrorMessage) {
+    let response;
+    try {
+      response = await fetch(url);
+    } catch (cause) {
+      throw createApiError({ defaultMessage: defaultErrorMessage, cause });
+    }
+
+    const payload = await parseJsonSafe(response);
+
+    if (!response.ok) {
+      throw createApiError({ response, payload, defaultMessage: defaultErrorMessage });
+    }
+
+    return payload || {};
+  }
+
+  function getListData$5(payload) {
+    if (Array.isArray(payload)) {
+      return payload;
+    }
+
+    if (Array.isArray(payload?.data)) {
+      return payload.data;
+    }
+
+    if (Array.isArray(payload?.records)) {
+      return payload.records;
+    }
+
+    return [];
+  }
+
+  function formatVernacularName$3(taxon) {
+    const plural = taxon?.vernacular_names;
+    if (Array.isArray(plural)) {
+      return plural.join(', ');
+    }
+
+    return taxon?.vernacular_name || '';
+  }
+
+  function areaToGeographicRegionIdentifier$4(area) {
+    if (area === 'vc-58') {
+      return 58;
+    }
+
+    if (area === 'vc-59') {
+      return 59;
+    }
+
+    if (area === 'vc-60') {
+      return 60;
+    }
+
+    return undefined;
+  }
+
+  function clearControlSubscription$4(element) {
+    const cleanup = element?.__tanvisControlCleanup;
+    if (typeof cleanup === 'function') {
+      cleanup();
+    }
+
+    delete element.__tanvisControlCleanup;
+  }
+
+  function getEffectiveArea$4(config) {
+    if (!config.control) {
+      return config.area;
+    }
+
+    const latestEvent = getLatestControlEvent(config.control);
+    if (latestEvent?.type === 'area-change' && latestEvent.area) {
+      return latestEvent.area;
+    }
+
+    if (typeof document === 'undefined') {
+      return config.area;
+    }
+
+    const controlElement = document.getElementById(config.control);
+    const controlArea = controlElement?.dataset?.visArea;
+    return controlArea || config.area;
+  }
+
+  function getEffectiveTaxonGroup$3(config) {
+    if (!config.control || typeof document === 'undefined') {
+      return '';
+    }
+
+    const controlElement = document.getElementById(config.control);
+    return controlElement?.dataset?.visTaxonGroup || '';
+  }
+
+  function getTabulatorGlobal$3() {
+    if (typeof window === 'undefined') {
+      return null;
+    }
+
+    return window.Tabulator || null;
+  }
+
+  const newSpeciesTableAdapter = createNewSpeciesTableAdapter();
+
+  function renderNewSpeciesTable(element, config) {
+    // Renderers are Tanvis-facing entry points keyed by data-vis-type.
+    // Adapters keep the implementation details for a specific library or API integration.
+    newSpeciesTableAdapter.render(element, config);
+  }
+
+  const DEFAULT_API_BASE$4 = '/api/v1';
+  const TAXON_STATS_RESOURCE$2 = 'taxon-stats';
+  const DEFAULT_PAGE_LIMIT$4 = 1000;
+  const DEFAULT_TOP_N = 50;
+  const columns$2 = [
+    { title: 'Species ID', field: 'speciesId', sorter: 'string' },
+    { title: 'Scientific name', field: 'scientificName', sorter: 'string' },
+    { title: 'Common name', field: 'commonName', sorter: 'string' },
+    { title: 'Rarity category', field: 'rarityCategory', sorter: 'string' },
+    { title: 'Total records', field: 'totalRecords', sorter: 'number' },
+    { title: 'Occupied grid squares', field: 'occupiedGridSquares', sorter: 'number' },
+    { title: 'Frequency trend', field: 'frequencyTrendScore', sorter: 'number' }
+  ];
+
+  function createIncreasingSpeciesTableAdapter() {
+    return {
+      name: 'increasing-species-table',
+      render(element, config) {
+        console.log('element', element);
+        clearControlSubscription$3(element);
+        const status = createVisStatusReporter(element);
+        clearElement(element);
+        status.showInfo('Loading...');
+
+        const effectiveArea = getEffectiveArea$3(config);
+        const renderConfig = effectiveArea === config.area
+          ? config
+          : {
+              ...config,
+              area: effectiveArea
+            };
+
+        const topN = parseTopN(renderConfig.topN) ?? DEFAULT_TOP_N;
+        const apiBase = renderConfig.source || DEFAULT_API_BASE$4;
+        const geographicRegionIdentifier = areaToGeographicRegionIdentifier$3(renderConfig.area);
+        const taxonGroupExternalKey = getEffectiveTaxonGroup$2(renderConfig);
+        const loadId = (element.__tanvisIncreasingLoadId || 0) + 1;
+        element.__tanvisIncreasingLoadId = loadId;
+        element.dataset.visArea = renderConfig.area;
+        element.dataset.visTaxonGroup = taxonGroupExternalKey;
+
+        if (renderConfig.control) {
+          element.__tanvisControlCleanup = subscribeToControl(renderConfig.control, (event) => {
+            if (!event || (event.type !== 'area-change' && event.type !== 'taxon-group-change')) {
+              return;
+            }
+
+            const nextArea = getEffectiveArea$3(renderConfig);
+            const nextTaxonGroupExternalKey = getEffectiveTaxonGroup$2(renderConfig);
+
+            if (nextArea === element.dataset.visArea && nextTaxonGroupExternalKey === (element.dataset.visTaxonGroup || '')) {
+              return;
+            }
+
+            element.dataset.visArea = nextArea;
+            element.dataset.visTaxonGroup = nextTaxonGroupExternalKey;
+            createIncreasingSpeciesTableAdapter().render(element, {
+              ...renderConfig,
+              area: nextArea
+            });
+          });
+        }
+
+        buildIncreasingSpeciesRecords({ apiBase, topN, geographicRegionIdentifier, taxonGroupExternalKey })
+          .then((records) => {
+            if (element.__tanvisIncreasingLoadId !== loadId) {
+              return;
+            }
+
+            const Tabulator = getTabulatorGlobal$2();
+
+            if (!Tabulator) {
+              throw new Error('Tabulator is not available. Include the Tabulator script before Tanvis.');
+            }
+
+            clearElement(element);
+            element.appendChild(createSummary$3(topN, records.length));
+            element.appendChild(createTableContainer$2(records, Tabulator));
+            status.clear();
+          })
+          .catch((error) => {
+            if (element.__tanvisIncreasingLoadId !== loadId) {
+              return;
+            }
+
+            clearElement(element);
+            status.showError(normalizeErrorMessage(error, 'Failed to render increasing species table'));
+          });
+      }
+    };
+  }
+
+  function createSummary$3(topN, count) {
+    const summary = document.createElement('p');
+    summary.textContent = `${count} species returned (top ${topN} by frequency trend)`;
+    return summary;
+  }
+
+  function createTableContainer$2(records, Tabulator) {
+    const container = document.createElement('div');
+
+    const table = new Tabulator(container, {
+      data: records,
+      columns: columns$2,
+      layout: 'fitColumns',
+      pagination: true,
+      paginationSize: 10,
+      initialSort: [
+        { column: 'frequencyTrendScore', dir: 'desc' }
+      ],
+      placeholder: 'No records found',
+    });
+
+    table.on("rowClick", function(e, row) {
+      // Triggered whenever a user clicks a row
+      const rowData = row.getData();
+      const speciesId = rowData.speciesId; 
+
+      // Create a custom event containing the ID in the 'detail' property
+      const rowSelectedEvent = new CustomEvent("species-row-selected", {
+          detail: { speciesId: speciesId },
+          bubbles: true, // Allows the event to bubble up the DOM tree
+          cancelable: true
+      });
+
+      // Dispatch the event from the table element (or window / document)
+      container.dispatchEvent(rowSelectedEvent);
+    });
+
+    return container;
+  }
+
+  function parseTopN(value) {
+    const parsed = Number(value);
+    if (!Number.isFinite(parsed) || parsed <= 0) {
+      return undefined;
+    }
+
+    return Math.floor(parsed);
+  }
+
+  function getTabulatorGlobal$2() {
+    if (typeof window === 'undefined') {
+      return null;
+    }
+
+    return window.Tabulator || null;
+  }
+
+  async function buildIncreasingSpeciesRecords({ apiBase, topN, geographicRegionIdentifier, taxonGroupExternalKey }) {
+    const taxonStatsRows = await fetchTaxonStats({ apiBase, geographicRegionIdentifier, taxonGroupExternalKey });
+    const rankedRows = taxonStatsRows
+      .slice()
+      .sort((a, b) => Number(b?.frequency_trend || 0) - Number(a?.frequency_trend || 0))
+      .slice(0, topN);
+
+    return rankedRows.map((row) => {
+      return {
+        speciesId: row.taxon_identifier,
+        vcNumber: row.geographic_region_identifier,
+        rarityCategory: row.rarity_group_name || '',
+        firstRecordDate: row.first_record_date,
+        totalRecords: row.occurrences_count,
+        occupiedGridSquares: row.grid_square_count,
+        frequencyTrendScore: row.frequency_trend,
+        scientificName: row.scientific_name || '',
+        commonName: formatVernacularName$2(row)
+      };
+    });
+  }
+
+  async function fetchTaxonStats({ apiBase, geographicRegionIdentifier, taxonGroupExternalKey }) {
+    const resourceUrl = resolveResourceUrl$4(apiBase, TAXON_STATS_RESOURCE$2);
+    const rows = [];
+    let offset = 0;
+
+    while (true) {
+      const pageUrl = new URL(resourceUrl.toString());
+      pageUrl.searchParams.set('include', 'taxon');
+      if (Number.isFinite(geographicRegionIdentifier)) {
+        pageUrl.searchParams.set('geographic_region_identifier[eq]', String(geographicRegionIdentifier));
+      }
+      if (taxonGroupExternalKey) {
+        pageUrl.searchParams.set('taxon_group_external_key[eq]', taxonGroupExternalKey);
+      }
+      pageUrl.searchParams.set('limit', String(DEFAULT_PAGE_LIMIT$4));
+      pageUrl.searchParams.set('offset', String(offset));
+
+      const payload = await fetchJson$4(pageUrl.toString(), 'Failed to load taxon-stats');
+      const pageRows = getListData$4(payload);
+      rows.push(...pageRows);
+
+      if (pageRows.length < DEFAULT_PAGE_LIMIT$4) {
+        break;
+      }
+
+      offset += DEFAULT_PAGE_LIMIT$4;
+    }
+
+    return rows;
+  }
+  function resolveResourceUrl$4(apiBase, resourceName) {
+    const baseUrl = new URL(apiBase, window.location.origin);
+    const pathname = baseUrl.pathname.endsWith('/') ? baseUrl.pathname : `${baseUrl.pathname}/`;
+    baseUrl.pathname = `${pathname}${resourceName}`;
+    baseUrl.search = '';
+    baseUrl.hash = '';
+    return baseUrl;
+  }
+
+  async function fetchJson$4(url, defaultErrorMessage) {
+    let response;
+    try {
+      response = await fetch(url);
+    } catch (cause) {
+      throw createApiError({ defaultMessage: defaultErrorMessage, cause });
+    }
+
+    const payload = await parseJsonSafe(response);
+
+    if (!response.ok) {
+      throw createApiError({ response, payload, defaultMessage: defaultErrorMessage });
+    }
+
+    return payload || {};
+  }
+
+  function getListData$4(payload) {
+    if (Array.isArray(payload)) {
+      return payload;
+    }
+
+    if (Array.isArray(payload?.data)) {
+      return payload.data;
+    }
+
+    if (Array.isArray(payload?.records)) {
+      return payload.records;
+    }
+
+    return [];
+  }
+
+  function formatVernacularName$2(taxon) {
+    const plural = taxon?.vernacular_names;
+    if (Array.isArray(plural)) {
+      return plural.join(', ');
+    }
+
+    return taxon?.vernacular_name || '';
+  }
+
+  function areaToGeographicRegionIdentifier$3(area) {
+    if (area === 'vc-58') {
+      return 58;
+    }
+
+    if (area === 'vc-59') {
+      return 59;
+    }
+
+    if (area === 'vc-60') {
+      return 60;
+    }
+
+    return undefined;
+  }
+
+  function clearControlSubscription$3(element) {
+    const cleanup = element?.__tanvisControlCleanup;
+    if (typeof cleanup === 'function') {
+      cleanup();
+    }
+
+    delete element.__tanvisControlCleanup;
+  }
+
+  function getEffectiveArea$3(config) {
+    if (!config.control) {
+      return config.area;
+    }
+
+    const latestEvent = getLatestControlEvent(config.control);
+    if (latestEvent?.type === 'area-change' && latestEvent.area) {
+      return latestEvent.area;
+    }
+
+    if (typeof document === 'undefined') {
+      return config.area;
+    }
+
+    const controlElement = document.getElementById(config.control);
+    const controlArea = controlElement?.dataset?.visArea;
+    return controlArea || config.area;
+  }
+
+  function getEffectiveTaxonGroup$2(config) {
+    if (!config.control || typeof document === 'undefined') {
+      return '';
+    }
+
+    const controlElement = document.getElementById(config.control);
+    return controlElement?.dataset?.visTaxonGroup || '';
+  }
+
+  const increasingSpeciesTableAdapter = createIncreasingSpeciesTableAdapter();
+
+  function renderIncreasingSpeciesTable(element, config) {
+    // Renderers are Tanvis-facing entry points keyed by data-vis-type.
+    // Adapters keep the implementation details for a specific library or API integration.
+    increasingSpeciesTableAdapter.render(element, config);
+  }
+
+  const DEFAULT_API_BASE$3 = '/api/v1';
+  const TAXON_STATS_RESOURCE$1 = 'taxon-stats';
+  const DEFAULT_PAGE_LIMIT$3 = 1000;
+  const columns$1 = [
+    { title: 'Species ID', field: 'speciesId', sorter: 'string' },
+    { title: 'Scientific name', field: 'scientificName', sorter: 'string' },
+    { title: 'Common name', field: 'commonName', sorter: 'string' },
+    { title: 'Last record date', field: 'lastRecordDate', sorter: 'string' },
+    { title: 'VC number', field: 'vcNumber', sorter: 'number' }
+  ];
+
+  function createSpeciesAbsentSinceAdapter() {
+    return {
+      name: 'species-absent-since',
+      render(element, config) {
+        clearControlSubscription$2(element);
+        const status = createVisStatusReporter(element);
+        clearElement(element);
+        status.showInfo('Loading...');
+
+        const effectiveArea = getEffectiveArea$2(config);
+        const renderConfig = effectiveArea === config.area
+          ? config
+          : {
+              ...config,
+              area: effectiveArea
+            };
+
+        const year = Number(renderConfig.year);
+        const apiBase = renderConfig.source || DEFAULT_API_BASE$3;
+        const geographicRegionIdentifier = areaToGeographicRegionIdentifier$2(renderConfig.area);
+        const taxonGroupExternalKey = getEffectiveTaxonGroup$1(renderConfig);
+        const loadId = (element.__tanvisSpeciesAbsentLoadId || 0) + 1;
+        element.__tanvisSpeciesAbsentLoadId = loadId;
+        element.dataset.visArea = renderConfig.area;
+        element.dataset.visTaxonGroup = taxonGroupExternalKey;
+
+        if (renderConfig.control) {
+          element.__tanvisControlCleanup = subscribeToControl(renderConfig.control, (event) => {
+            if (!event || (event.type !== 'area-change' && event.type !== 'taxon-group-change')) {
+              return;
+            }
+
+            const nextArea = getEffectiveArea$2(renderConfig);
+            const nextTaxonGroupExternalKey = getEffectiveTaxonGroup$1(renderConfig);
+
+            if (nextArea === element.dataset.visArea && nextTaxonGroupExternalKey === (element.dataset.visTaxonGroup || '')) {
+              return;
+            }
+
+            element.dataset.visArea = nextArea;
+            element.dataset.visTaxonGroup = nextTaxonGroupExternalKey;
+            createSpeciesAbsentSinceAdapter().render(element, {
+              ...renderConfig,
+              area: nextArea
+            });
+          });
+        }
+
+        buildSpeciesAbsentSinceRecords({
+          apiBase,
+          year,
+          geographicRegionIdentifier,
+          taxonGroupExternalKey
+        })
+          .then((records) => {
+            if (element.__tanvisSpeciesAbsentLoadId !== loadId) {
+              return;
+            }
+
+            const Tabulator = getTabulatorGlobal$1();
+
+            if (!Tabulator) {
+              throw new Error('Tabulator is not available. Include the Tabulator script before Tanvis.');
+            }
+
+            clearElement(element);
+            element.appendChild(createSummary$2(year, records.length));
+            element.appendChild(createTableContainer$1(records, Tabulator));
+            status.clear();
+          })
+          .catch((error) => {
+            if (element.__tanvisSpeciesAbsentLoadId !== loadId) {
+              return;
+            }
+
+            clearElement(element);
+            status.showError(normalizeErrorMessage(error, 'Failed to render species absent since table'));
+          });
+      }
+    };
+  }
+
+  function createSummary$2(year, count) {
+    const summary = document.createElement('p');
+    summary.textContent = `${count} species with last record date on or before ${year}`;
+    return summary;
+  }
+
+  function createTableContainer$1(records, Tabulator) {
+    const container = document.createElement('div');
+
+    const table = new Tabulator(container, {
+      data: records,
+      columns: columns$1,
+      layout: 'fitColumns',
+      pagination: true,
+      paginationSize: 10,
+      placeholder: 'No records found'
+    });
+
+    table.on('rowClick', (event, row) => {
+      const speciesId = row?.getData?.()?.speciesId;
+      if (!speciesId) {
+        return;
+      }
+
+      const rowSelectedEvent = new CustomEvent('species-row-selected', {
+        detail: { speciesId },
+        bubbles: true,
+        cancelable: true
+      });
+
+      container.dispatchEvent(rowSelectedEvent);
+    });
+
+    return container;
+  }
+
+  async function buildSpeciesAbsentSinceRecords({ apiBase, year, geographicRegionIdentifier, taxonGroupExternalKey }) {
+    const cutoffDate = `${year}-12-31`;
+    const taxonStatsRows = await fetchTaxonStatsAbsentSince$1({
+      apiBase,
+      cutoffDate,
+      geographicRegionIdentifier,
+      taxonGroupExternalKey
+    });
+
+    return taxonStatsRows.map((row) => {
+      return {
+        speciesId: row.taxon_identifier,
+        scientificName: row.scientific_name || '',
+        commonName: formatVernacularName$1(row),
+        lastRecordDate: row.last_record_date,
+        vcNumber: row.geographic_region_identifier
+      };
+    });
+  }
+
+  async function fetchTaxonStatsAbsentSince$1({ apiBase, cutoffDate, geographicRegionIdentifier, taxonGroupExternalKey }) {
+    const resourceUrl = resolveResourceUrl$3(apiBase, TAXON_STATS_RESOURCE$1);
+    const rows = [];
+    let offset = 0;
+
+    while (true) {
+      const pageUrl = new URL(resourceUrl.toString());
+      pageUrl.searchParams.set('last_record_date[lte]', cutoffDate);
       pageUrl.searchParams.set('include', 'taxon');
       if (Number.isFinite(geographicRegionIdentifier)) {
         pageUrl.searchParams.set('geographic_region_identifier[eq]', String(geographicRegionIdentifier));
@@ -1634,6 +2163,7 @@ var Tanvis = (function (exports) {
 
     return rows;
   }
+
   function resolveResourceUrl$3(apiBase, resourceName) {
     const baseUrl = new URL(apiBase, window.location.origin);
     const pathname = baseUrl.pathname.endsWith('/') ? baseUrl.pathname : `${baseUrl.pathname}/`;
@@ -1676,7 +2206,7 @@ var Tanvis = (function (exports) {
     return [];
   }
 
-  function formatVernacularName$2(taxon) {
+  function formatVernacularName$1(taxon) {
     const plural = taxon?.vernacular_names;
     if (Array.isArray(plural)) {
       return plural.join(', ');
@@ -1729,7 +2259,7 @@ var Tanvis = (function (exports) {
     return controlArea || config.area;
   }
 
-  function getEffectiveTaxonGroup$2(config) {
+  function getEffectiveTaxonGroup$1(config) {
     if (!config.control || typeof document === 'undefined') {
       return '';
     }
@@ -1738,7 +2268,7 @@ var Tanvis = (function (exports) {
     return controlElement?.dataset?.visTaxonGroup || '';
   }
 
-  function getTabulatorGlobal$2() {
+  function getTabulatorGlobal$1() {
     if (typeof window === 'undefined') {
       return null;
     }
@@ -1746,33 +2276,27 @@ var Tanvis = (function (exports) {
     return window.Tabulator || null;
   }
 
-  const newSpeciesTableAdapter = createNewSpeciesTableAdapter();
+  const speciesAbsentSinceAdapter = createSpeciesAbsentSinceAdapter();
 
-  function renderNewSpeciesTable(element, config) {
-    // Renderers are Tanvis-facing entry points keyed by data-vis-type.
-    // Adapters keep the implementation details for a specific library or API integration.
-    newSpeciesTableAdapter.render(element, config);
+  function renderSpeciesAbsentSince(element, config) {
+    speciesAbsentSinceAdapter.render(element, config);
   }
 
   const DEFAULT_API_BASE$2 = '/api/v1';
-  const TAXON_STATS_RESOURCE$1 = 'taxon-stats';
+  const TAXON_STATS_RESOURCE = 'taxon-stats';
   const DEFAULT_PAGE_LIMIT$2 = 1000;
-  const DEFAULT_TOP_N = 50;
-  const columns$1 = [
+  const columns = [
     { title: 'Species ID', field: 'speciesId', sorter: 'string' },
     { title: 'Scientific name', field: 'scientificName', sorter: 'string' },
     { title: 'Common name', field: 'commonName', sorter: 'string' },
-    { title: 'Rarity category', field: 'rarityCategory', sorter: 'string' },
-    { title: 'Total records', field: 'totalRecords', sorter: 'number' },
-    { title: 'Occupied grid squares', field: 'occupiedGridSquares', sorter: 'number' },
-    { title: 'Frequency trend', field: 'frequencyTrendScore', sorter: 'number' }
+    { title: 'Last record date', field: 'lastRecordDate', sorter: 'string' },
+    { title: 'VC number', field: 'vcNumber', sorter: 'number' }
   ];
 
-  function createIncreasingSpeciesTableAdapter() {
+  function createSpeciesMapAdapter() {
     return {
-      name: 'increasing-species-table',
+      name: 'species-map',
       render(element, config) {
-        console.log('element', element);
         clearControlSubscription$1(element);
         const status = createVisStatusReporter(element);
         clearElement(element);
@@ -1786,12 +2310,12 @@ var Tanvis = (function (exports) {
               area: effectiveArea
             };
 
-        const topN = parseTopN(renderConfig.topN) ?? DEFAULT_TOP_N;
+        const year = Number(renderConfig.year);
         const apiBase = renderConfig.source || DEFAULT_API_BASE$2;
         const geographicRegionIdentifier = areaToGeographicRegionIdentifier$1(renderConfig.area);
-        const taxonGroupExternalKey = getEffectiveTaxonGroup$1(renderConfig);
-        const loadId = (element.__tanvisIncreasingLoadId || 0) + 1;
-        element.__tanvisIncreasingLoadId = loadId;
+        const taxonGroupExternalKey = getEffectiveTaxonGroup(renderConfig);
+        const loadId = (element.__tanvisSpeciesMapLoadId || 0) + 1;
+        element.__tanvisSpeciesMapLoadId = loadId;
         element.dataset.visArea = renderConfig.area;
         element.dataset.visTaxonGroup = taxonGroupExternalKey;
 
@@ -1802,7 +2326,7 @@ var Tanvis = (function (exports) {
             }
 
             const nextArea = getEffectiveArea$1(renderConfig);
-            const nextTaxonGroupExternalKey = getEffectiveTaxonGroup$1(renderConfig);
+            const nextTaxonGroupExternalKey = getEffectiveTaxonGroup(renderConfig);
 
             if (nextArea === element.dataset.visArea && nextTaxonGroupExternalKey === (element.dataset.visTaxonGroup || '')) {
               return;
@@ -1810,128 +2334,128 @@ var Tanvis = (function (exports) {
 
             element.dataset.visArea = nextArea;
             element.dataset.visTaxonGroup = nextTaxonGroupExternalKey;
-            createIncreasingSpeciesTableAdapter().render(element, {
+            createSpeciesMapAdapter().render(element, {
               ...renderConfig,
               area: nextArea
             });
           });
         }
 
-        buildIncreasingSpeciesRecords({ apiBase, topN, geographicRegionIdentifier, taxonGroupExternalKey })
+        buildSpeciesMapRecords({ apiBase, year, geographicRegionIdentifier, taxonGroupExternalKey })
           .then((records) => {
-            if (element.__tanvisIncreasingLoadId !== loadId) {
+            if (element.__tanvisSpeciesMapLoadId !== loadId) {
               return;
             }
 
-            const Tabulator = getTabulatorGlobal$1();
+            const Tabulator = getTabulatorGlobal();
 
             if (!Tabulator) {
               throw new Error('Tabulator is not available. Include the Tabulator script before Tanvis.');
             }
 
             clearElement(element);
-            element.appendChild(createSummary$1(topN, records.length));
-            element.appendChild(createTableContainer$1(records, Tabulator));
+            const summary = createSummary$1(year, records.length);
+            const tableContainer = createTableContainer(records, Tabulator);
+            const mapContainer = document.createElement('div');
+            mapContainer.dataset.tanvisSpeciesMap = 'map';
+
+            element.appendChild(summary);
+            element.appendChild(tableContainer);
+            element.appendChild(mapContainer);
             status.clear();
+
+            renderMapBackend$1(mapContainer, renderConfig);
           })
           .catch((error) => {
-            if (element.__tanvisIncreasingLoadId !== loadId) {
+            if (element.__tanvisSpeciesMapLoadId !== loadId) {
               return;
             }
 
             clearElement(element);
-            status.showError(normalizeErrorMessage(error, 'Failed to render increasing species table'));
+            status.showError(normalizeErrorMessage(error, 'Failed to render species map'));
           });
       }
     };
   }
 
-  function createSummary$1(topN, count) {
+  function renderMapBackend$1(element, config) {
+    const mapType = String(config.mapType || 'static').toLowerCase();
+
+    if (mapType === 'leaflet') {
+      return renderLeafletAtlasMap(element, config, {
+        idPrefix: 'tanvis-species-map',
+        errorMessage: 'Failed to render species map'
+      });
+    }
+
+    return renderStaticAtlasMap(element, config, {
+      idPrefix: 'tanvis-species-map',
+      errorMessage: 'Failed to render species map'
+    });
+  }
+
+  function createSummary$1(year, count) {
     const summary = document.createElement('p');
-    summary.textContent = `${count} species returned (top ${topN} by frequency trend)`;
+    summary.textContent = `${count} species absent since ${year}`;
     return summary;
   }
 
-  function createTableContainer$1(records, Tabulator) {
+  function createTableContainer(records, Tabulator) {
     const container = document.createElement('div');
 
     const table = new Tabulator(container, {
       data: records,
-      columns: columns$1,
+      columns,
       layout: 'fitColumns',
       pagination: true,
       paginationSize: 10,
-      initialSort: [
-        { column: 'frequencyTrendScore', dir: 'desc' }
-      ],
-      placeholder: 'No records found',
+      placeholder: 'No records found'
     });
 
-    table.on("rowClick", function(e, row) {
-      // Triggered whenever a user clicks a row
-      const rowData = row.getData();
-      const speciesId = rowData.speciesId; 
+    table.on('rowClick', (_event, row) => {
+      const speciesId = row?.getData?.()?.speciesId;
+      if (!speciesId) {
+        return;
+      }
 
-      // Create a custom event containing the ID in the 'detail' property
-      const rowSelectedEvent = new CustomEvent("species-row-selected", {
-          detail: { speciesId: speciesId },
-          bubbles: true, // Allows the event to bubble up the DOM tree
-          cancelable: true
+      const rowSelectedEvent = new CustomEvent('species-row-selected', {
+        detail: { speciesId },
+        bubbles: true,
+        cancelable: true
       });
 
-      // Dispatch the event from the table element (or window / document)
       container.dispatchEvent(rowSelectedEvent);
     });
 
     return container;
   }
 
-  function parseTopN(value) {
-    const parsed = Number(value);
-    if (!Number.isFinite(parsed) || parsed <= 0) {
-      return undefined;
-    }
-
-    return Math.floor(parsed);
-  }
-
-  function getTabulatorGlobal$1() {
-    if (typeof window === 'undefined') {
-      return null;
-    }
-
-    return window.Tabulator || null;
-  }
-
-  async function buildIncreasingSpeciesRecords({ apiBase, topN, geographicRegionIdentifier, taxonGroupExternalKey }) {
-    const taxonStatsRows = await fetchTaxonStats({ apiBase, geographicRegionIdentifier, taxonGroupExternalKey });
-    const rankedRows = taxonStatsRows
-      .slice()
-      .sort((a, b) => Number(b?.frequency_trend || 0) - Number(a?.frequency_trend || 0))
-      .slice(0, topN);
-
-    return rankedRows.map((row) => {
-      return {
-        speciesId: row.taxon_identifier,
-        vcNumber: row.geographic_region_identifier,
-        rarityCategory: row.rarity_group_name || '',
-        firstRecordDate: row.first_record_date,
-        totalRecords: row.occurrences_count,
-        occupiedGridSquares: row.grid_square_count,
-        frequencyTrendScore: row.frequency_trend,
-        scientificName: row.scientific_name || '',
-        commonName: formatVernacularName$1(row)
-      };
+  async function buildSpeciesMapRecords({ apiBase, year, geographicRegionIdentifier, taxonGroupExternalKey }) {
+    const cutoffDate = `${year}-12-31`;
+    const taxonStatsRows = await fetchTaxonStatsAbsentSince({
+      apiBase,
+      cutoffDate,
+      geographicRegionIdentifier,
+      taxonGroupExternalKey
     });
+
+    return taxonStatsRows.map((row) => ({
+      speciesId: row.taxon_identifier,
+      scientificName: row.scientific_name || '',
+      commonName: formatVernacularName(row),
+      lastRecordDate: row.last_record_date,
+      vcNumber: row.geographic_region_identifier
+    }));
   }
 
-  async function fetchTaxonStats({ apiBase, geographicRegionIdentifier, taxonGroupExternalKey }) {
-    const resourceUrl = resolveResourceUrl$2(apiBase, TAXON_STATS_RESOURCE$1);
+  async function fetchTaxonStatsAbsentSince({ apiBase, cutoffDate, geographicRegionIdentifier, taxonGroupExternalKey }) {
+    const resourceUrl = resolveResourceUrl$2(apiBase, TAXON_STATS_RESOURCE);
     const rows = [];
     let offset = 0;
 
     while (true) {
       const pageUrl = new URL(resourceUrl.toString());
+      pageUrl.searchParams.set('last_record_date[lte]', cutoffDate);
       pageUrl.searchParams.set('include', 'taxon');
       if (Number.isFinite(geographicRegionIdentifier)) {
         pageUrl.searchParams.set('geographic_region_identifier[eq]', String(geographicRegionIdentifier));
@@ -1955,6 +2479,7 @@ var Tanvis = (function (exports) {
 
     return rows;
   }
+
   function resolveResourceUrl$2(apiBase, resourceName) {
     const baseUrl = new URL(apiBase, window.location.origin);
     const pathname = baseUrl.pathname.endsWith('/') ? baseUrl.pathname : `${baseUrl.pathname}/`;
@@ -1997,7 +2522,7 @@ var Tanvis = (function (exports) {
     return [];
   }
 
-  function formatVernacularName$1(taxon) {
+  function formatVernacularName(taxon) {
     const plural = taxon?.vernacular_names;
     if (Array.isArray(plural)) {
       return plural.join(', ');
@@ -2050,7 +2575,7 @@ var Tanvis = (function (exports) {
     return controlArea || config.area;
   }
 
-  function getEffectiveTaxonGroup$1(config) {
+  function getEffectiveTaxonGroup(config) {
     if (!config.control || typeof document === 'undefined') {
       return '';
     }
@@ -2059,28 +2584,29 @@ var Tanvis = (function (exports) {
     return controlElement?.dataset?.visTaxonGroup || '';
   }
 
-  const increasingSpeciesTableAdapter = createIncreasingSpeciesTableAdapter();
+  function getTabulatorGlobal() {
+    if (typeof window === 'undefined') {
+      return null;
+    }
 
-  function renderIncreasingSpeciesTable(element, config) {
-    // Renderers are Tanvis-facing entry points keyed by data-vis-type.
-    // Adapters keep the implementation details for a specific library or API integration.
-    increasingSpeciesTableAdapter.render(element, config);
+    return window.Tabulator || null;
+  }
+
+  const speciesMapAdapter = createSpeciesMapAdapter();
+
+  function renderSpeciesMap(element, config) {
+    speciesMapAdapter.render(element, config);
   }
 
   const DEFAULT_API_BASE$1 = '/api/v1';
-  const TAXON_STATS_RESOURCE = 'taxon-stats';
+  const GRID_SQUARE_STATS_RESOURCE = 'grid-square-stats';
   const DEFAULT_PAGE_LIMIT$1 = 1000;
-  const columns = [
-    { title: 'Species ID', field: 'speciesId', sorter: 'string' },
-    { title: 'Scientific name', field: 'scientificName', sorter: 'string' },
-    { title: 'Common name', field: 'commonName', sorter: 'string' },
-    { title: 'Last record date', field: 'lastRecordDate', sorter: 'string' },
-    { title: 'VC number', field: 'vcNumber', sorter: 'number' }
-  ];
 
-  function createSpeciesAbsentSinceAdapter() {
+  let mapData=[];
+
+  function createGridStatsMapAdapter() {
     return {
-      name: 'species-absent-since',
+      name: 'grid-stats-map',
       render(element, config) {
         clearControlSubscription(element);
         const status = createVisStatusReporter(element);
@@ -2095,146 +2621,125 @@ var Tanvis = (function (exports) {
               area: effectiveArea
             };
 
-        const year = Number(renderConfig.year);
         const apiBase = renderConfig.source || DEFAULT_API_BASE$1;
         const geographicRegionIdentifier = areaToGeographicRegionIdentifier(renderConfig.area);
-        const taxonGroupExternalKey = getEffectiveTaxonGroup(renderConfig);
-        const loadId = (element.__tanvisSpeciesAbsentLoadId || 0) + 1;
-        element.__tanvisSpeciesAbsentLoadId = loadId;
+        const loadId = (element.__tanvisGridStatsMapLoadId || 0) + 1;
+        element.__tanvisGridStatsMapLoadId = loadId;
         element.dataset.visArea = renderConfig.area;
-        element.dataset.visTaxonGroup = taxonGroupExternalKey;
 
         if (renderConfig.control) {
           element.__tanvisControlCleanup = subscribeToControl(renderConfig.control, (event) => {
-            if (!event || (event.type !== 'area-change' && event.type !== 'taxon-group-change')) {
+            if (!event || event.type !== 'area-change') {
               return;
             }
 
             const nextArea = getEffectiveArea(renderConfig);
-            const nextTaxonGroupExternalKey = getEffectiveTaxonGroup(renderConfig);
 
-            if (nextArea === element.dataset.visArea && nextTaxonGroupExternalKey === (element.dataset.visTaxonGroup || '')) {
+            if (nextArea === element.dataset.visArea) {
               return;
             }
 
             element.dataset.visArea = nextArea;
-            element.dataset.visTaxonGroup = nextTaxonGroupExternalKey;
-            createSpeciesAbsentSinceAdapter().render(element, {
+            createGridStatsMapAdapter().render(element, {
               ...renderConfig,
               area: nextArea
             });
           });
         }
 
-        buildSpeciesAbsentSinceRecords({
-          apiBase,
-          year,
-          geographicRegionIdentifier,
-          taxonGroupExternalKey
-        })
+        buildGridStatsMapRecords({ apiBase, geographicRegionIdentifier })
           .then((records) => {
-            if (element.__tanvisSpeciesAbsentLoadId !== loadId) {
+            if (element.__tanvisGridStatsMapLoadId !== loadId) {
               return;
             }
 
-            const Tabulator = getTabulatorGlobal();
-
-            if (!Tabulator) {
-              throw new Error('Tabulator is not available. Include the Tabulator script before Tanvis.');
-            }
-
             clearElement(element);
-            element.appendChild(createSummary(year, records.length));
-            element.appendChild(createTableContainer(records, Tabulator));
+            const summary = createSummary(records.length, renderConfig.area);
+            const mapContainer = document.createElement('div');
+            const pre = document.createElement('pre');
+            pre.textContent = JSON.stringify(records, null, 2);
+
+            element.appendChild(summary);
+            element.appendChild(mapContainer);
+            element.appendChild(pre);
             status.clear();
+
+            mapData = records;
+            console.log('[grid-stats-map] retrieved records:', mapData);
+
+            renderMapBackend(mapContainer, renderConfig);
           })
           .catch((error) => {
-            if (element.__tanvisSpeciesAbsentLoadId !== loadId) {
+            if (element.__tanvisGridStatsMapLoadId !== loadId) {
               return;
             }
 
             clearElement(element);
-            status.showError(normalizeErrorMessage(error, 'Failed to render species absent since table'));
+            status.showError(normalizeErrorMessage(error, 'Failed to render grid stats map'));
           });
       }
     };
   }
 
-  function createSummary(year, count) {
+  function createSummary(count, area) {
     const summary = document.createElement('p');
-    summary.textContent = `${count} species with last record date on or before ${year}`;
+    summary.textContent = `${count} grid-square-stats records loaded${area ? ` for ${area}` : ''}. See the console for the raw payload.`;
     return summary;
   }
 
-  function createTableContainer(records, Tabulator) {
-    const container = document.createElement('div');
+  function renderMapBackend(element, config) {
+    const mapType = String(config.mapType || 'static').toLowerCase();
 
-    const table = new Tabulator(container, {
-      data: records,
-      columns,
-      layout: 'fitColumns',
-      pagination: true,
-      paginationSize: 10,
-      placeholder: 'No records found'
-    });
-
-    table.on('rowClick', (event, row) => {
-      const speciesId = row?.getData?.()?.speciesId;
-      if (!speciesId) {
-        return;
-      }
-
-      const rowSelectedEvent = new CustomEvent('species-row-selected', {
-        detail: { speciesId },
-        bubbles: true,
-        cancelable: true
+    if (mapType === 'leaflet') {
+      return renderLeafletAtlasMap(element, config, {
+        idPrefix: 'tanvis-grid-stats-map',
+        errorMessage: 'Failed to render grid stats map'
       });
+    }
 
-      container.dispatchEvent(rowSelectedEvent);
+    console.log('Rendering static grid stats map with records:', mapData);
+    
+    return renderStaticAtlasMap(element, config, {
+      idPrefix: 'tanvis-grid-stats-map',
+      errorMessage: 'Failed to render grid stats map',
+      mapTypesSel: {
+        'grid-stats': () => {
+            return new Promise(function (resolve, reject) {
+              const recs = mapData.map(function (r) {
+                return { gr: r.square, id: r.square, colour: 'black' };
+              });
+              resolve({ records: recs, size: 1, precision: 2000, shape: "circle", opacity: 1 });
+            });
+        },
+      },
+      mapTypesKey: 'grid-stats'
     });
-
-    return container;
   }
 
-  async function buildSpeciesAbsentSinceRecords({ apiBase, year, geographicRegionIdentifier, taxonGroupExternalKey }) {
-    const cutoffDate = `${year}-12-31`;
-    const taxonStatsRows = await fetchTaxonStatsAbsentSince({
+  async function buildGridStatsMapRecords({ apiBase, geographicRegionIdentifier }) {
+    const gridSquareStatsRows = await fetchGridSquareStats({
       apiBase,
-      cutoffDate,
       geographicRegionIdentifier,
-      taxonGroupExternalKey
     });
 
-    return taxonStatsRows.map((row) => {
-      return {
-        speciesId: row.taxon_identifier,
-        scientificName: row.scientific_name || '',
-        commonName: formatVernacularName(row),
-        lastRecordDate: row.last_record_date,
-        vcNumber: row.geographic_region_identifier
-      };
-    });
+    return gridSquareStatsRows;
   }
 
-  async function fetchTaxonStatsAbsentSince({ apiBase, cutoffDate, geographicRegionIdentifier, taxonGroupExternalKey }) {
-    const resourceUrl = resolveResourceUrl$1(apiBase, TAXON_STATS_RESOURCE);
+  async function fetchGridSquareStats({ apiBase, geographicRegionIdentifier }) {
+    const resourceUrl = resolveResourceUrl$1(apiBase, GRID_SQUARE_STATS_RESOURCE);
     const rows = [];
     let offset = 0;
 
     while (true) {
       const pageUrl = new URL(resourceUrl.toString());
-      pageUrl.searchParams.set('last_record_date[lte]', cutoffDate);
-      pageUrl.searchParams.set('include', 'taxon');
+      pageUrl.searchParams.set('include', 'geographic-region');
       if (Number.isFinite(geographicRegionIdentifier)) {
         pageUrl.searchParams.set('geographic_region_identifier[eq]', String(geographicRegionIdentifier));
-      }
-      if (taxonGroupExternalKey) {
-        pageUrl.searchParams.set('taxon_group_external_key[eq]', taxonGroupExternalKey);
       }
       pageUrl.searchParams.set('limit', String(DEFAULT_PAGE_LIMIT$1));
       pageUrl.searchParams.set('offset', String(offset));
 
-      const payload = await fetchJson$1(pageUrl.toString(), 'Failed to load taxon-stats');
+      const payload = await fetchJson$1(pageUrl.toString(), 'Failed to load grid-square-stats');
       const pageRows = getListData$1(payload);
       rows.push(...pageRows);
 
@@ -2290,15 +2795,6 @@ var Tanvis = (function (exports) {
     return [];
   }
 
-  function formatVernacularName(taxon) {
-    const plural = taxon?.vernacular_names;
-    if (Array.isArray(plural)) {
-      return plural.join(', ');
-    }
-
-    return taxon?.vernacular_name || '';
-  }
-
   function areaToGeographicRegionIdentifier(area) {
     if (area === 'vc-58') {
       return 58;
@@ -2313,15 +2809,6 @@ var Tanvis = (function (exports) {
     }
 
     return undefined;
-  }
-
-  function clearControlSubscription(element) {
-    const cleanup = element?.__tanvisControlCleanup;
-    if (typeof cleanup === 'function') {
-      cleanup();
-    }
-
-    delete element.__tanvisControlCleanup;
   }
 
   function getEffectiveArea(config) {
@@ -2343,27 +2830,19 @@ var Tanvis = (function (exports) {
     return controlArea || config.area;
   }
 
-  function getEffectiveTaxonGroup(config) {
-    if (!config.control || typeof document === 'undefined') {
-      return '';
+  function clearControlSubscription(element) {
+    const cleanup = element?.__tanvisControlCleanup;
+    if (typeof cleanup === 'function') {
+      cleanup();
     }
 
-    const controlElement = document.getElementById(config.control);
-    return controlElement?.dataset?.visTaxonGroup || '';
+    delete element.__tanvisControlCleanup;
   }
 
-  function getTabulatorGlobal() {
-    if (typeof window === 'undefined') {
-      return null;
-    }
+  const gridStatsMapAdapter = createGridStatsMapAdapter();
 
-    return window.Tabulator || null;
-  }
-
-  const speciesAbsentSinceAdapter = createSpeciesAbsentSinceAdapter();
-
-  function renderSpeciesAbsentSince(element, config) {
-    speciesAbsentSinceAdapter.render(element, config);
+  function renderGridStatsMap(element, config) {
+    gridStatsMapAdapter.render(element, config);
   }
 
   // Adapter for Tanvis temporal year charts backed by BRC Charts.
@@ -2654,6 +3133,8 @@ var Tanvis = (function (exports) {
     registerRenderer('new-species-table', renderNewSpeciesTable);
     registerRenderer('increasing-species-table', renderIncreasingSpeciesTable);
     registerRenderer('species-absent-since', renderSpeciesAbsentSince);
+    registerRenderer('species-map', renderSpeciesMap);
+    registerRenderer('grid-stats-map', renderGridStatsMap);
     registerRenderer('temporal-year-chart', renderTemporalYearChart);
     defaultsRegistered = true;
   }

@@ -167,4 +167,15 @@ describe('parseOptions', () => {
       year: 2024
     });
   });
+
+  it('reads data-vis-map-type for map renderers', () => {
+    const element = document.createElement('div');
+    element.dataset.visType = 'species-map';
+    element.dataset.visMapType = 'leaflet';
+
+    expect(parseOptions(element)).toMatchObject({
+      type: 'species-map',
+      mapType: 'leaflet'
+    });
+  });
 });

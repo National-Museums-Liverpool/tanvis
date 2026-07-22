@@ -5,6 +5,7 @@ export function parseOptions(element) {
   const height = parseOptionalPositiveNumber(dataset.visHeight);
   const topN = parseOptionalPositiveInteger(dataset.visTopN);
   const year = parseOptionalPositiveInteger(dataset.visYear);
+  const mapType = dataset.visMapType;
   const startYear = parseOptionalPositiveInteger(dataset.visStartYear);
   const endYear = parseOptionalPositiveInteger(dataset.visEndYear);
 
@@ -13,6 +14,7 @@ export function parseOptions(element) {
     source: dataset.visSource,
     control: dataset.visControl,
     linkedTable: dataset.visLinkedTable,
+    mapType,
     taxonId: dataset.visTaxonid,
     startDate: dataset.visStartDate,
     endDate: dataset.visEndDate,
