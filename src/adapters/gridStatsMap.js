@@ -12,8 +12,9 @@ import {
   normalizeMapTypeMode,
   resolveActiveMapType
 } from './map/mapTypeSwitchControl.js';
+import { assignDeciles } from '../utils/assignDeciles.js';
 
-const DEFAULT_API_BASE = '/api/v1';
+const DEFAULT_API_BASE = 'https://tanhub.biodiverseit.co.uk/api/v1';
 const GRID_SQUARE_STATS_RESOURCE = 'grid-square-stats';
 const DEFAULT_PAGE_LIMIT = 1000;
 const GRID_STATS_RECORDS_KEY = 'grid-stats-records';
@@ -79,6 +80,13 @@ export function createGridStatsMapAdapter() {
           status.clear();
 
           mapData = records;
+          // Convert string to number objects for important properties
+          mapData = mapData.map(r => ({
+            ...r,
+            occurrences_count: Number(r.occurrences_count),
+            species_count: Number(r.species_count)
+          }));
+
           console.log('[grid-stats-map] retrieved records:', mapData);
 
           renderMapBackend(mapContainer, renderConfig);
@@ -377,18 +385,23 @@ function clearControlSubscription(element) {
 
 function createRecordNumberData(opacity = 1) {
   return new Promise(function (resolve) {
-    const minVal = mapData.reduce((min, r) => Math.min(min, r.occurrences_count || Infinity), Infinity);
-    const maxVal = mapData.reduce((max, r) => Math.max(max, r.occurrences_count || -Infinity), -Infinity);
+
+    mapData = assignDeciles(mapData.filter(r => r.occurrences_count !== 0), 'occurrences_count');
+
+    console.log('[grid-stats-map] mapData with decile ranks:', mapData);
+
+    // const minVal = mapData.reduce((min, r) => Math.min(min, r.occurrences_count || Infinity), Infinity);
+    // const maxVal = mapData.reduce((max, r) => Math.max(max, r.occurrences_count || -Infinity), -Infinity);
     const colorScale = d3.scaleSequential()
-      .domain([minVal, maxVal])
+      .domain([1, 10])
       .interpolator(d3.interpolateViridis);
 
     const recs = mapData.map(function (r) {
       return {
         gr: r.square,
         id: r.square,
-        colour: colorScale(r.occurrences_count || 0),
-        caption: `${r.square}: ${r.occurrences_count || 0} records`
+        colour: colorScale(r.decile || 0),
+        caption: `${r.square}: ${r.occurrences_count || 0} records ${r.decile}`
       };
     });
     resolve({ records: recs, size: 1, precision: 2000, shape: 'circle', opacity });
@@ -397,18 +410,22 @@ function createRecordNumberData(opacity = 1) {
 
 function createSpeciesNumberData(opacity = 1) {
   return new Promise(function (resolve) {
-    const minVal = mapData.reduce((min, r) => Math.min(min, r.species_count || Infinity), Infinity);
-    const maxVal = mapData.reduce((max, r) => Math.max(max, r.species_count || -Infinity), -Infinity);
+
+    mapData = assignDeciles(mapData.filter(r => r.species_count !== 0), 'species_count');
+ 
+
+    //const minVal = mapData.reduce((min, r) => Math.min(min, r.species_count || Infinity), Infinity);
+    //const maxVal = mapData.reduce((max, r) => Math.max(max, r.species_count || -Infinity), -Infinity);
     const colorScale = d3.scaleSequential()
-      .domain([minVal, maxVal])
+      .domain([1, 10])
       .interpolator(d3.interpolateCividis);
 
     const recs = mapData.map(function (r) {
       return {
         gr: r.square,
         id: r.square,
-        colour: colorScale(r.species_count || 0),
-        caption: `${r.square}: ${r.species_count || 0} species`
+        colour: colorScale(r.decile || 0),
+        caption: `${r.square}: ${r.species_count || 0} species ${r.decile}`
       };
     });
     resolve({ records: recs, size: 1, precision: 2000, shape: 'circle', opacity });
