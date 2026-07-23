@@ -36,17 +36,21 @@
       data-vis-type="species-map"
       data-vis-species="NHMSYS0000001001"
       data-vis-year="2024"
-      data-vis-map-type="leaflet"
+      data-vis-map-type="switch"
       data-vis-control="vc-control"
+      data-vis-width="500"
+      data-vis-height="500"
+      data-vis-expand="false"
+      data-vis-boundaries="true"
     ></div>
 
     <script src="../dist/tanvis.iife.js"></script>
     <script type="module">
-      import { installSpeciesAbsentSinceMockApi } from './mock/speciesAbsentSinceMockApi.js';
+      import { installSpeciesOccurrencesMockApi } from './mock/speciesOccurrencesMockApi.js';
       import { installTaxonGroupsMockApi } from './mock/taxonGroupsMockApi.js';
 
       installTaxonGroupsMockApi({ baseUrl: '/api', latencyMs: 150 });
-      installSpeciesAbsentSinceMockApi({ baseUrl: '/api', latencyMs: 150 });
+      installSpeciesOccurrencesMockApi({ baseUrl: '/api', latencyMs: 150 });
       window.Tanvis.init();
     </script>
   </body>

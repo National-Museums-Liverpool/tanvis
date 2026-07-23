@@ -6,6 +6,12 @@ import { renderLeafletAtlasMap } from './map/leafletBackend.js';
 import { renderStaticAtlasMap } from './map/staticBackend.js';
 import { createRadioGroup } from '../controls/radioGroup.js';
 import { ensureSharedStyles } from '../styles/sharedStyles.js';
+import {
+  createMapTypeSwitchControl,
+  ensureMapControlsContainer,
+  normalizeMapTypeMode,
+  resolveActiveMapType
+} from './map/mapTypeSwitchControl.js';
 
 const DEFAULT_API_BASE = '/api/v1';
 const GRID_SQUARE_STATS_RESOURCE = 'grid-square-stats';
@@ -97,7 +103,7 @@ function createSummary(count, area) {
 
 function renderMapBackend(mapElement, config) {
   const mapTypeMode = normalizeMapTypeMode(config.mapType);
-  const activeMapType = resolveActiveMapType(mapElement, mapTypeMode);
+  const activeMapType = resolveActiveMapType(mapElement, mapTypeMode, 'tanvisGridStatsActiveMapType');
   const pointOpacity = activeMapType === 'leaflet' ? 0.7 : 1;
   const gridStatsType = normalizeGridStatsType(config.gridStatsType);
   const showGridStatsSwitch = gridStatsType === 'switch';
@@ -167,47 +173,17 @@ function renderMapControlGroup(mapElement, options) {
   }
 
   if (options.showMapTypeSwitch) {
-    controls.appendChild(createMapTypeSwitchControl(mapElement, options.activeMapType, options.onMapTypeChange));
+    controls.appendChild(createMapTypeSwitchControl({
+      mapElement,
+      activeMapType: options.activeMapType,
+      onChange: options.onMapTypeChange,
+      fallbackId: 'tanvis-grid-stats-map'
+    }));
   }
 
   if (options.showGridStatsSwitch) {
     controls.appendChild(createGridStatsTypeSwitchControl(mapElement, options.selectedMapTypeKey, options.onGridStatsTypeChange));
   }
-}
-
-function ensureMapControlsContainer(hostElement) {
-  for (const child of hostElement.children) {
-    if (child.classList?.contains('tanvis-grid-stats-map-controls')) {
-      return child;
-    }
-  }
-
-  const controls = document.createElement('div');
-  controls.className = 'tanvis-grid-stats-map-controls';
-  hostElement.appendChild(controls);
-  return controls;
-}
-
-function createMapTypeSwitchControl(mapElement, activeMapType, onChange) {
-  const group = createRadioGroup({
-    name: getMapTypeSwitchName(mapElement),
-    selectedValue: activeMapType,
-    items: [
-      { value: 'static', label: 'Static' },
-      { value: 'leaflet', label: 'Leaflet' }
-    ],
-    onChange: (value) => {
-      const nextMapType = normalizeBaseMapType(value);
-      if (nextMapType === activeMapType) {
-        return;
-      }
-
-      onChange(nextMapType);
-    }
-  });
-
-  group.classList.add('tanvis-grid-stats-map-type-switch');
-  return group;
 }
 
 function createGridStatsTypeSwitchControl(mapElement, selectedMapTypeKey, onChange) {
@@ -242,29 +218,6 @@ function getGridStatsSwitchName(mapElement) {
   return `${base}-switch`;
 }
 
-function getMapTypeSwitchName(mapElement) {
-  const base = mapElement.id || 'tanvis-grid-stats-map';
-  return `${base}-map-type-switch`;
-}
-
-function normalizeMapTypeMode(value) {
-  const normalized = String(value || '').trim().toLowerCase();
-
-  if (normalized === 'leaflet') {
-    return 'leaflet';
-  }
-
-  if (normalized === 'switch') {
-    return 'switch';
-  }
-
-  return 'static';
-}
-
-function normalizeBaseMapType(value) {
-  return String(value || '').trim().toLowerCase() === 'leaflet' ? 'leaflet' : 'static';
-}
-
 function normalizeGridStatsType(value) {
   const normalized = String(value || '').trim().toLowerCase();
 
@@ -277,16 +230,6 @@ function normalizeGridStatsType(value) {
   }
 
   return 'switch';
-}
-
-function resolveActiveMapType(mapElement, mapTypeMode) {
-  if (mapTypeMode !== 'switch') {
-    return mapTypeMode;
-  }
-
-  const savedMapType = normalizeBaseMapType(mapElement?.dataset?.tanvisGridStatsActiveMapType);
-  mapElement.dataset.tanvisGridStatsActiveMapType = savedMapType;
-  return savedMapType;
 }
 
 function resolveSelectedMapTypeKey(mapElement, gridStatsType) {

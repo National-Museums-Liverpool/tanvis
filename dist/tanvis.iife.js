@@ -1392,12 +1392,12 @@ var Tanvis = (function (exports) {
   }
 
   async function fetchTaxonGroups(apiBase) {
-    const resourceUrl = resolveResourceUrl$5(apiBase, 'taxon-groups');
-    const payload = await fetchJson$5(resourceUrl.toString(), 'Failed to load taxon groups');
-    return getListData$5(payload);
+    const resourceUrl = resolveResourceUrl$6(apiBase, 'taxon-groups');
+    const payload = await fetchJson$6(resourceUrl.toString(), 'Failed to load taxon groups');
+    return getListData$6(payload);
   }
 
-  function resolveResourceUrl$5(apiBase, resourceName) {
+  function resolveResourceUrl$6(apiBase, resourceName) {
     const baseUrl = new URL(apiBase, window.location.origin);
     const pathname = baseUrl.pathname.endsWith('/') ? baseUrl.pathname : `${baseUrl.pathname}/`;
     baseUrl.pathname = `${pathname}${resourceName}`;
@@ -1406,7 +1406,7 @@ var Tanvis = (function (exports) {
     return baseUrl;
   }
 
-  async function fetchJson$5(url, defaultErrorMessage) {
+  async function fetchJson$6(url, defaultErrorMessage) {
     let response;
     try {
       response = await fetch(url);
@@ -1423,7 +1423,7 @@ var Tanvis = (function (exports) {
     return payload || {};
   }
 
-  function getListData$5(payload) {
+  function getListData$6(payload) {
     if (Array.isArray(payload)) {
       return payload;
     }
@@ -1439,7 +1439,7 @@ var Tanvis = (function (exports) {
     return [];
   }
 
-  const DEFAULT_API_BASE$5 = '/api/v1';
+  const DEFAULT_API_BASE$6 = '/api/v1';
 
   function createControlBlockAdapter() {
     return {
@@ -1471,7 +1471,7 @@ var Tanvis = (function (exports) {
 
         element.appendChild(createTaxonGroupControls({
           rootElement: element,
-          apiBase: config.source || DEFAULT_API_BASE$5,
+          apiBase: config.source || DEFAULT_API_BASE$6,
           body,
           loadToken
         }));
@@ -1490,9 +1490,9 @@ var Tanvis = (function (exports) {
     controlBlockAdapter.render(element, config);
   }
 
-  const DEFAULT_API_BASE$4 = '/api/v1';
+  const DEFAULT_API_BASE$5 = '/api/v1';
   const TAXON_STATS_RESOURCE$2 = 'taxon-stats';
-  const DEFAULT_PAGE_LIMIT$4 = 1000;
+  const DEFAULT_PAGE_LIMIT$5 = 1000;
   const columns$2 = [
     { title: 'Species ID', field: 'speciesId', sorter: 'string' },
     { title: 'Scientific name', field: 'scientificName', sorter: 'string' },
@@ -1520,7 +1520,7 @@ var Tanvis = (function (exports) {
 
         const startDate = renderConfig.startDate;
         const endDate = renderConfig.endDate || getCurrentIsoDate();
-        const apiBase = renderConfig.source || DEFAULT_API_BASE$4;
+        const apiBase = renderConfig.source || DEFAULT_API_BASE$5;
         const geographicRegionIdentifier = areaToGeographicRegionIdentifier$3(renderConfig.area);
         const taxonGroupExternalKey = getEffectiveTaxonGroup$3(renderConfig);
         const loadId = (element.__tanvisNewSpeciesLoadId || 0) + 1;
@@ -1650,7 +1650,7 @@ var Tanvis = (function (exports) {
   }
 
   async function fetchTaxonStatsInRange({ apiBase, startDate, endDate, geographicRegionIdentifier, taxonGroupExternalKey }) {
-    const resourceUrl = resolveResourceUrl$4(apiBase, TAXON_STATS_RESOURCE$2);
+    const resourceUrl = resolveResourceUrl$5(apiBase, TAXON_STATS_RESOURCE$2);
     const rows = [];
     let offset = 0;
 
@@ -1665,23 +1665,23 @@ var Tanvis = (function (exports) {
       if (taxonGroupExternalKey) {
         pageUrl.searchParams.set('taxon_group_external_key[eq]', taxonGroupExternalKey);
       }
-      pageUrl.searchParams.set('limit', String(DEFAULT_PAGE_LIMIT$4));
+      pageUrl.searchParams.set('limit', String(DEFAULT_PAGE_LIMIT$5));
       pageUrl.searchParams.set('offset', String(offset));
 
-      const payload = await fetchJson$4(pageUrl.toString(), 'Failed to load taxon-stats');
-      const pageRows = getListData$4(payload);
+      const payload = await fetchJson$5(pageUrl.toString(), 'Failed to load taxon-stats');
+      const pageRows = getListData$5(payload);
       rows.push(...pageRows);
 
-      if (pageRows.length < DEFAULT_PAGE_LIMIT$4) {
+      if (pageRows.length < DEFAULT_PAGE_LIMIT$5) {
         break;
       }
 
-      offset += DEFAULT_PAGE_LIMIT$4;
+      offset += DEFAULT_PAGE_LIMIT$5;
     }
 
     return rows;
   }
-  function resolveResourceUrl$4(apiBase, resourceName) {
+  function resolveResourceUrl$5(apiBase, resourceName) {
     const baseUrl = new URL(apiBase, window.location.origin);
     const pathname = baseUrl.pathname.endsWith('/') ? baseUrl.pathname : `${baseUrl.pathname}/`;
     baseUrl.pathname = `${pathname}${resourceName}`;
@@ -1690,7 +1690,7 @@ var Tanvis = (function (exports) {
     return baseUrl;
   }
 
-  async function fetchJson$4(url, defaultErrorMessage) {
+  async function fetchJson$5(url, defaultErrorMessage) {
     let response;
     try {
       response = await fetch(url);
@@ -1707,7 +1707,7 @@ var Tanvis = (function (exports) {
     return payload || {};
   }
 
-  function getListData$4(payload) {
+  function getListData$5(payload) {
     if (Array.isArray(payload)) {
       return payload;
     }
@@ -1801,9 +1801,9 @@ var Tanvis = (function (exports) {
     newSpeciesTableAdapter.render(element, config);
   }
 
-  const DEFAULT_API_BASE$3 = '/api/v1';
+  const DEFAULT_API_BASE$4 = '/api/v1';
   const TAXON_STATS_RESOURCE$1 = 'taxon-stats';
-  const DEFAULT_PAGE_LIMIT$3 = 1000;
+  const DEFAULT_PAGE_LIMIT$4 = 1000;
   const DEFAULT_TOP_N = 50;
   const columns$1 = [
     { title: 'Species ID', field: 'speciesId', sorter: 'string' },
@@ -1834,7 +1834,7 @@ var Tanvis = (function (exports) {
             };
 
         const topN = parseTopN(renderConfig.topN) ?? DEFAULT_TOP_N;
-        const apiBase = renderConfig.source || DEFAULT_API_BASE$3;
+        const apiBase = renderConfig.source || DEFAULT_API_BASE$4;
         const geographicRegionIdentifier = areaToGeographicRegionIdentifier$2(renderConfig.area);
         const taxonGroupExternalKey = getEffectiveTaxonGroup$2(renderConfig);
         const loadId = (element.__tanvisIncreasingLoadId || 0) + 1;
@@ -1973,7 +1973,7 @@ var Tanvis = (function (exports) {
   }
 
   async function fetchTaxonStats({ apiBase, geographicRegionIdentifier, taxonGroupExternalKey }) {
-    const resourceUrl = resolveResourceUrl$3(apiBase, TAXON_STATS_RESOURCE$1);
+    const resourceUrl = resolveResourceUrl$4(apiBase, TAXON_STATS_RESOURCE$1);
     const rows = [];
     let offset = 0;
 
@@ -1986,23 +1986,23 @@ var Tanvis = (function (exports) {
       if (taxonGroupExternalKey) {
         pageUrl.searchParams.set('taxon_group_external_key[eq]', taxonGroupExternalKey);
       }
-      pageUrl.searchParams.set('limit', String(DEFAULT_PAGE_LIMIT$3));
+      pageUrl.searchParams.set('limit', String(DEFAULT_PAGE_LIMIT$4));
       pageUrl.searchParams.set('offset', String(offset));
 
-      const payload = await fetchJson$3(pageUrl.toString(), 'Failed to load taxon-stats');
-      const pageRows = getListData$3(payload);
+      const payload = await fetchJson$4(pageUrl.toString(), 'Failed to load taxon-stats');
+      const pageRows = getListData$4(payload);
       rows.push(...pageRows);
 
-      if (pageRows.length < DEFAULT_PAGE_LIMIT$3) {
+      if (pageRows.length < DEFAULT_PAGE_LIMIT$4) {
         break;
       }
 
-      offset += DEFAULT_PAGE_LIMIT$3;
+      offset += DEFAULT_PAGE_LIMIT$4;
     }
 
     return rows;
   }
-  function resolveResourceUrl$3(apiBase, resourceName) {
+  function resolveResourceUrl$4(apiBase, resourceName) {
     const baseUrl = new URL(apiBase, window.location.origin);
     const pathname = baseUrl.pathname.endsWith('/') ? baseUrl.pathname : `${baseUrl.pathname}/`;
     baseUrl.pathname = `${pathname}${resourceName}`;
@@ -2011,7 +2011,7 @@ var Tanvis = (function (exports) {
     return baseUrl;
   }
 
-  async function fetchJson$3(url, defaultErrorMessage) {
+  async function fetchJson$4(url, defaultErrorMessage) {
     let response;
     try {
       response = await fetch(url);
@@ -2028,7 +2028,7 @@ var Tanvis = (function (exports) {
     return payload || {};
   }
 
-  function getListData$3(payload) {
+  function getListData$4(payload) {
     if (Array.isArray(payload)) {
       return payload;
     }
@@ -2114,9 +2114,9 @@ var Tanvis = (function (exports) {
     increasingSpeciesTableAdapter.render(element, config);
   }
 
-  const DEFAULT_API_BASE$2 = '/api/v1';
+  const DEFAULT_API_BASE$3 = '/api/v1';
   const TAXON_STATS_RESOURCE = 'taxon-stats';
-  const DEFAULT_PAGE_LIMIT$2 = 1000;
+  const DEFAULT_PAGE_LIMIT$3 = 1000;
   const columns = [
     { title: 'Species ID', field: 'speciesId', sorter: 'string' },
     { title: 'Scientific name', field: 'scientificName', sorter: 'string' },
@@ -2143,7 +2143,7 @@ var Tanvis = (function (exports) {
             };
 
         const year = Number(renderConfig.year);
-        const apiBase = renderConfig.source || DEFAULT_API_BASE$2;
+        const apiBase = renderConfig.source || DEFAULT_API_BASE$3;
         const geographicRegionIdentifier = areaToGeographicRegionIdentifier$1(renderConfig.area);
         const taxonGroupExternalKey = getEffectiveTaxonGroup$1(renderConfig);
         const loadId = (element.__tanvisSpeciesAbsentLoadId || 0) + 1;
@@ -2264,7 +2264,7 @@ var Tanvis = (function (exports) {
   }
 
   async function fetchTaxonStatsAbsentSince({ apiBase, cutoffDate, geographicRegionIdentifier, taxonGroupExternalKey }) {
-    const resourceUrl = resolveResourceUrl$2(apiBase, TAXON_STATS_RESOURCE);
+    const resourceUrl = resolveResourceUrl$3(apiBase, TAXON_STATS_RESOURCE);
     const rows = [];
     let offset = 0;
 
@@ -2278,24 +2278,24 @@ var Tanvis = (function (exports) {
       if (taxonGroupExternalKey) {
         pageUrl.searchParams.set('taxon_group_external_key[eq]', taxonGroupExternalKey);
       }
-      pageUrl.searchParams.set('limit', String(DEFAULT_PAGE_LIMIT$2));
+      pageUrl.searchParams.set('limit', String(DEFAULT_PAGE_LIMIT$3));
       pageUrl.searchParams.set('offset', String(offset));
 
-      const payload = await fetchJson$2(pageUrl.toString(), 'Failed to load taxon-stats');
-      const pageRows = getListData$2(payload);
+      const payload = await fetchJson$3(pageUrl.toString(), 'Failed to load taxon-stats');
+      const pageRows = getListData$3(payload);
       rows.push(...pageRows);
 
-      if (pageRows.length < DEFAULT_PAGE_LIMIT$2) {
+      if (pageRows.length < DEFAULT_PAGE_LIMIT$3) {
         break;
       }
 
-      offset += DEFAULT_PAGE_LIMIT$2;
+      offset += DEFAULT_PAGE_LIMIT$3;
     }
 
     return rows;
   }
 
-  function resolveResourceUrl$2(apiBase, resourceName) {
+  function resolveResourceUrl$3(apiBase, resourceName) {
     const baseUrl = new URL(apiBase, window.location.origin);
     const pathname = baseUrl.pathname.endsWith('/') ? baseUrl.pathname : `${baseUrl.pathname}/`;
     baseUrl.pathname = `${pathname}${resourceName}`;
@@ -2304,7 +2304,7 @@ var Tanvis = (function (exports) {
     return baseUrl;
   }
 
-  async function fetchJson$2(url, defaultErrorMessage) {
+  async function fetchJson$3(url, defaultErrorMessage) {
     let response;
     try {
       response = await fetch(url);
@@ -2321,7 +2321,7 @@ var Tanvis = (function (exports) {
     return payload || {};
   }
 
-  function getListData$2(payload) {
+  function getListData$3(payload) {
     if (Array.isArray(payload)) {
       return payload;
     }
@@ -2413,6 +2413,84 @@ var Tanvis = (function (exports) {
     speciesAbsentSinceAdapter.render(element, config);
   }
 
+  function normalizeMapTypeMode(value) {
+    const normalized = String(value || '').trim().toLowerCase();
+
+    if (normalized === 'leaflet') {
+      return 'leaflet';
+    }
+
+    if (normalized === 'switch') {
+      return 'switch';
+    }
+
+    return 'static';
+  }
+
+  function normalizeBaseMapType(value) {
+    return String(value || '').trim().toLowerCase() === 'leaflet' ? 'leaflet' : 'static';
+  }
+
+  function resolveActiveMapType(mapElement, mapTypeMode, datasetKey) {
+    if (mapTypeMode !== 'switch') {
+      return mapTypeMode;
+    }
+
+    const savedMapType = normalizeBaseMapType(mapElement?.dataset?.[datasetKey]);
+    mapElement.dataset[datasetKey] = savedMapType;
+    return savedMapType;
+  }
+
+  function ensureMapControlsContainer(hostElement, className = 'tanvis-grid-stats-map-controls') {
+    for (const child of hostElement.children) {
+      if (child.classList?.contains(className)) {
+        return child;
+      }
+    }
+
+    const controls = document.createElement('div');
+    controls.className = className;
+    hostElement.appendChild(controls);
+    return controls;
+  }
+
+  function createMapTypeSwitchControl({
+    mapElement,
+    activeMapType,
+    onChange,
+    fallbackId = 'tanvis-map',
+    controlClassName = 'tanvis-grid-stats-map-type-switch'
+  }) {
+    const group = createRadioGroup({
+      name: getMapTypeSwitchName(mapElement, fallbackId),
+      selectedValue: activeMapType,
+      items: [
+        { value: 'static', label: 'Static' },
+        { value: 'leaflet', label: 'Leaflet' }
+      ],
+      onChange: (value) => {
+        const nextMapType = normalizeBaseMapType(value);
+        if (nextMapType === activeMapType) {
+          return;
+        }
+
+        onChange(nextMapType);
+      }
+    });
+
+    group.classList.add(controlClassName);
+    return group;
+  }
+
+  function getMapTypeSwitchName(mapElement, fallbackId) {
+    const base = mapElement.id || fallbackId;
+    return `${base}-map-type-switch`;
+  }
+
+  const DEFAULT_API_BASE$2 = '/api/v1';
+  const OCCURRENCES_RESOURCE = 'occurrences';
+  const DEFAULT_PAGE_LIMIT$2 = 1000;
+
   function createSpeciesMapAdapter() {
     return {
       name: 'species-map',
@@ -2431,6 +2509,7 @@ var Tanvis = (function (exports) {
             };
 
         const speciesCode = renderConfig.species || '';
+        const apiBase = renderConfig.source || DEFAULT_API_BASE$2;
         const taxonGroupExternalKey = getEffectiveTaxonGroup(renderConfig);
         const loadId = (element.__tanvisSpeciesMapLoadId || 0) + 1;
         element.__tanvisSpeciesMapLoadId = loadId;
@@ -2461,6 +2540,27 @@ var Tanvis = (function (exports) {
           });
         }
 
+        fetchSpeciesOccurrences({
+          apiBase,
+          speciesCode,
+          area: renderConfig.area,
+          includeAreaFilter: Boolean(config.control || config.area)
+        })
+          .then((rows) => {
+            if (element.__tanvisSpeciesMapLoadId !== loadId) {
+              return;
+            }
+
+            console.log('[species-map] occurrences:', rows);
+          })
+          .catch((error) => {
+            if (element.__tanvisSpeciesMapLoadId !== loadId) {
+              return;
+            }
+
+            console.error('[species-map] failed to fetch occurrences:', error);
+          });
+
         try {
           if (element.__tanvisSpeciesMapLoadId !== loadId) {
             return;
@@ -2486,19 +2586,60 @@ var Tanvis = (function (exports) {
   }
 
   function renderMapBackend$1(element, config) {
-    const mapType = String(config.mapType || 'static').toLowerCase();
+    const mapTypeMode = normalizeMapTypeMode(config.mapType);
+    const activeMapType = resolveActiveMapType(element, mapTypeMode, 'tanvisSpeciesMapActiveMapType');
 
-    if (mapType === 'leaflet') {
-      return renderLeafletAtlasMap(element, config, {
+    let map;
+
+    if (activeMapType === 'leaflet') {
+      map = renderLeafletAtlasMap(element, config, {
+        idPrefix: 'tanvis-species-map',
+        errorMessage: 'Failed to render species map'
+      });
+    } else {
+      map = renderStaticAtlasMap(element, config, {
         idPrefix: 'tanvis-species-map',
         errorMessage: 'Failed to render species map'
       });
     }
 
-    return renderStaticAtlasMap(element, config, {
-      idPrefix: 'tanvis-species-map',
-      errorMessage: 'Failed to render species map'
+    renderMapTypeControlGroup(element, {
+      activeMapType,
+      showMapTypeSwitch: mapTypeMode === 'switch',
+      onMapTypeChange: (nextMapType) => {
+        element.dataset.tanvisSpeciesMapActiveMapType = nextMapType;
+        renderMapBackend$1(element, config);
+      }
     });
+
+    return map;
+  }
+
+  function renderMapTypeControlGroup(mapElement, options) {
+    if (typeof document === 'undefined') {
+      return;
+    }
+
+    ensureSharedStyles();
+    const hostElement = mapElement.parentElement;
+    if (!hostElement) {
+      return;
+    }
+
+    const controls = ensureMapControlsContainer(hostElement);
+    clearElement(controls);
+
+    if (!options.showMapTypeSwitch) {
+      controls.remove();
+      return;
+    }
+
+    controls.appendChild(createMapTypeSwitchControl({
+      mapElement,
+      activeMapType: options.activeMapType,
+      onChange: options.onMapTypeChange,
+      fallbackId: 'tanvis-species-map'
+    }));
   }
 
   function clearControlSubscription$1(element) {
@@ -2536,6 +2677,106 @@ var Tanvis = (function (exports) {
 
     const controlElement = document.getElementById(config.control);
     return controlElement?.dataset?.visTaxonGroup || '';
+  }
+
+  async function fetchSpeciesOccurrences({ apiBase, speciesCode, area, includeAreaFilter }) {
+    if (!speciesCode) {
+      return [];
+    }
+
+    const resourceUrl = resolveResourceUrl$2(apiBase, OCCURRENCES_RESOURCE);
+    const rows = [];
+    let offset = 0;
+
+    while (true) {
+      const pageUrl = new URL(resourceUrl.toString());
+      pageUrl.searchParams.set('taxon_identifier[eq]', speciesCode);
+
+      if (includeAreaFilter) {
+        const higherGeographyIdentifiers = areaToHigherGeographyIdentifiers(area);
+        if (higherGeographyIdentifiers.length > 0) {
+          pageUrl.searchParams.set('higher_geography_identifier[in]', higherGeographyIdentifiers.join(','));
+        }
+      }
+
+      pageUrl.searchParams.set('limit', String(DEFAULT_PAGE_LIMIT$2));
+      pageUrl.searchParams.set('offset', String(offset));
+
+      const payload = await fetchJson$2(pageUrl.toString(), 'Failed to load occurrences');
+      const pageRows = getListData$2(payload);
+      rows.push(...pageRows);
+
+      if (pageRows.length < DEFAULT_PAGE_LIMIT$2) {
+        break;
+      }
+
+      offset += DEFAULT_PAGE_LIMIT$2;
+    }
+
+    return rows;
+  }
+
+  function areaToHigherGeographyIdentifiers(area) {
+    if (area === 'vc-58') {
+      return [58];
+    }
+
+    if (area === 'vc-59') {
+      return [59];
+    }
+
+    if (area === 'vc-60') {
+      return [60];
+    }
+
+    // Combined VC selection means "all relevant areas", so no additional filter is required.
+    if (area === 'vc-58-59-60' || area === 'vc-58-69-60') {
+      return [];
+    }
+
+    return [];
+  }
+
+  function resolveResourceUrl$2(apiBase, resourceName) {
+    const baseUrl = new URL(apiBase, window.location.origin);
+    const pathname = baseUrl.pathname.endsWith('/') ? baseUrl.pathname : `${baseUrl.pathname}/`;
+    baseUrl.pathname = `${pathname}${resourceName}`;
+    baseUrl.search = '';
+    baseUrl.hash = '';
+    return baseUrl;
+  }
+
+  async function fetchJson$2(url, defaultErrorMessage) {
+    let response;
+    try {
+      response = await fetch(url);
+    } catch (cause) {
+      throw createApiError({ defaultMessage: defaultErrorMessage, cause });
+    }
+
+    const payload = await parseJsonSafe(response);
+
+    if (!response.ok) {
+      throw createApiError({ response, payload, defaultMessage: defaultErrorMessage });
+    }
+
+    return payload || {};
+  }
+
+  function getListData$2(payload) {
+    if (Array.isArray(payload)) {
+      return payload;
+    }
+
+    if (Array.isArray(payload?.data)) {
+      return payload.data;
+    }
+
+    if (Array.isArray(payload?.records)) {
+      return payload.records;
+    }
+
+    return [];
   }
 
   const speciesMapAdapter = createSpeciesMapAdapter();
@@ -2634,7 +2875,7 @@ var Tanvis = (function (exports) {
 
   function renderMapBackend(mapElement, config) {
     const mapTypeMode = normalizeMapTypeMode(config.mapType);
-    const activeMapType = resolveActiveMapType(mapElement, mapTypeMode);
+    const activeMapType = resolveActiveMapType(mapElement, mapTypeMode, 'tanvisGridStatsActiveMapType');
     const pointOpacity = activeMapType === 'leaflet' ? 0.7 : 1;
     const gridStatsType = normalizeGridStatsType(config.gridStatsType);
     const showGridStatsSwitch = gridStatsType === 'switch';
@@ -2703,47 +2944,17 @@ var Tanvis = (function (exports) {
     }
 
     if (options.showMapTypeSwitch) {
-      controls.appendChild(createMapTypeSwitchControl(mapElement, options.activeMapType, options.onMapTypeChange));
+      controls.appendChild(createMapTypeSwitchControl({
+        mapElement,
+        activeMapType: options.activeMapType,
+        onChange: options.onMapTypeChange,
+        fallbackId: 'tanvis-grid-stats-map'
+      }));
     }
 
     if (options.showGridStatsSwitch) {
       controls.appendChild(createGridStatsTypeSwitchControl(mapElement, options.selectedMapTypeKey, options.onGridStatsTypeChange));
     }
-  }
-
-  function ensureMapControlsContainer(hostElement) {
-    for (const child of hostElement.children) {
-      if (child.classList?.contains('tanvis-grid-stats-map-controls')) {
-        return child;
-      }
-    }
-
-    const controls = document.createElement('div');
-    controls.className = 'tanvis-grid-stats-map-controls';
-    hostElement.appendChild(controls);
-    return controls;
-  }
-
-  function createMapTypeSwitchControl(mapElement, activeMapType, onChange) {
-    const group = createRadioGroup({
-      name: getMapTypeSwitchName(mapElement),
-      selectedValue: activeMapType,
-      items: [
-        { value: 'static', label: 'Static' },
-        { value: 'leaflet', label: 'Leaflet' }
-      ],
-      onChange: (value) => {
-        const nextMapType = normalizeBaseMapType(value);
-        if (nextMapType === activeMapType) {
-          return;
-        }
-
-        onChange(nextMapType);
-      }
-    });
-
-    group.classList.add('tanvis-grid-stats-map-type-switch');
-    return group;
   }
 
   function createGridStatsTypeSwitchControl(mapElement, selectedMapTypeKey, onChange) {
@@ -2778,29 +2989,6 @@ var Tanvis = (function (exports) {
     return `${base}-switch`;
   }
 
-  function getMapTypeSwitchName(mapElement) {
-    const base = mapElement.id || 'tanvis-grid-stats-map';
-    return `${base}-map-type-switch`;
-  }
-
-  function normalizeMapTypeMode(value) {
-    const normalized = String(value || '').trim().toLowerCase();
-
-    if (normalized === 'leaflet') {
-      return 'leaflet';
-    }
-
-    if (normalized === 'switch') {
-      return 'switch';
-    }
-
-    return 'static';
-  }
-
-  function normalizeBaseMapType(value) {
-    return String(value || '').trim().toLowerCase() === 'leaflet' ? 'leaflet' : 'static';
-  }
-
   function normalizeGridStatsType(value) {
     const normalized = String(value || '').trim().toLowerCase();
 
@@ -2813,16 +3001,6 @@ var Tanvis = (function (exports) {
     }
 
     return 'switch';
-  }
-
-  function resolveActiveMapType(mapElement, mapTypeMode) {
-    if (mapTypeMode !== 'switch') {
-      return mapTypeMode;
-    }
-
-    const savedMapType = normalizeBaseMapType(mapElement?.dataset?.tanvisGridStatsActiveMapType);
-    mapElement.dataset.tanvisGridStatsActiveMapType = savedMapType;
-    return savedMapType;
   }
 
   function resolveSelectedMapTypeKey(mapElement, gridStatsType) {

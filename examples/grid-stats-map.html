@@ -41,7 +41,6 @@
     <div
       class="tanvis"
       data-vis-type="grid-stats-map"
-      data-vis-source="https://tanhub.biodiverseit.co.uk/api/v1"
       data-vis-map-type="switch"
       data-vis-control="vc-control"
       data-vis-grid-stats-type="switch"
@@ -56,8 +55,7 @@
     <script type="module">
       import { installGridStatsMockApi } from './mock/gridStatsMockApi.js';
 
-      // Keep this available for offline/dev fallback if needed.
-      // installGridStatsMockApi({ baseUrl: '/api', latencyMs: 150 });
+      installGridStatsMockApi({ baseUrl: '/api', latencyMs: 150 });
       window.Tanvis.init();
     </script>
   </body>
