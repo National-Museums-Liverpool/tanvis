@@ -1,6 +1,7 @@
 import { clearElement } from '../../utils/dom.js';
 import { normalizeErrorMessage } from '../../utils/apiError.js';
 import { createVisStatusReporter } from '../../utils/visStatus.js';
+import { ensureSharedStyles } from '../../styles/sharedStyles.js';
 import {
   assignElementId,
   clearControlSubscription,
@@ -31,6 +32,7 @@ export function renderStaticAtlasMap(element, config, options = {}) {
 
     const idPrefix = options.idPrefix || 'tanvis-map';
     assignElementId(element, idPrefix);
+    ensureMapTetradInfo(element);
 
     const effectiveArea = getEffectiveArea(config);
     const renderConfig = effectiveArea === config.area
@@ -87,6 +89,7 @@ function createStaticMapOptions(element, config, options) {
 
   return {
     selector: `#${element.id}`,
+    captionId: 'map-tetrad-info',
     transOptsControl: false,
     transOptsSel,
     transOptsKey: config.area,
@@ -99,4 +102,54 @@ function createStaticMapOptions(element, config, options) {
     mapTypesSel: options.mapTypesSel,
     mapTypesKey: options.mapTypesKey,
   };
+}
+
+function ensureMapTetradInfo(element) {
+  if (typeof document === 'undefined') {
+    return;
+  }
+
+  ensureSharedStyles();
+
+  const parent = element?.parentElement;
+  if (!parent) {
+    return;
+  }
+
+  let info = document.getElementById('map-tetrad-info');
+  if (!info) {
+    info = document.createElement('div');
+    info.id = 'map-tetrad-info';
+  }
+
+  info.setAttribute('data-placeholder', 'Tetrad information');
+  ensureMapTetradInfoPlaceholderBehavior(info);
+  parent.insertBefore(info, element);
+}
+
+function ensureMapTetradInfoPlaceholderBehavior(info) {
+  if (!info) {
+    return;
+  }
+
+  if (!info.__tanvisMapTetradInfoObserver) {
+    const observer = new MutationObserver(() => {
+      syncMapTetradInfoEmptyState(info);
+    });
+
+    observer.observe(info, {
+      childList: true,
+      subtree: true,
+      characterData: true
+    });
+
+    info.__tanvisMapTetradInfoObserver = observer;
+  }
+
+  syncMapTetradInfoEmptyState(info);
+}
+
+function syncMapTetradInfoEmptyState(info) {
+  const isEmpty = !String(info.textContent || '').trim();
+  info.classList.toggle('tanvis-map-tetrad-info-empty', isEmpty);
 }

@@ -179,6 +179,35 @@ const SHARED_STYLES = `
   color: #4b5563;
   font: 500 0.85rem/1.3 system-ui, sans-serif;
 }
+
+.tanvis-grid-stats-map-controls {
+  display: flex;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  margin-top: 0.45rem;
+}
+
+.tanvis-grid-stats-switch,
+.tanvis-grid-stats-map-type-switch {
+  margin-top: 0;
+}
+
+.tanvis-grid-stats-switch .tanvis-controls-text,
+.tanvis-grid-stats-map-type-switch .tanvis-controls-text {
+  text-transform: none;
+  min-width: 5.25rem;
+}
+
+#map-tetrad-info {
+  min-height: 1.2em;
+  margin: 0 0 0.35rem;
+}
+
+#map-tetrad-info.tanvis-map-tetrad-info-empty::before {
+  content: attr(data-placeholder);
+  color: #9ca3af;
+}
 `;
 
 export function ensureSharedStyles() {

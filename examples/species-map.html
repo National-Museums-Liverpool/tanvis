@@ -4,6 +4,8 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Tanvis Species Map Example</title>
+    <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
     <script src="https://d3js.org/d3.v7.min.js"></script>
     <script src="https://cdn.jsdelivr.net/gh/biologicalrecordscentre/brc-atlas/dist/brcatlas.umd.js"></script>
     <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/gh/biologicalrecordscentre/brc-atlas/dist/brcatlas.umd.css" />
@@ -20,7 +22,7 @@
   </head>
   <body>
     <h1>Tanvis Species Map Example</h1>
-    <p>This renders a species table paired with a BRC Atlas map using the shared map backend.</p>
+    <p>This renders a species map using the shared map backend.</p>
 
     <div
       id="vc-control"
@@ -32,12 +34,12 @@
     <div
       class="tanvis"
       data-vis-type="species-map"
+      data-vis-species="NHMSYS0000001001"
       data-vis-year="2024"
       data-vis-map-type="leaflet"
       data-vis-control="vc-control"
     ></div>
 
-    <script src="https://unpkg.com/tabulator-tables@6.3.0/dist/js/tabulator.min.js"></script>
     <script src="../dist/tanvis.iife.js"></script>
     <script type="module">
       import { installSpeciesAbsentSinceMockApi } from './mock/speciesAbsentSinceMockApi.js';
@@ -46,10 +48,6 @@
       installTaxonGroupsMockApi({ baseUrl: '/api', latencyMs: 150 });
       installSpeciesAbsentSinceMockApi({ baseUrl: '/api', latencyMs: 150 });
       window.Tanvis.init();
-
-      document.addEventListener('species-row-selected', (event) => {
-        console.log('Row clicked:', event.detail);
-      });
     </script>
   </body>
 </html>

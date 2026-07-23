@@ -8,12 +8,14 @@ export function parseOptions(element) {
   const mapType = dataset.visMapType;
   const startYear = parseOptionalPositiveInteger(dataset.visStartYear);
   const endYear = parseOptionalPositiveInteger(dataset.visEndYear);
+  const gridStatsType = dataset.visGridStatsType;
 
   return {
     type: dataset.visType || 'table',
     source: dataset.visSource,
     control: dataset.visControl,
     linkedTable: dataset.visLinkedTable,
+    species: dataset.visSpecies,
     mapType,
     taxonId: dataset.visTaxonid,
     startDate: dataset.visStartDate,
@@ -21,6 +23,7 @@ export function parseOptions(element) {
     area: dataset.visArea || 'vc-58-59-60',
     ctl: parseBoolean(dataset.visCtl),
     boundaries: parseBoolean(dataset.visBoundaries),
+    gridStatsType,
     hectads: parseBooleanDefaultTrue(dataset.visHectads),
     ...(topN !== undefined ? { topN } : {}),
     ...(year !== undefined ? { year } : {}),

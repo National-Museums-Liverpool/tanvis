@@ -49,7 +49,7 @@ console.log(window.Tanvis.version);
 ```
 
 This snippet demonstrates the wiring pattern (`.tanvis` + `data-*` attributes + `init()`); the `table` renderer is currently scaffold-only.
-For working end-to-end examples, use `static-map`, `slippy-map`, `new-species-table`, `increasing-species-table`, `species-absent-since`, or `temporal-year-chart` (see `examples/static-map.html`, `examples/slippy-map.html`, `examples/new-species-table.html`, `examples/increasing-species-table.html`, `examples/species-absent-since.html`, and `examples/temporal-year-chart.html`).
+For working end-to-end examples, use `static-map`, `new-species-table`, `increasing-species-table`, `species-absent-since`, `species-map`, `grid-stats-map`, or `temporal-year-chart` (see `examples/static-map.html`, `examples/new-species-table.html`, `examples/increasing-species-table.html`, `examples/species-absent-since.html`, `examples/species-map.html`, `examples/grid-stats-map.html`, and `examples/temporal-year-chart.html`).
 
 To see a shared control block driving two map outputs together, open `examples/shared-control-maps.html`.
 
@@ -60,10 +60,11 @@ Tanvis currently registers these renderer types:
 - `table`
 - `chart`
 - `static-map`
-- `slippy-map`
 - `new-species-table`
 - `increasing-species-table`
 - `species-absent-since`
+- `species-map`
+- `grid-stats-map`
 - `temporal-year-chart`
 
 `table` and `chart` are scaffolded but their adapters are not implemented yet.
@@ -108,50 +109,11 @@ A separate `control-block` visualization can render radio options (`vc58`, `vc59
 
 The static map renderer calls `brcatlas.svgMap(...)` and then `setIdentfier(...)` and `redrawMap()` when available.
 
-### Slippy Map Renderer (Leaflet via BRC Atlas)
-
-Use `data-vis-type="slippy-map"`.
-
-Supported attributes:
-
-- `data-vis-source`: optional source string passed to `setIdentfier(...)`
-- `data-vis-area`: used to calculate aspect ratio when `data-vis-width` is set (default: `vc-58-59-60`)
-- `data-vis-control`: optional id of a `control-block` element used to drive area changes
-- `data-vis-boundaries`: `true`/`false` to show vice county boundaries (default: `false`)
-- `data-vis-expand`: `true`/`false` (optional)
-- `data-vis-width`: positive number in pixels (optional)
-
-```html
-<script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
-<script src="https://d3js.org/d3.v7.min.js"></script>
-<script src="https://cdn.jsdelivr.net/gh/biologicalrecordscentre/brc-atlas/dist/brcatlas.umd.js"></script>
-<link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/gh/biologicalrecordscentre/brc-atlas/dist/brcatlas.umd.css">
-
-<div
-  id="vc-control"
-  class="tanvis"
-  data-vis-type="control-block"
-  data-vis-area="vc-58"
-></div>
-
-<div
-  class="tanvis"
-  data-vis-type="slippy-map"
-  data-vis-area="vc-58"
-  data-vis-width="600"
-  data-vis-control="vc-control"
-  data-vis-boundaries="true"
-></div>
-```
-
 `control-block` elements must have an `id` attribute. Any visualization with `data-vis-control="<id>"` subscribes to that block.
 
 The control block currently renders VC selection controls plus a taxon-group dropdown populated from `taxon-groups`, with Scientific/Vernacular radio buttons that switch the dropdown labels between the `title` and `friendly` fields. The first dropdown option is `All groups`, and option values map to `external_key`.
 
 When a visualization is subscribed to a control block, the control block's current `data-vis-area` value takes precedence over the visualization's own `data-vis-area` both on initial render and on later control changes.
-
-The slippy map renderer calls `brcatlas.leafletMap(...)` and then `setIdentfier(...)` and `redrawMap()` when available.
 
 ### Species Map / Grid Stats Map Renderers
 
@@ -293,4 +255,4 @@ Tanvis queries `taxon-year-stats` for the selected `taxon_identifier`, reshapes 
 
 When `data-vis-linked-table` is set, Tanvis listens for `species-row-selected` events on that element and rerenders the chart using the emitted `detail.speciesId`.
 
-See `examples/static-map.html`, `examples/slippy-map.html`, `examples/shared-control-maps.html`, `examples/new-species-table.html`, `examples/increasing-species-table.html`, `examples/species-absent-since.html`, `examples/species-map.html`, `examples/grid-stats-map.html`, and `examples/temporal-year-chart.html` for ready-to-run pages.
+See `examples/static-map.html`, `examples/shared-control-maps.html`, `examples/new-species-table.html`, `examples/increasing-species-table.html`, `examples/species-absent-since.html`, `examples/species-map.html`, `examples/grid-stats-map.html`, and `examples/temporal-year-chart.html` for ready-to-run pages.

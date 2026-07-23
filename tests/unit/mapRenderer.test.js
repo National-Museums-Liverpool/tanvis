@@ -158,7 +158,7 @@ describe('renderLeafletMap', () => {
 
     const element = document.createElement('div');
     renderLeafletMap(element, {
-      type: 'slippy-map',
+      type: 'leaflet-map',
       area: 'vc-58-59-60',
       control: 'vc-control-leaflet'
     });
@@ -208,7 +208,7 @@ describe('renderLeafletMap', () => {
 
     const element = document.createElement('div');
     renderLeafletMap(element, {
-      type: 'slippy-map',
+      type: 'leaflet-map',
       area: 'vc-59'
     });
 
@@ -229,7 +229,7 @@ describe('renderLeafletMap', () => {
 
     const element = document.createElement('div');
     renderLeafletMap(element, {
-      type: 'slippy-map',
+      type: 'leaflet-map',
       area: 'vc-59',
       width: 630
     });
@@ -254,7 +254,7 @@ describe('renderLeafletMap', () => {
 
     const element = document.createElement('div');
     renderLeafletMap(element, {
-      type: 'slippy-map',
+      type: 'leaflet-map',
       area: 'vc-59',
       width: 630,
       height: 410
@@ -289,7 +289,7 @@ describe('renderLeafletMap', () => {
     });
 
     renderLeafletMap(element, {
-      type: 'slippy-map',
+      type: 'leaflet-map',
       area: 'vc-59',
       width: 630,
       expand: true
@@ -326,7 +326,7 @@ describe('renderLeafletMap', () => {
     });
 
     renderLeafletMap(element, {
-      type: 'slippy-map',
+      type: 'leaflet-map',
       area: 'vc-59',
       expand: true
     });
@@ -354,7 +354,7 @@ describe('renderLeafletMap', () => {
 
     const element = document.createElement('div');
     renderLeafletMap(element, {
-      type: 'slippy-map',
+      type: 'leaflet-map',
       area: 'vc-58',
       boundaries: true
     });

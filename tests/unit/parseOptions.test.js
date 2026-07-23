@@ -8,12 +8,13 @@ describe('parseOptions', () => {
     element.dataset.visSource = '/data.json';
     element.dataset.visCtl = 'true';
 
-    expect(parseOptions(element)).toEqual({
+    expect(parseOptions(element)).toMatchObject({
       type: 'chart',
       source: '/data.json',
       area: 'vc-58-59-60',
       ctl: true,
       boundaries: false,
+      gridStatsType: undefined,
       hectads: true
     });
   });
@@ -176,6 +177,28 @@ describe('parseOptions', () => {
     expect(parseOptions(element)).toMatchObject({
       type: 'species-map',
       mapType: 'leaflet'
+    });
+  });
+
+  it('reads data-vis-species for species-map', () => {
+    const element = document.createElement('div');
+    element.dataset.visType = 'species-map';
+    element.dataset.visSpecies = 'NHMSYS0000001001';
+
+    expect(parseOptions(element)).toMatchObject({
+      type: 'species-map',
+      species: 'NHMSYS0000001001'
+    });
+  });
+
+  it('reads data-vis-grid-stats-type for grid-stats-map', () => {
+    const element = document.createElement('div');
+    element.dataset.visType = 'grid-stats-map';
+    element.dataset.visGridStatsType = 'species';
+
+    expect(parseOptions(element)).toMatchObject({
+      type: 'grid-stats-map',
+      gridStatsType: 'species'
     });
   });
 });

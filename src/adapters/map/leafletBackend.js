@@ -1,6 +1,7 @@
 import { clearElement } from '../../utils/dom.js';
 import { normalizeErrorMessage } from '../../utils/apiError.js';
 import { createVisStatusReporter } from '../../utils/visStatus.js';
+import { ensureSharedStyles } from '../../styles/sharedStyles.js';
 import {
   assignElementId,
   attachExpandResizeHandlers,
@@ -34,6 +35,7 @@ export function renderLeafletAtlasMap(element, config, options = {}) {
 
     const idPrefix = options.idPrefix || 'tanvis-leaflet-map';
     assignElementId(element, idPrefix);
+    ensureMapTetradInfo(element);
 
     const effectiveArea = getEffectiveArea(config);
     const renderConfig = effectiveArea === config.area
@@ -45,7 +47,7 @@ export function renderLeafletAtlasMap(element, config, options = {}) {
 
     element.dataset.visArea = renderConfig.area;
 
-    const map = brcAtlas.leafletMap(createLeafletMapOptions(element, renderConfig));
+    const map = brcAtlas.leafletMap(createLeafletMapOptions(element, renderConfig, options));
 
     if (renderConfig.expand === true) {
       attachExpandResizeHandlers(element, renderConfig, map);
@@ -81,7 +83,7 @@ export function renderLeafletAtlasMap(element, config, options = {}) {
   }
 }
 
-function createLeafletMapOptions(element, config) {
+function createLeafletMapOptions(element, config, options) {
   const width = getConfiguredWidth(element, config);
   const explicitHeight = parseOptionalPositiveNumber(config.height);
   const selectedBounds = getAreaBounds(config.area);
@@ -90,9 +92,12 @@ function createLeafletMapOptions(element, config) {
 
   return {
     selector: `#${element.id}`,
+    captionId: 'map-tetrad-info',
     showVcs: showBoundaries,
     ...(width !== undefined ? { width } : {}),
     ...(height !== undefined ? { height } : {}),
+    ...(options?.mapTypesSel ? { mapTypesSel: options.mapTypesSel } : {}),
+    ...(options?.mapTypesKey ? { mapTypesKey: options.mapTypesKey } : {}),
     basemapConfigs: [
       {
         name: 'OpenStreetMap',
@@ -116,6 +121,56 @@ function createLeafletMapOptions(element, config) {
       }
     ]
   };
+}
+
+function ensureMapTetradInfo(element) {
+  if (typeof document === 'undefined') {
+    return;
+  }
+
+  ensureSharedStyles();
+
+  const parent = element?.parentElement;
+  if (!parent) {
+    return;
+  }
+
+  let info = document.getElementById('map-tetrad-info');
+  if (!info) {
+    info = document.createElement('div');
+    info.id = 'map-tetrad-info';
+  }
+
+  info.setAttribute('data-placeholder', 'Tetrad information');
+  ensureMapTetradInfoPlaceholderBehavior(info);
+  parent.insertBefore(info, element);
+}
+
+function ensureMapTetradInfoPlaceholderBehavior(info) {
+  if (!info) {
+    return;
+  }
+
+  if (!info.__tanvisMapTetradInfoObserver) {
+    const observer = new MutationObserver(() => {
+      syncMapTetradInfoEmptyState(info);
+    });
+
+    observer.observe(info, {
+      childList: true,
+      subtree: true,
+      characterData: true
+    });
+
+    info.__tanvisMapTetradInfoObserver = observer;
+  }
+
+  syncMapTetradInfoEmptyState(info);
+}
+
+function syncMapTetradInfoEmptyState(info) {
+  const isEmpty = !String(info.textContent || '').trim();
+  info.classList.toggle('tanvis-map-tetrad-info-empty', isEmpty);
 }
 
 function panToAreaCentroid(areaKey, map) {

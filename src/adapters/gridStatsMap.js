@@ -4,12 +4,16 @@ import { createApiError, normalizeErrorMessage, parseJsonSafe } from '../utils/a
 import { createVisStatusReporter } from '../utils/visStatus.js';
 import { renderLeafletAtlasMap } from './map/leafletBackend.js';
 import { renderStaticAtlasMap } from './map/staticBackend.js';
+import { createRadioGroup } from '../controls/radioGroup.js';
+import { ensureSharedStyles } from '../styles/sharedStyles.js';
 
 const DEFAULT_API_BASE = '/api/v1';
 const GRID_SQUARE_STATS_RESOURCE = 'grid-square-stats';
 const DEFAULT_PAGE_LIMIT = 1000;
+const GRID_STATS_RECORDS_KEY = 'grid-stats-records';
+const GRID_STATS_SPECIES_KEY = 'grid-stats-species';
 
-let mapData=[];
+let mapData = [];
 
 export function createGridStatsMapAdapter() {
   return {
@@ -63,12 +67,9 @@ export function createGridStatsMapAdapter() {
           clearElement(element);
           const summary = createSummary(records.length, renderConfig.area);
           const mapContainer = document.createElement('div');
-          const pre = document.createElement('pre');
-          pre.textContent = JSON.stringify(records, null, 2);
 
           element.appendChild(summary);
           element.appendChild(mapContainer);
-          element.appendChild(pre);
           status.clear();
 
           mapData = records;
@@ -94,33 +95,218 @@ function createSummary(count, area) {
   return summary;
 }
 
-function renderMapBackend(element, config) {
-  const mapType = String(config.mapType || 'static').toLowerCase();
+function renderMapBackend(mapElement, config) {
+  const mapTypeMode = normalizeMapTypeMode(config.mapType);
+  const activeMapType = resolveActiveMapType(mapElement, mapTypeMode);
+  const pointOpacity = activeMapType === 'leaflet' ? 0.7 : 1;
+  const gridStatsType = normalizeGridStatsType(config.gridStatsType);
+  const showGridStatsSwitch = gridStatsType === 'switch';
+  const showMapTypeSwitch = mapTypeMode === 'switch';
+  const selectedMapTypeKey = resolveSelectedMapTypeKey(mapElement, gridStatsType);
+  const mapTypesSel = {
+    [GRID_STATS_RECORDS_KEY]: () => createRecordNumberData(pointOpacity),
+    [GRID_STATS_SPECIES_KEY]: () => createSpeciesNumberData(pointOpacity),
+  };
 
-  if (mapType === 'leaflet') {
-    return renderLeafletAtlasMap(element, config, {
+  let map;
+
+  if (activeMapType === 'leaflet') {
+    map = renderLeafletAtlasMap(mapElement, config, {
       idPrefix: 'tanvis-grid-stats-map',
-      errorMessage: 'Failed to render grid stats map'
+      errorMessage: 'Failed to render grid stats map',
+      mapTypesSel,
+      mapTypesKey: selectedMapTypeKey
+    });
+  } else {
+    console.log('Rendering static grid stats map with records:', mapData);
+
+    map = renderStaticAtlasMap(mapElement, config, {
+      idPrefix: 'tanvis-grid-stats-map',
+      errorMessage: 'Failed to render grid stats map',
+      mapTypesSel,
+      mapTypesKey: selectedMapTypeKey
     });
   }
 
-  console.log('Rendering static grid stats map with records:', mapData);
-  
-  return renderStaticAtlasMap(element, config, {
-    idPrefix: 'tanvis-grid-stats-map',
-    errorMessage: 'Failed to render grid stats map',
-    mapTypesSel: {
-      'grid-stats': () => {
-          return new Promise(function (resolve, reject) {
-            const recs = mapData.map(function (r) {
-              return { gr: r.square, id: r.square, colour: 'black' };
-            });
-            resolve({ records: recs, size: 1, precision: 2000, shape: "circle", opacity: 1 });
-          });
-      },
+  renderMapControlGroup(mapElement, {
+    map,
+    activeMapType,
+    selectedMapTypeKey,
+    showMapTypeSwitch,
+    showGridStatsSwitch,
+    onMapTypeChange: (nextMapType) => {
+      mapElement.dataset.tanvisGridStatsActiveMapType = nextMapType;
+      renderMapBackend(mapElement, config);
     },
-    mapTypesKey: 'grid-stats'
+    onGridStatsTypeChange: (nextMapTypeKey) => {
+      mapElement.dataset.tanvisGridStatsSelectedMapTypeKey = nextMapTypeKey;
+      applyMapTypeSelection(map, nextMapTypeKey);
+    }
   });
+
+  return map;
+}
+
+function renderMapControlGroup(mapElement, options) {
+  if (typeof document === 'undefined') {
+    return;
+  }
+
+  ensureSharedStyles();
+  const hostElement = mapElement.parentElement;
+  if (!hostElement) {
+    return;
+  }
+
+  const controls = ensureMapControlsContainer(hostElement);
+  clearElement(controls);
+
+  if (!options.showMapTypeSwitch && !options.showGridStatsSwitch) {
+    controls.remove();
+    return;
+  }
+
+  if (options.showMapTypeSwitch) {
+    controls.appendChild(createMapTypeSwitchControl(mapElement, options.activeMapType, options.onMapTypeChange));
+  }
+
+  if (options.showGridStatsSwitch) {
+    controls.appendChild(createGridStatsTypeSwitchControl(mapElement, options.selectedMapTypeKey, options.onGridStatsTypeChange));
+  }
+}
+
+function ensureMapControlsContainer(hostElement) {
+  for (const child of hostElement.children) {
+    if (child.classList?.contains('tanvis-grid-stats-map-controls')) {
+      return child;
+    }
+  }
+
+  const controls = document.createElement('div');
+  controls.className = 'tanvis-grid-stats-map-controls';
+  hostElement.appendChild(controls);
+  return controls;
+}
+
+function createMapTypeSwitchControl(mapElement, activeMapType, onChange) {
+  const group = createRadioGroup({
+    name: getMapTypeSwitchName(mapElement),
+    selectedValue: activeMapType,
+    items: [
+      { value: 'static', label: 'Static' },
+      { value: 'leaflet', label: 'Leaflet' }
+    ],
+    onChange: (value) => {
+      const nextMapType = normalizeBaseMapType(value);
+      if (nextMapType === activeMapType) {
+        return;
+      }
+
+      onChange(nextMapType);
+    }
+  });
+
+  group.classList.add('tanvis-grid-stats-map-type-switch');
+  return group;
+}
+
+function createGridStatsTypeSwitchControl(mapElement, selectedMapTypeKey, onChange) {
+  const group = createRadioGroup({
+    name: getGridStatsSwitchName(mapElement),
+    selectedValue: selectedMapTypeKey === GRID_STATS_SPECIES_KEY ? 'species' : 'records',
+    items: [
+      { value: 'records', label: 'Records' },
+      { value: 'species', label: 'Species' }
+    ],
+    onChange: (value) => {
+      const mapTypeKey = value === 'species' ? GRID_STATS_SPECIES_KEY : GRID_STATS_RECORDS_KEY;
+      onChange(mapTypeKey);
+    }
+  });
+
+  group.classList.add('tanvis-grid-stats-switch');
+  return group;
+}
+
+function applyMapTypeSelection(map, mapTypeKey) {
+  if (!map || typeof map.setMapType !== 'function' || typeof map.redrawMap !== 'function') {
+    return;
+  }
+
+  map.setMapType(mapTypeKey);
+  map.redrawMap();
+}
+
+function getGridStatsSwitchName(mapElement) {
+  const base = mapElement.id || 'tanvis-grid-stats-map';
+  return `${base}-switch`;
+}
+
+function getMapTypeSwitchName(mapElement) {
+  const base = mapElement.id || 'tanvis-grid-stats-map';
+  return `${base}-map-type-switch`;
+}
+
+function normalizeMapTypeMode(value) {
+  const normalized = String(value || '').trim().toLowerCase();
+
+  if (normalized === 'leaflet') {
+    return 'leaflet';
+  }
+
+  if (normalized === 'switch') {
+    return 'switch';
+  }
+
+  return 'static';
+}
+
+function normalizeBaseMapType(value) {
+  return String(value || '').trim().toLowerCase() === 'leaflet' ? 'leaflet' : 'static';
+}
+
+function normalizeGridStatsType(value) {
+  const normalized = String(value || '').trim().toLowerCase();
+
+  if (normalized === 'species') {
+    return 'species';
+  }
+
+  if (normalized === 'records') {
+    return 'records';
+  }
+
+  return 'switch';
+}
+
+function resolveActiveMapType(mapElement, mapTypeMode) {
+  if (mapTypeMode !== 'switch') {
+    return mapTypeMode;
+  }
+
+  const savedMapType = normalizeBaseMapType(mapElement?.dataset?.tanvisGridStatsActiveMapType);
+  mapElement.dataset.tanvisGridStatsActiveMapType = savedMapType;
+  return savedMapType;
+}
+
+function resolveSelectedMapTypeKey(mapElement, gridStatsType) {
+  if (gridStatsType === 'species') {
+    mapElement.dataset.tanvisGridStatsSelectedMapTypeKey = GRID_STATS_SPECIES_KEY;
+    return GRID_STATS_SPECIES_KEY;
+  }
+
+  if (gridStatsType === 'records') {
+    mapElement.dataset.tanvisGridStatsSelectedMapTypeKey = GRID_STATS_RECORDS_KEY;
+    return GRID_STATS_RECORDS_KEY;
+  }
+
+  const saved = mapElement?.dataset?.tanvisGridStatsSelectedMapTypeKey;
+  if (saved === GRID_STATS_SPECIES_KEY || saved === GRID_STATS_RECORDS_KEY) {
+    return saved;
+  }
+
+  mapElement.dataset.tanvisGridStatsSelectedMapTypeKey = GRID_STATS_RECORDS_KEY;
+  return GRID_STATS_RECORDS_KEY;
 }
 
 async function buildGridStatsMapRecords({ apiBase, geographicRegionIdentifier }) {
@@ -246,3 +432,42 @@ function clearControlSubscription(element) {
   delete element.__tanvisControlCleanup;
 }
 
+function createRecordNumberData(opacity = 1) {
+  return new Promise(function (resolve) {
+    const minVal = mapData.reduce((min, r) => Math.min(min, r.occurrences_count || Infinity), Infinity);
+    const maxVal = mapData.reduce((max, r) => Math.max(max, r.occurrences_count || -Infinity), -Infinity);
+    const colorScale = d3.scaleSequential()
+      .domain([minVal, maxVal])
+      .interpolator(d3.interpolateViridis);
+
+    const recs = mapData.map(function (r) {
+      return {
+        gr: r.square,
+        id: r.square,
+        colour: colorScale(r.occurrences_count || 0),
+        caption: `${r.square}: ${r.occurrences_count || 0} records`
+      };
+    });
+    resolve({ records: recs, size: 1, precision: 2000, shape: 'circle', opacity });
+  });
+}
+
+function createSpeciesNumberData(opacity = 1) {
+  return new Promise(function (resolve) {
+    const minVal = mapData.reduce((min, r) => Math.min(min, r.species_count || Infinity), Infinity);
+    const maxVal = mapData.reduce((max, r) => Math.max(max, r.species_count || -Infinity), -Infinity);
+    const colorScale = d3.scaleSequential()
+      .domain([minVal, maxVal])
+      .interpolator(d3.interpolateCividis);
+
+    const recs = mapData.map(function (r) {
+      return {
+        gr: r.square,
+        id: r.square,
+        colour: colorScale(r.species_count || 0),
+        caption: `${r.square}: ${r.species_count || 0} species`
+      };
+    });
+    resolve({ records: recs, size: 1, precision: 2000, shape: 'circle', opacity });
+  });
+}
