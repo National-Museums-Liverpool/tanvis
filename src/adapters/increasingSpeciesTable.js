@@ -3,6 +3,7 @@ import { getLatestControlEvent, subscribeToControl } from '../controls/controlBu
 import { createApiError, normalizeErrorMessage, parseJsonSafe } from '../utils/apiError.js';
 import { createVisStatusReporter } from '../utils/visStatus.js';
 import { resolveApiBase } from '../config/apiBase.js';
+import { logApiRequest } from '../utils/apiRequest.js';
 
 const TAXON_STATS_RESOURCE = 'taxon-stats';
 const DEFAULT_PAGE_LIMIT = 1000;
@@ -214,6 +215,8 @@ function resolveResourceUrl(apiBase, resourceName) {
 }
 
 async function fetchJson(url, defaultErrorMessage) {
+  logApiRequest(url, { method: 'GET' });
+
   let response;
   try {
     response = await fetch(url);

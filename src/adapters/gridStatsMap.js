@@ -13,8 +13,9 @@ import {
   resolveActiveMapType
 } from './map/mapTypeSwitchControl.js';
 import { assignDeciles } from '../utils/assignDeciles.js';
+import { logApiRequest } from '../utils/apiRequest.js';
+import { resolveApiBase } from '../config/apiBase.js';
 
-const DEFAULT_API_BASE = 'https://tanhub.biodiverseit.co.uk/api/v1';
 const GRID_SQUARE_STATS_RESOURCE = 'grid-square-stats';
 const DEFAULT_PAGE_LIMIT = 1000;
 const GRID_STATS_RECORDS_KEY = 'grid-stats-records';
@@ -39,7 +40,7 @@ export function createGridStatsMapAdapter() {
             area: effectiveArea
           };
 
-      const apiBase = resolveApiBase(renderConfig.source || DEFAULT_API_BASE);
+      const apiBase = resolveApiBase(renderConfig.source);
       const geographicRegionIdentifier = areaToGeographicRegionIdentifier(renderConfig.area);
       const loadId = (element.__tanvisGridStatsMapLoadId || 0) + 1;
       element.__tanvisGridStatsMapLoadId = loadId;
@@ -307,6 +308,8 @@ function resolveResourceUrl(apiBase, resourceName) {
 }
 
 async function fetchJson(url, defaultErrorMessage) {
+  logApiRequest(url, { method: 'GET' });
+
   let response;
   try {
     response = await fetch(url);

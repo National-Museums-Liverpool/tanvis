@@ -16,7 +16,17 @@ const taxonSeriesProfiles = [
   { taxon_identifier: 'NHMSYS0000002001', baseOccurrences: 6, yearlyOccurrencesStep: 1, baseGridSquares: 3, yearlyGridStep: 1 },
   { taxon_identifier: 'NHMSYS0000002002', baseOccurrences: 4, yearlyOccurrencesStep: 1, baseGridSquares: 2, yearlyGridStep: 1 },
   { taxon_identifier: 'NHMSYS0000002003', baseOccurrences: 3, yearlyOccurrencesStep: 1, baseGridSquares: 1, yearlyGridStep: 1 },
-  { taxon_identifier: 'NHMSYS0000002004', baseOccurrences: 5, yearlyOccurrencesStep: 1, baseGridSquares: 2, yearlyGridStep: 1 }
+  { taxon_identifier: 'NHMSYS0000002004', baseOccurrences: 5, yearlyOccurrencesStep: 1, baseGridSquares: 2, yearlyGridStep: 1 },
+  { taxon_identifier: 'NBNSYS0000008324', baseOccurrences: 21, yearlyOccurrencesStep: 2, baseGridSquares: 10, yearlyGridStep: 1 },
+  { taxon_identifier: 'NBNSYS0000166146', baseOccurrences: 18, yearlyOccurrencesStep: 2, baseGridSquares: 9, yearlyGridStep: 1 },
+  { taxon_identifier: 'NBNSYS0000009861', baseOccurrences: 24, yearlyOccurrencesStep: 2, baseGridSquares: 12, yearlyGridStep: 1 },
+  { taxon_identifier: 'NBNSYS0100003682', baseOccurrences: 15, yearlyOccurrencesStep: 2, baseGridSquares: 8, yearlyGridStep: 1 },
+  { taxon_identifier: 'NHMSYS0000875595', baseOccurrences: 16, yearlyOccurrencesStep: 2, baseGridSquares: 8, yearlyGridStep: 1 },
+  { taxon_identifier: 'NBNSYS0000031091', baseOccurrences: 12, yearlyOccurrencesStep: 1, baseGridSquares: 6, yearlyGridStep: 1 },
+  { taxon_identifier: 'NHMSYS0001387317', baseOccurrences: 11, yearlyOccurrencesStep: 1, baseGridSquares: 5, yearlyGridStep: 1 },
+  { taxon_identifier: 'NBNSYS0000030351', baseOccurrences: 13, yearlyOccurrencesStep: 1, baseGridSquares: 6, yearlyGridStep: 1 },
+  { taxon_identifier: 'NBNSYS0000009230', baseOccurrences: 14, yearlyOccurrencesStep: 1, baseGridSquares: 7, yearlyGridStep: 1 },
+  { taxon_identifier: 'NBNSYS0000007559', baseOccurrences: 20, yearlyOccurrencesStep: 2, baseGridSquares: 10, yearlyGridStep: 1 }
 ];
 
 const taxonYearStatsRows = taxonSeriesProfiles.flatMap((profile, profileIndex) => {

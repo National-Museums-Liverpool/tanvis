@@ -3,6 +3,7 @@ import { createRadioGroup } from './radioGroup.js';
 import { publishControlEvent } from './controlBus.js';
 import { createApiError, normalizeErrorMessage, parseJsonSafe } from '../utils/apiError.js';
 import { createVisStatusReporter } from '../utils/visStatus.js';
+import { logApiRequest } from '../../src/utils/apiRequest.js';
 
 const LABEL_MODE_OPTIONS = [
   { label: 'Scientific', value: 'scientific' },
@@ -161,6 +162,8 @@ function resolveResourceUrl(apiBase, resourceName) {
 }
 
 async function fetchJson(url, defaultErrorMessage) {
+  logApiRequest(url, { method: 'GET' });
+
   let response;
   try {
     response = await fetch(url);

@@ -2,6 +2,7 @@ import { clearElement } from '../utils/dom.js';
 import { createApiError, normalizeErrorMessage, parseJsonSafe } from '../utils/apiError.js';
 import { createVisStatusReporter } from '../utils/visStatus.js';
 import { resolveApiBase } from '../config/apiBase.js';
+import { logApiRequest } from '../utils/apiRequest.js';
 
 // Adapter for Tanvis temporal year charts backed by BRC Charts.
 // Keeps all dependency checks and data-loading in one place.
@@ -219,6 +220,8 @@ function resolveResourceUrl(apiBase, resourceName) {
 }
 
 async function fetchJson(url, defaultErrorMessage) {
+  logApiRequest(url, { method: 'GET' });
+
   let response;
   try {
     response = await fetch(url);

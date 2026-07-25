@@ -2,6 +2,7 @@ import { clearElement } from '../utils/dom.js';
 import { getLatestControlEvent, subscribeToControl } from '../controls/controlBus.js';
 import { createApiError, normalizeErrorMessage, parseJsonSafe } from '../utils/apiError.js';
 import { createVisStatusReporter } from '../utils/visStatus.js';
+import { logApiRequest } from '../utils/apiRequest.js';
 import { renderLeafletAtlasMap } from './map/leafletBackend.js';
 import { renderStaticAtlasMap } from './map/staticBackend.js';
 import { ensureSharedStyles } from '../styles/sharedStyles.js';
@@ -12,9 +13,11 @@ import {
   resolveActiveMapType
 } from './map/mapTypeSwitchControl.js';
 import { resolveApiBase } from '../config/apiBase.js';
+import { assignDeciles } from '../utils/assignDeciles.js';
 
 const OCCURRENCES_RESOURCE = 'occurrences';
 const DEFAULT_PAGE_LIMIT = 1000;
+let mapData = [];
 
 export function createSpeciesMapAdapter() {
   return {
@@ -65,6 +68,26 @@ export function createSpeciesMapAdapter() {
         });
       }
 
+      clearElement(element);
+      const mapContainer = document.createElement('div');
+      mapContainer.dataset.tanvisSpeciesMap = 'map';
+      element.appendChild(mapContainer);
+      status.clear();
+
+      let map;
+
+      try {
+        map = renderMapBackend(mapContainer, renderConfig);
+      } catch (error) {
+        if (element.__tanvisSpeciesMapLoadId !== loadId) {
+          return;
+        }
+
+        clearElement(element);
+        status.showError(normalizeErrorMessage(error, 'Failed to render species map'));
+        return;
+      }
+
       fetchSpeciesOccurrences({
         apiBase,
         speciesCode,
@@ -76,7 +99,10 @@ export function createSpeciesMapAdapter() {
             return;
           }
 
-          console.log('[species-map] occurrences:', rows);
+          const occurrenceRows = Array.isArray(rows) ? rows : [];
+          console.log('[species-map] occurrences:', occurrenceRows);
+
+          applyOccurrenceDataToMap(map, occurrenceRows);
         })
         .catch((error) => {
           if (element.__tanvisSpeciesMapLoadId !== loadId) {
@@ -84,28 +110,8 @@ export function createSpeciesMapAdapter() {
           }
 
           console.error('[species-map] failed to fetch occurrences:', error);
+          status.showError(normalizeErrorMessage(error, 'Failed to render species map'));
         });
-
-      try {
-        if (element.__tanvisSpeciesMapLoadId !== loadId) {
-          return;
-        }
-
-        clearElement(element);
-        const mapContainer = document.createElement('div');
-        mapContainer.dataset.tanvisSpeciesMap = 'map';
-        element.appendChild(mapContainer);
-        status.clear();
-
-        renderMapBackend(mapContainer, renderConfig);
-      } catch (error) {
-        if (element.__tanvisSpeciesMapLoadId !== loadId) {
-          return;
-        }
-
-        clearElement(element);
-        status.showError(normalizeErrorMessage(error, 'Failed to render species map'));
-      }
     }
   };
 }
@@ -113,18 +119,26 @@ export function createSpeciesMapAdapter() {
 function renderMapBackend(element, config) {
   const mapTypeMode = normalizeMapTypeMode(config.mapType);
   const activeMapType = resolveActiveMapType(element, mapTypeMode, 'tanvisSpeciesMapActiveMapType');
+  const pointOpacity = activeMapType === 'leaflet' ? 0.7 : 1;
+  const mapTypesSel = {
+    'occurrence-adapter': () => createRecordNumberData(pointOpacity),
+  };
 
   let map;
 
   if (activeMapType === 'leaflet') {
     map = renderLeafletAtlasMap(element, config, {
       idPrefix: 'tanvis-species-map',
-      errorMessage: 'Failed to render species map'
+      errorMessage: 'Failed to render species map',
+      mapTypesSel,
+      mapTypesKey: 'occurrence-adapter'
     });
   } else {
     map = renderStaticAtlasMap(element, config, {
       idPrefix: 'tanvis-species-map',
-      errorMessage: 'Failed to render species map'
+      errorMessage: 'Failed to render species map',
+      mapTypesSel,
+      mapTypesKey: 'occurrence-adapter'
     });
   }
 
@@ -174,6 +188,25 @@ function clearControlSubscription(element) {
   }
 
   delete element.__tanvisControlCleanup;
+}
+
+export function applyOccurrenceDataToMap(map, occurrenceRows = []) {
+  mapData = Array.isArray(occurrenceRows) ? occurrenceRows : [];
+
+  if (!map || typeof map.setMapType !== 'function' || typeof map.redrawMap !== 'function') {
+    return;
+  }
+
+  map.setMapType('occurrence-adapter');
+  map.redrawMap();
+
+  return map;
+}
+
+export function createOccurrenceMapTypeAdapter(opacity = 1) {
+  return function occurrenceMapTypeAdapter() {
+    return Promise.resolve(createOccurrenceData(mapData, opacity));
+  };
 }
 
 function getEffectiveArea(config) {
@@ -272,6 +305,8 @@ function resolveResourceUrl(apiBase, resourceName) {
 }
 
 async function fetchJson(url, defaultErrorMessage) {
+  logApiRequest(url, { method: 'GET' });
+
   let response;
   try {
     response = await fetch(url);
@@ -302,4 +337,41 @@ function getListData(payload) {
   }
 
   return [];
+}
+
+function createRecordNumberData(opacity = 1) {
+  return new Promise(function (resolve) {
+
+    // mapData = assignDeciles(mapData.filter(r => r.occurrences_count !== 0), 'occurrences_count');
+
+    // console.log('[grid-stats-map] mapData with decile ranks:', mapData);
+
+    // // const minVal = mapData.reduce((min, r) => Math.min(min, r.occurrences_count || Infinity), Infinity);
+    // // const maxVal = mapData.reduce((max, r) => Math.max(max, r.occurrences_count || -Infinity), -Infinity);
+    // const colorScale = d3.scaleSequential()
+    //   .domain([1, 10])
+    //   .interpolator(d3.interpolateViridis);
+
+    // There can be grid reference in returned data which are blank, so
+    // filter those out.
+    const recs = mapData.filter(r => r.grid_ref_2km).map(function (r) {
+      return {
+        gr: r.grid_ref_2km,
+        id: r.grid_ref_2km,
+        colour: 'red', //colorScale(r.decile || 0),
+        caption: `${r.grid_ref_2km}: ${r.occurrences_count || 0} records`
+      };
+    });
+
+    // Check if there are any invalid tetrad grid reference
+    const invalidGridRefs = recs.filter(r => !r.gr || typeof r.gr !== 'string' || r.gr.length !== 5);
+    if (invalidGridRefs.length > 0) {
+      console.warn('[species-map] Invalid tetrad grid references found:', invalidGridRefs);
+    }
+
+
+    console.log('[species-map] records for map rendering:', recs);
+
+    resolve({ records: recs, size: 1, precision: 2000, shape: 'circle', opacity });
+  });
 }

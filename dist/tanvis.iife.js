@@ -1250,6 +1250,11 @@ var Tanvis = (function (exports) {
     return targetBody;
   }
 
+  function logApiRequest(url, options = {}) {
+    const method = (options?.method || 'GET').toUpperCase();
+    console.info(`[api-request] ${method} ${url}`);
+  }
+
   const LABEL_MODE_OPTIONS = [
     { label: 'Scientific', value: 'scientific' },
     { label: 'Vernacular', value: 'vernacular' }
@@ -1407,6 +1412,8 @@ var Tanvis = (function (exports) {
   }
 
   async function fetchJson$6(url, defaultErrorMessage) {
+    logApiRequest(url, { method: 'GET' });
+
     let response;
     try {
       response = await fetch(url);
@@ -1439,10 +1446,10 @@ var Tanvis = (function (exports) {
     return [];
   }
 
-  const DEFAULT_API_BASE$1 = 'https://tanhub.biodiverseit.co.uk/api/v1';
+  const DEFAULT_API_BASE = 'https://tanhub.biodiverseit.co.uk/api/v1';
 
-  function resolveApiBase$1(source) {
-    return source || DEFAULT_API_BASE$1;
+  function resolveApiBase(source) {
+    return source || DEFAULT_API_BASE;
   }
 
   function createControlBlockAdapter() {
@@ -1475,7 +1482,7 @@ var Tanvis = (function (exports) {
 
         element.appendChild(createTaxonGroupControls({
           rootElement: element,
-          apiBase: resolveApiBase$1(config.source),
+          apiBase: resolveApiBase(config.source),
           body,
           loadToken
         }));
@@ -1523,7 +1530,7 @@ var Tanvis = (function (exports) {
 
         const startDate = renderConfig.startDate;
         const endDate = renderConfig.endDate || getCurrentIsoDate();
-        const apiBase = resolveApiBase$1(renderConfig.source);
+        const apiBase = resolveApiBase(renderConfig.source);
         const geographicRegionIdentifier = areaToGeographicRegionIdentifier$3(renderConfig.area);
         const taxonGroupExternalKey = getEffectiveTaxonGroup$3(renderConfig);
         const loadId = (element.__tanvisNewSpeciesLoadId || 0) + 1;
@@ -1694,6 +1701,8 @@ var Tanvis = (function (exports) {
   }
 
   async function fetchJson$5(url, defaultErrorMessage) {
+    logApiRequest(url, { method: 'GET' });
+
     let response;
     try {
       response = await fetch(url);
@@ -1836,7 +1845,7 @@ var Tanvis = (function (exports) {
             };
 
         const topN = parseTopN(renderConfig.topN) ?? DEFAULT_TOP_N;
-        const apiBase = resolveApiBase$1(renderConfig.source);
+        const apiBase = resolveApiBase(renderConfig.source);
         const geographicRegionIdentifier = areaToGeographicRegionIdentifier$2(renderConfig.area);
         const taxonGroupExternalKey = getEffectiveTaxonGroup$2(renderConfig);
         const loadId = (element.__tanvisIncreasingLoadId || 0) + 1;
@@ -2014,6 +2023,8 @@ var Tanvis = (function (exports) {
   }
 
   async function fetchJson$4(url, defaultErrorMessage) {
+    logApiRequest(url, { method: 'GET' });
+
     let response;
     try {
       response = await fetch(url);
@@ -2144,7 +2155,7 @@ var Tanvis = (function (exports) {
             };
 
         const year = Number(renderConfig.year);
-        const apiBase = resolveApiBase$1(renderConfig.source);
+        const apiBase = resolveApiBase(renderConfig.source);
         const geographicRegionIdentifier = areaToGeographicRegionIdentifier$1(renderConfig.area);
         const taxonGroupExternalKey = getEffectiveTaxonGroup$1(renderConfig);
         const loadId = (element.__tanvisSpeciesAbsentLoadId || 0) + 1;
@@ -2306,6 +2317,8 @@ var Tanvis = (function (exports) {
   }
 
   async function fetchJson$3(url, defaultErrorMessage) {
+    logApiRequest(url, { method: 'GET' });
+
     let response;
     try {
       response = await fetch(url);
@@ -2488,8 +2501,50 @@ var Tanvis = (function (exports) {
     return `${base}-map-type-switch`;
   }
 
+  function assignDeciles(arr, key) {
+    // 1. Create a shallow copy and sort by the target key ascending
+    const sorted = [...arr].sort((a, b) => a[key] - b[key]);
+    const total = sorted.length;
+    
+    // 2. Count frequencies of each unique value
+    const counts = {};
+    for (const item of sorted) {
+      const val = item[key];
+      counts[val] = (counts[val] || 0) + 1;
+    }
+    
+    // 3. Map unique values to their respective deciles based on cumulative count
+    const valueToDecile = {};
+    let cumulativeCount = 0;
+    
+    for (const item of sorted) {
+      const val = item[key];
+      
+      // Skip if we already assigned a decile to this unique value
+      if (valueToDecile[val] !== undefined) continue;
+      
+      // Add the full weight of this value group to the cumulative total
+      cumulativeCount += counts[val];
+      
+      // Calculate decile (1-10) using the midpoint/end of the current cluster
+      let decile = Math.ceil((cumulativeCount / total) * 10);
+      
+      // Ensure boundaries stay within 1 and 10
+      decile = Math.max(1, Math.min(10, decile));
+      
+      valueToDecile[val] = decile;
+    }
+    
+    // 4. Map the deciles back to the original array structure
+    return arr.map(item => ({
+      ...item,
+      decile: valueToDecile[item[key]]
+    }));
+  }
+
   const OCCURRENCES_RESOURCE = 'occurrences';
   const DEFAULT_PAGE_LIMIT$2 = 1000;
+  let mapData$1 = [];
 
   function createSpeciesMapAdapter() {
     return {
@@ -2509,7 +2564,7 @@ var Tanvis = (function (exports) {
             };
 
         const speciesCode = renderConfig.species || '';
-        const apiBase = resolveApiBase$1(renderConfig.source);
+        const apiBase = resolveApiBase(renderConfig.source);
         const taxonGroupExternalKey = getEffectiveTaxonGroup(renderConfig);
         const loadId = (element.__tanvisSpeciesMapLoadId || 0) + 1;
         element.__tanvisSpeciesMapLoadId = loadId;
@@ -2540,6 +2595,26 @@ var Tanvis = (function (exports) {
           });
         }
 
+        clearElement(element);
+        const mapContainer = document.createElement('div');
+        mapContainer.dataset.tanvisSpeciesMap = 'map';
+        element.appendChild(mapContainer);
+        status.clear();
+
+        let map;
+
+        try {
+          map = renderMapBackend$1(mapContainer, renderConfig);
+        } catch (error) {
+          if (element.__tanvisSpeciesMapLoadId !== loadId) {
+            return;
+          }
+
+          clearElement(element);
+          status.showError(normalizeErrorMessage(error, 'Failed to render species map'));
+          return;
+        }
+
         fetchSpeciesOccurrences({
           apiBase,
           speciesCode,
@@ -2551,7 +2626,10 @@ var Tanvis = (function (exports) {
               return;
             }
 
-            console.log('[species-map] occurrences:', rows);
+            const occurrenceRows = Array.isArray(rows) ? rows : [];
+            console.log('[species-map] occurrences:', occurrenceRows);
+
+            applyOccurrenceDataToMap(map, occurrenceRows);
           })
           .catch((error) => {
             if (element.__tanvisSpeciesMapLoadId !== loadId) {
@@ -2559,28 +2637,8 @@ var Tanvis = (function (exports) {
             }
 
             console.error('[species-map] failed to fetch occurrences:', error);
+            status.showError(normalizeErrorMessage(error, 'Failed to render species map'));
           });
-
-        try {
-          if (element.__tanvisSpeciesMapLoadId !== loadId) {
-            return;
-          }
-
-          clearElement(element);
-          const mapContainer = document.createElement('div');
-          mapContainer.dataset.tanvisSpeciesMap = 'map';
-          element.appendChild(mapContainer);
-          status.clear();
-
-          renderMapBackend$1(mapContainer, renderConfig);
-        } catch (error) {
-          if (element.__tanvisSpeciesMapLoadId !== loadId) {
-            return;
-          }
-
-          clearElement(element);
-          status.showError(normalizeErrorMessage(error, 'Failed to render species map'));
-        }
       }
     };
   }
@@ -2588,18 +2646,26 @@ var Tanvis = (function (exports) {
   function renderMapBackend$1(element, config) {
     const mapTypeMode = normalizeMapTypeMode(config.mapType);
     const activeMapType = resolveActiveMapType(element, mapTypeMode, 'tanvisSpeciesMapActiveMapType');
+    const pointOpacity = activeMapType === 'leaflet' ? 0.7 : 1;
+    const mapTypesSel = {
+      'occurrence-adapter': () => createRecordNumberData$1(pointOpacity),
+    };
 
     let map;
 
     if (activeMapType === 'leaflet') {
       map = renderLeafletAtlasMap(element, config, {
         idPrefix: 'tanvis-species-map',
-        errorMessage: 'Failed to render species map'
+        errorMessage: 'Failed to render species map',
+        mapTypesSel,
+        mapTypesKey: 'occurrence-adapter'
       });
     } else {
       map = renderStaticAtlasMap(element, config, {
         idPrefix: 'tanvis-species-map',
-        errorMessage: 'Failed to render species map'
+        errorMessage: 'Failed to render species map',
+        mapTypesSel,
+        mapTypesKey: 'occurrence-adapter'
       });
     }
 
@@ -2649,6 +2715,19 @@ var Tanvis = (function (exports) {
     }
 
     delete element.__tanvisControlCleanup;
+  }
+
+  function applyOccurrenceDataToMap(map, occurrenceRows = []) {
+    mapData$1 = Array.isArray(occurrenceRows) ? occurrenceRows : [];
+
+    if (!map || typeof map.setMapType !== 'function' || typeof map.redrawMap !== 'function') {
+      return;
+    }
+
+    map.setMapType('occurrence-adapter');
+    map.redrawMap();
+
+    return map;
   }
 
   function getEffectiveArea$1(config) {
@@ -2747,6 +2826,8 @@ var Tanvis = (function (exports) {
   }
 
   async function fetchJson$2(url, defaultErrorMessage) {
+    logApiRequest(url, { method: 'GET' });
+
     let response;
     try {
       response = await fetch(url);
@@ -2779,54 +2860,49 @@ var Tanvis = (function (exports) {
     return [];
   }
 
+  function createRecordNumberData$1(opacity = 1) {
+    return new Promise(function (resolve) {
+
+      // mapData = assignDeciles(mapData.filter(r => r.occurrences_count !== 0), 'occurrences_count');
+
+      // console.log('[grid-stats-map] mapData with decile ranks:', mapData);
+
+      // // const minVal = mapData.reduce((min, r) => Math.min(min, r.occurrences_count || Infinity), Infinity);
+      // // const maxVal = mapData.reduce((max, r) => Math.max(max, r.occurrences_count || -Infinity), -Infinity);
+      // const colorScale = d3.scaleSequential()
+      //   .domain([1, 10])
+      //   .interpolator(d3.interpolateViridis);
+
+      // There can be grid reference in returned data which are blank, so
+      // filter those out.
+      const recs = mapData$1.filter(r => r.grid_ref_2km).map(function (r) {
+        return {
+          gr: r.grid_ref_2km,
+          id: r.grid_ref_2km,
+          colour: 'red', //colorScale(r.decile || 0),
+          caption: `${r.grid_ref_2km}: ${r.occurrences_count || 0} records`
+        };
+      });
+
+      // Check if there are any invalid tetrad grid reference
+      const invalidGridRefs = recs.filter(r => !r.gr || typeof r.gr !== 'string' || r.gr.length !== 5);
+      if (invalidGridRefs.length > 0) {
+        console.warn('[species-map] Invalid tetrad grid references found:', invalidGridRefs);
+      }
+
+
+      console.log('[species-map] records for map rendering:', recs);
+
+      resolve({ records: recs, size: 1, precision: 2000, shape: 'circle', opacity });
+    });
+  }
+
   const speciesMapAdapter = createSpeciesMapAdapter();
 
   function renderSpeciesMap(element, config) {
     speciesMapAdapter.render(element, config);
   }
 
-  function assignDeciles(arr, key) {
-    // 1. Create a shallow copy and sort by the target key ascending
-    const sorted = [...arr].sort((a, b) => a[key] - b[key]);
-    const total = sorted.length;
-    
-    // 2. Count frequencies of each unique value
-    const counts = {};
-    for (const item of sorted) {
-      const val = item[key];
-      counts[val] = (counts[val] || 0) + 1;
-    }
-    
-    // 3. Map unique values to their respective deciles based on cumulative count
-    const valueToDecile = {};
-    let cumulativeCount = 0;
-    
-    for (const item of sorted) {
-      const val = item[key];
-      
-      // Skip if we already assigned a decile to this unique value
-      if (valueToDecile[val] !== undefined) continue;
-      
-      // Add the full weight of this value group to the cumulative total
-      cumulativeCount += counts[val];
-      
-      // Calculate decile (1-10) using the midpoint/end of the current cluster
-      let decile = Math.ceil((cumulativeCount / total) * 10);
-      
-      // Ensure boundaries stay within 1 and 10
-      decile = Math.max(1, Math.min(10, decile));
-      
-      valueToDecile[val] = decile;
-    }
-    
-    // 4. Map the deciles back to the original array structure
-    return arr.map(item => ({
-      ...item,
-      decile: valueToDecile[item[key]]
-    }));
-  }
-
-  const DEFAULT_API_BASE = 'https://tanhub.biodiverseit.co.uk/api/v1';
   const GRID_SQUARE_STATS_RESOURCE = 'grid-square-stats';
   const DEFAULT_PAGE_LIMIT$1 = 1000;
   const GRID_STATS_RECORDS_KEY = 'grid-stats-records';
@@ -2851,7 +2927,7 @@ var Tanvis = (function (exports) {
               area: effectiveArea
             };
 
-        const apiBase = resolveApiBase(renderConfig.source || DEFAULT_API_BASE);
+        const apiBase = resolveApiBase(renderConfig.source);
         const geographicRegionIdentifier = areaToGeographicRegionIdentifier(renderConfig.area);
         const loadId = (element.__tanvisGridStatsMapLoadId || 0) + 1;
         element.__tanvisGridStatsMapLoadId = loadId;
@@ -3118,6 +3194,8 @@ var Tanvis = (function (exports) {
   }
 
   async function fetchJson$1(url, defaultErrorMessage) {
+    logApiRequest(url, { method: 'GET' });
+
     let response;
     try {
       response = await fetch(url);
@@ -3359,7 +3437,7 @@ var Tanvis = (function (exports) {
     }
 
     const chartRecords = await fetchTaxonYearStats({
-      apiBase: resolveApiBase$1(config.source),
+      apiBase: resolveApiBase(config.source),
       taxonIdentifier: config.taxonId,
       startYear: config.startYear,
       endYear: config.endYear
@@ -3465,6 +3543,8 @@ var Tanvis = (function (exports) {
   }
 
   async function fetchJson(url, defaultErrorMessage) {
+    logApiRequest(url, { method: 'GET' });
+
     let response;
     try {
       response = await fetch(url);
