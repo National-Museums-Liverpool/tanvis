@@ -39,7 +39,7 @@ export function createGridStatsMapAdapter() {
             area: effectiveArea
           };
 
-      const apiBase = renderConfig.source || DEFAULT_API_BASE;
+      const apiBase = resolveApiBase(renderConfig.source || DEFAULT_API_BASE);
       const geographicRegionIdentifier = areaToGeographicRegionIdentifier(renderConfig.area);
       const loadId = (element.__tanvisGridStatsMapLoadId || 0) + 1;
       element.__tanvisGridStatsMapLoadId = loadId;
@@ -401,7 +401,7 @@ function createRecordNumberData(opacity = 1) {
         gr: r.square,
         id: r.square,
         colour: colorScale(r.decile || 0),
-        caption: `${r.square}: ${r.occurrences_count || 0} records ${r.decile}`
+        caption: `${r.square}: ${r.occurrences_count || 0} records`
       };
     });
     resolve({ records: recs, size: 1, precision: 2000, shape: 'circle', opacity });
@@ -425,7 +425,7 @@ function createSpeciesNumberData(opacity = 1) {
         gr: r.square,
         id: r.square,
         colour: colorScale(r.decile || 0),
-        caption: `${r.square}: ${r.species_count || 0} species ${r.decile}`
+        caption: `${r.square}: ${r.species_count || 0} species`
       };
     });
     resolve({ records: recs, size: 1, precision: 2000, shape: 'circle', opacity });

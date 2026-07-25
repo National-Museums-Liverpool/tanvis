@@ -11,8 +11,8 @@ import {
   normalizeMapTypeMode,
   resolveActiveMapType
 } from './map/mapTypeSwitchControl.js';
+import { resolveApiBase } from '../config/apiBase.js';
 
-const DEFAULT_API_BASE = '/api/v1';
 const OCCURRENCES_RESOURCE = 'occurrences';
 const DEFAULT_PAGE_LIMIT = 1000;
 
@@ -34,7 +34,7 @@ export function createSpeciesMapAdapter() {
           };
 
       const speciesCode = renderConfig.species || '';
-      const apiBase = renderConfig.source || DEFAULT_API_BASE;
+      const apiBase = resolveApiBase(renderConfig.source);
       const taxonGroupExternalKey = getEffectiveTaxonGroup(renderConfig);
       const loadId = (element.__tanvisSpeciesMapLoadId || 0) + 1;
       element.__tanvisSpeciesMapLoadId = loadId;

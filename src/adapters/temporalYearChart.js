@@ -1,11 +1,11 @@
 import { clearElement } from '../utils/dom.js';
 import { createApiError, normalizeErrorMessage, parseJsonSafe } from '../utils/apiError.js';
 import { createVisStatusReporter } from '../utils/visStatus.js';
+import { resolveApiBase } from '../config/apiBase.js';
 
 // Adapter for Tanvis temporal year charts backed by BRC Charts.
 // Keeps all dependency checks and data-loading in one place.
 
-const DEFAULT_API_BASE = '/api/v1';
 const TAXON_YEAR_STATS_RESOURCE = 'taxon-year-stats';
 const DEFAULT_PAGE_LIMIT = 1000;
 
@@ -113,7 +113,7 @@ async function loadTemporalYearChart(element, config) {
   }
 
   const chartRecords = await fetchTaxonYearStats({
-    apiBase: config.source || DEFAULT_API_BASE,
+    apiBase: resolveApiBase(config.source),
     taxonIdentifier: config.taxonId,
     startYear: config.startYear,
     endYear: config.endYear

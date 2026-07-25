@@ -3,8 +3,7 @@ import { createControlsPanel } from '../controls/panel.js';
 import { createAreaControls } from '../controls/areaControls.js';
 import { createTaxonGroupControls } from '../controls/taxonGroupControls.js';
 import { publishControlEvent } from '../controls/controlBus.js';
-
-const DEFAULT_API_BASE = '/api/v1';
+import { resolveApiBase } from '../config/apiBase.js';
 
 export function createControlBlockAdapter() {
   return {
@@ -36,7 +35,7 @@ export function createControlBlockAdapter() {
 
       element.appendChild(createTaxonGroupControls({
         rootElement: element,
-        apiBase: config.source || DEFAULT_API_BASE,
+        apiBase: resolveApiBase(config.source),
         body,
         loadToken
       }));

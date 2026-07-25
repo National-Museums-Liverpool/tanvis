@@ -1439,7 +1439,11 @@ var Tanvis = (function (exports) {
     return [];
   }
 
-  const DEFAULT_API_BASE$6 = '/api/v1';
+  const DEFAULT_API_BASE$1 = 'https://tanhub.biodiverseit.co.uk/api/v1';
+
+  function resolveApiBase$1(source) {
+    return source || DEFAULT_API_BASE$1;
+  }
 
   function createControlBlockAdapter() {
     return {
@@ -1471,7 +1475,7 @@ var Tanvis = (function (exports) {
 
         element.appendChild(createTaxonGroupControls({
           rootElement: element,
-          apiBase: config.source || DEFAULT_API_BASE$6,
+          apiBase: resolveApiBase$1(config.source),
           body,
           loadToken
         }));
@@ -1490,7 +1494,6 @@ var Tanvis = (function (exports) {
     controlBlockAdapter.render(element, config);
   }
 
-  const DEFAULT_API_BASE$5 = '/api/v1';
   const TAXON_STATS_RESOURCE$2 = 'taxon-stats';
   const DEFAULT_PAGE_LIMIT$5 = 1000;
   const columns$2 = [
@@ -1520,7 +1523,7 @@ var Tanvis = (function (exports) {
 
         const startDate = renderConfig.startDate;
         const endDate = renderConfig.endDate || getCurrentIsoDate();
-        const apiBase = renderConfig.source || DEFAULT_API_BASE$5;
+        const apiBase = resolveApiBase$1(renderConfig.source);
         const geographicRegionIdentifier = areaToGeographicRegionIdentifier$3(renderConfig.area);
         const taxonGroupExternalKey = getEffectiveTaxonGroup$3(renderConfig);
         const loadId = (element.__tanvisNewSpeciesLoadId || 0) + 1;
@@ -1801,7 +1804,6 @@ var Tanvis = (function (exports) {
     newSpeciesTableAdapter.render(element, config);
   }
 
-  const DEFAULT_API_BASE$4 = '/api/v1';
   const TAXON_STATS_RESOURCE$1 = 'taxon-stats';
   const DEFAULT_PAGE_LIMIT$4 = 1000;
   const DEFAULT_TOP_N = 50;
@@ -1834,7 +1836,7 @@ var Tanvis = (function (exports) {
             };
 
         const topN = parseTopN(renderConfig.topN) ?? DEFAULT_TOP_N;
-        const apiBase = renderConfig.source || DEFAULT_API_BASE$4;
+        const apiBase = resolveApiBase$1(renderConfig.source);
         const geographicRegionIdentifier = areaToGeographicRegionIdentifier$2(renderConfig.area);
         const taxonGroupExternalKey = getEffectiveTaxonGroup$2(renderConfig);
         const loadId = (element.__tanvisIncreasingLoadId || 0) + 1;
@@ -2114,7 +2116,6 @@ var Tanvis = (function (exports) {
     increasingSpeciesTableAdapter.render(element, config);
   }
 
-  const DEFAULT_API_BASE$3 = '/api/v1';
   const TAXON_STATS_RESOURCE = 'taxon-stats';
   const DEFAULT_PAGE_LIMIT$3 = 1000;
   const columns = [
@@ -2143,7 +2144,7 @@ var Tanvis = (function (exports) {
             };
 
         const year = Number(renderConfig.year);
-        const apiBase = renderConfig.source || DEFAULT_API_BASE$3;
+        const apiBase = resolveApiBase$1(renderConfig.source);
         const geographicRegionIdentifier = areaToGeographicRegionIdentifier$1(renderConfig.area);
         const taxonGroupExternalKey = getEffectiveTaxonGroup$1(renderConfig);
         const loadId = (element.__tanvisSpeciesAbsentLoadId || 0) + 1;
@@ -2487,7 +2488,6 @@ var Tanvis = (function (exports) {
     return `${base}-map-type-switch`;
   }
 
-  const DEFAULT_API_BASE$2 = '/api/v1';
   const OCCURRENCES_RESOURCE = 'occurrences';
   const DEFAULT_PAGE_LIMIT$2 = 1000;
 
@@ -2509,7 +2509,7 @@ var Tanvis = (function (exports) {
             };
 
         const speciesCode = renderConfig.species || '';
-        const apiBase = renderConfig.source || DEFAULT_API_BASE$2;
+        const apiBase = resolveApiBase$1(renderConfig.source);
         const taxonGroupExternalKey = getEffectiveTaxonGroup(renderConfig);
         const loadId = (element.__tanvisSpeciesMapLoadId || 0) + 1;
         element.__tanvisSpeciesMapLoadId = loadId;
@@ -2826,7 +2826,7 @@ var Tanvis = (function (exports) {
     }));
   }
 
-  const DEFAULT_API_BASE$1 = 'https://tanhub.biodiverseit.co.uk/api/v1';
+  const DEFAULT_API_BASE = 'https://tanhub.biodiverseit.co.uk/api/v1';
   const GRID_SQUARE_STATS_RESOURCE = 'grid-square-stats';
   const DEFAULT_PAGE_LIMIT$1 = 1000;
   const GRID_STATS_RECORDS_KEY = 'grid-stats-records';
@@ -2851,7 +2851,7 @@ var Tanvis = (function (exports) {
               area: effectiveArea
             };
 
-        const apiBase = renderConfig.source || DEFAULT_API_BASE$1;
+        const apiBase = resolveApiBase(renderConfig.source || DEFAULT_API_BASE);
         const geographicRegionIdentifier = areaToGeographicRegionIdentifier(renderConfig.area);
         const loadId = (element.__tanvisGridStatsMapLoadId || 0) + 1;
         element.__tanvisGridStatsMapLoadId = loadId;
@@ -3212,7 +3212,7 @@ var Tanvis = (function (exports) {
           gr: r.square,
           id: r.square,
           colour: colorScale(r.decile || 0),
-          caption: `${r.square}: ${r.occurrences_count || 0} records ${r.decile}`
+          caption: `${r.square}: ${r.occurrences_count || 0} records`
         };
       });
       resolve({ records: recs, size: 1, precision: 2000, shape: 'circle', opacity });
@@ -3236,7 +3236,7 @@ var Tanvis = (function (exports) {
           gr: r.square,
           id: r.square,
           colour: colorScale(r.decile || 0),
-          caption: `${r.square}: ${r.species_count || 0} species ${r.decile}`
+          caption: `${r.square}: ${r.species_count || 0} species`
         };
       });
       resolve({ records: recs, size: 1, precision: 2000, shape: 'circle', opacity });
@@ -3252,7 +3252,6 @@ var Tanvis = (function (exports) {
   // Adapter for Tanvis temporal year charts backed by BRC Charts.
   // Keeps all dependency checks and data-loading in one place.
 
-  const DEFAULT_API_BASE = '/api/v1';
   const TAXON_YEAR_STATS_RESOURCE = 'taxon-year-stats';
   const DEFAULT_PAGE_LIMIT = 1000;
 
@@ -3360,7 +3359,7 @@ var Tanvis = (function (exports) {
     }
 
     const chartRecords = await fetchTaxonYearStats({
-      apiBase: config.source || DEFAULT_API_BASE,
+      apiBase: resolveApiBase$1(config.source),
       taxonIdentifier: config.taxonId,
       startYear: config.startYear,
       endYear: config.endYear

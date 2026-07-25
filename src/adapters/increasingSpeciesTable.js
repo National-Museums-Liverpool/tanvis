@@ -2,8 +2,8 @@ import { clearElement } from '../utils/dom.js';
 import { getLatestControlEvent, subscribeToControl } from '../controls/controlBus.js';
 import { createApiError, normalizeErrorMessage, parseJsonSafe } from '../utils/apiError.js';
 import { createVisStatusReporter } from '../utils/visStatus.js';
+import { resolveApiBase } from '../config/apiBase.js';
 
-const DEFAULT_API_BASE = '/api/v1';
 const TAXON_STATS_RESOURCE = 'taxon-stats';
 const DEFAULT_PAGE_LIMIT = 1000;
 const DEFAULT_TOP_N = 50;
@@ -36,7 +36,7 @@ export function createIncreasingSpeciesTableAdapter() {
           };
 
       const topN = parseTopN(renderConfig.topN) ?? DEFAULT_TOP_N;
-      const apiBase = renderConfig.source || DEFAULT_API_BASE;
+      const apiBase = resolveApiBase(renderConfig.source);
       const geographicRegionIdentifier = areaToGeographicRegionIdentifier(renderConfig.area);
       const taxonGroupExternalKey = getEffectiveTaxonGroup(renderConfig);
       const loadId = (element.__tanvisIncreasingLoadId || 0) + 1;
