@@ -78,7 +78,7 @@ export function createSpeciesMapAdapter() {
       let map;
 
       try {
-        map = renderMapBackend(mapContainer, renderConfig);
+        map = renderMapBackend(mapContainer, renderConfig, element);
       } catch (error) {
         if (element.__tanvisSpeciesMapLoadId !== loadId) {
           return;
@@ -117,12 +117,13 @@ export function createSpeciesMapAdapter() {
   };
 }
 
-function renderMapBackend(element, config) {
+function renderMapBackend(element, config, hostElement) {
   const mapTypeMode = normalizeMapTypeMode(config.mapType);
   const activeMapType = resolveActiveMapType(element, mapTypeMode, 'tanvisSpeciesMapActiveMapType');
   const pointOpacity = activeMapType === 'leaflet' ? 0.7 : 1;
+  const dotStyleOptions = getDotStyleOptions(hostElement);
   const mapTypesSel = {
-    [OCCURRENCES_MAP_TYPE_KEY]: () => createOccurrenceData(mapData, pointOpacity),
+    [OCCURRENCES_MAP_TYPE_KEY]: () => createOccurrenceData(pointOpacity, dotStyleOptions),
   };
 
   let map;
@@ -151,7 +152,7 @@ function renderMapBackend(element, config) {
       if (element.parentElement) {
         element.parentElement.dataset.tanvisSpeciesMapActiveMapType = nextMapType;
       }
-      renderMapBackend(element, config);
+      renderMapBackend(element, config, element.parentElement);
     }
   });
 
@@ -192,6 +193,18 @@ function clearControlSubscription(element) {
   }
 
   delete element.__tanvisControlCleanup;
+}
+
+function getDotStyleOptions(hostElement) {
+  if (!hostElement || typeof hostElement.dataset !== 'object') {
+    return {};
+  }
+
+  return {
+    dotColour: hostElement.dataset.visDotColour || '',
+    transformation: hostElement.dataset.visTransformation || '',
+    shape: hostElement.dataset.visDotShape || 'circle'
+  };
 }
 
 export function applyOccurrenceDataToMap(map, occurrenceRows = []) {
@@ -337,8 +350,9 @@ function getListData(payload) {
   return [];
 }
 
-export function createOccurrenceData(opacity = 1) {
+export function createOccurrenceData(opacity = 1, options = {}) {
   return new Promise(function (resolve) {
+    const { dotColour = '', transformation = '', shape = 'circle' } = options || {};
 
     console.log('got here')
 
@@ -369,8 +383,10 @@ export function createOccurrenceData(opacity = 1) {
       r.caption = `${r.gr}: ${r.val} records`;
     });
 
-    recs = resolveColours(recs, "deciles", "viridis");
+    const resolvedTransform = transformation || '';
+    const resolvedColourScale = dotColour || 'black';
+    recs = resolveColours(recs, resolvedTransform, resolvedColourScale);
 
-    resolve({ records: recs, size: 1, precision: 2000, shape: 'circle', opacity });
+    resolve({ records: recs, size: 1, precision: 2000, shape, opacity });
   });
 }

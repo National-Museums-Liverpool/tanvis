@@ -90,7 +90,7 @@ export function createGridStatsMapAdapter() {
 
           console.log('[grid-stats-map] retrieved records:', mapData);
 
-          renderMapBackend(mapContainer, renderConfig);
+          renderMapBackend(mapContainer, renderConfig, element);
         })
         .catch((error) => {
           if (element.__tanvisGridStatsMapLoadId !== loadId) {
@@ -110,7 +110,7 @@ function createSummary(count, area) {
   return summary;
 }
 
-function renderMapBackend(mapElement, config) {
+function renderMapBackend(mapElement, config, hostElement) {
   const mapTypeMode = normalizeMapTypeMode(config.mapType);
   const activeMapType = resolveActiveMapType(mapElement, mapTypeMode, 'tanvisGridStatsActiveMapType');
   const pointOpacity = activeMapType === 'leaflet' ? 0.7 : 1;
@@ -118,9 +118,10 @@ function renderMapBackend(mapElement, config) {
   const showGridStatsSwitch = gridStatsType === 'switch';
   const showMapTypeSwitch = mapTypeMode === 'switch';
   const selectedMapTypeKey = resolveSelectedMapTypeKey(mapElement, gridStatsType);
+  const dotStyleOptions = getDotStyleOptions(hostElement);
   const mapTypesSel = {
-    [GRID_STATS_RECORDS_KEY]: () => createRecordNumberData(pointOpacity),
-    [GRID_STATS_SPECIES_KEY]: () => createSpeciesNumberData(pointOpacity),
+    [GRID_STATS_RECORDS_KEY]: () => createRecordNumberData(pointOpacity, dotStyleOptions),
+    [GRID_STATS_SPECIES_KEY]: () => createSpeciesNumberData(pointOpacity, dotStyleOptions),
   };
 
   let map;
@@ -154,7 +155,7 @@ function renderMapBackend(mapElement, config) {
       if (mapElement.parentElement) {
         mapElement.parentElement.dataset.tanvisGridStatsActiveMapType = nextMapType;
       }
-      renderMapBackend(mapElement, config);
+      renderMapBackend(mapElement, config, mapElement.parentElement);
     },
     onGridStatsTypeChange: (nextMapTypeKey) => {
       mapElement.dataset.tanvisGridStatsSelectedMapTypeKey = nextMapTypeKey;
@@ -389,7 +390,19 @@ function clearControlSubscription(element) {
   delete element.__tanvisControlCleanup;
 }
 
-function createRecordNumberData(opacity = 1) {
+function getDotStyleOptions(hostElement) {
+  if (!hostElement || typeof hostElement.dataset !== 'object') {
+    return {};
+  }
+
+  return {
+    dotColour: hostElement.dataset.visDotColour || '',
+    transformation: hostElement.dataset.visTransformation || '',
+    shape: hostElement.dataset.visDotShape || 'circle'
+  };
+}
+
+function createRecordNumberData(opacity = 1, options = {}) {
   return new Promise(function (resolve) {
     
     let recs = mapData.filter(r => r.occurrences_count !== 0).map(function (r) {
@@ -400,12 +413,15 @@ function createRecordNumberData(opacity = 1) {
         caption: `${r.square}: ${r.occurrences_count || 0} records`
       };
     });
-    recs = resolveColours(recs, "deciles", "viridis");
-    resolve({ records: recs, size: 1, precision: 2000, shape: 'circle', opacity });
+    const { dotColour = '', transformation = '', shape = 'circle' } = options || {};
+    const resolvedTransform = transformation || '';
+    const resolvedColourScale = dotColour || 'black';
+    recs = resolveColours(recs, resolvedTransform, resolvedColourScale);
+    resolve({ records: recs, size: 1, precision: 2000, shape, opacity });
   });
 }
 
-function createSpeciesNumberData(opacity = 1) {
+function createSpeciesNumberData(opacity = 1, options = {}) {
   return new Promise(function (resolve) {
 
     let recs = mapData.filter(r => r.species_count !== 0).map(function (r) {
@@ -416,7 +432,10 @@ function createSpeciesNumberData(opacity = 1) {
         caption: `${r.square}: ${r.species_count || 0} species`
       };
     });
-    recs = resolveColours(recs, "deciles", "cividis");
-    resolve({ records: recs, size: 1, precision: 2000, shape: 'circle', opacity });
+    const { dotColour = '', transformation = '', shape = 'circle' } = options || {};
+    const resolvedTransform = transformation || '';
+    const resolvedColourScale = dotColour || 'black';
+    recs = resolveColours(recs, resolvedTransform, resolvedColourScale);
+    resolve({ records: recs, size: 1, precision: 2000, shape, opacity });
   });
 }

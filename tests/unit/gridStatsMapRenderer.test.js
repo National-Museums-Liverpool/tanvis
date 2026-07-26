@@ -1,7 +1,12 @@
-import { describe, it, expect, vi, afterEach } from 'vitest';
+import * as d3 from 'd3';
+import { beforeEach, describe, it, expect, vi, afterEach } from 'vitest';
 import { renderGridStatsMap } from '../../src/renderers/gridStatsMap.js';
 
 describe('renderGridStatsMap', () => {
+  beforeEach(() => {
+    globalThis.d3 = d3;
+  });
+
   afterEach(() => {
     vi.restoreAllMocks();
     delete window.brcatlas;
@@ -155,5 +160,113 @@ describe('renderGridStatsMap', () => {
     expect(svgMapCalls).toHaveLength(1);
     expect(leafletMapCalls).toHaveLength(1);
     expect(leafletMapCalls[0].mapTypesKey).toBe('grid-stats-records');
+  });
+
+  it('uses host element dataset values for grid stats dot styling', async () => {
+    const mapTypeHandlers = {};
+
+    window.brcatlas = {
+      svgMap: (opts) => {
+        Object.assign(mapTypeHandlers, opts.mapTypesSel);
+        return {
+          setMapType() {},
+          redrawMap() {}
+        };
+      }
+    };
+
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        data: [
+          {
+            square: 'SJ58',
+            occurrences_count: 12,
+            species_count: 4
+          }
+        ]
+      })
+    });
+
+    const element = document.createElement('div');
+    element.dataset.visDotColour = 'magenta';
+    element.dataset.visTransformation = 'sqrt';
+    element.dataset.visDotShape = 'square';
+
+    renderGridStatsMap(element, {
+      type: 'grid-stats-map',
+      mapType: 'static',
+      area: 'vc-58',
+      gridStatsType: 'records'
+    });
+
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    const payload = await mapTypeHandlers['grid-stats-records']();
+
+    expect(payload.shape).toBe('square');
+    expect(payload.records[0]).toMatchObject({
+      gr: 'SJ58',
+      colour: 'magenta'
+    });
+  });
+
+  it('preserves dataset dot styling when switching from static to leaflet', async () => {
+    const mapTypeHandlers = {};
+
+    window.brcatlas = {
+      svgMap: (opts) => {
+        Object.assign(mapTypeHandlers, opts.mapTypesSel);
+        return {
+          setMapType() {},
+          redrawMap() {}
+        };
+      },
+      leafletMap: (opts) => {
+        Object.assign(mapTypeHandlers, opts.mapTypesSel);
+        return {
+          setMapType() {},
+          redrawMap() {}
+        };
+      }
+    };
+
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        data: [
+          {
+            square: 'SJ58',
+            occurrences_count: 12,
+            species_count: 4
+          }
+        ]
+      })
+    });
+
+    const element = document.createElement('div');
+    element.dataset.visDotColour = 'magenta';
+    element.dataset.visTransformation = 'sqrt';
+    element.dataset.visDotShape = 'square';
+
+    renderGridStatsMap(element, {
+      type: 'grid-stats-map',
+      mapType: 'switch',
+      area: 'vc-58',
+      gridStatsType: 'records'
+    });
+
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    const leafletInput = element.querySelector('input[type="radio"][value="leaflet"]');
+    leafletInput.checked = true;
+    leafletInput.dispatchEvent(new Event('change', { bubbles: true }));
+
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    const payload = await mapTypeHandlers['grid-stats-records']();
+
+    expect(payload.shape).toBe('square');
+    expect(payload.records[0]).toMatchObject({ colour: 'magenta' });
   });
 });
