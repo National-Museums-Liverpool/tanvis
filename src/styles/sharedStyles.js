@@ -182,8 +182,8 @@ const SHARED_STYLES = `
 
 .tanvis-grid-stats-map-controls {
   display: flex;
+  flex-direction: column;
   align-items: flex-start;
-  flex-wrap: wrap;
   gap: 0.45rem;
   margin-top: 0.45rem;
 }
