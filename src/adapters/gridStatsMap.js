@@ -12,7 +12,7 @@ import {
   normalizeMapTypeMode,
   resolveActiveMapType
 } from './map/mapTypeSwitchControl.js';
-import { assignDeciles } from '../utils/assignDeciles.js';
+import { resolveColours } from '../utils/colourMapDots.js';
 import { logApiRequest } from '../utils/apiRequest.js';
 import { resolveApiBase } from '../config/apiBase.js';
 
@@ -391,25 +391,16 @@ function clearControlSubscription(element) {
 
 function createRecordNumberData(opacity = 1) {
   return new Promise(function (resolve) {
-
-    mapData = assignDeciles(mapData.filter(r => r.occurrences_count !== 0), 'occurrences_count');
-
-    console.log('[grid-stats-map] mapData with decile ranks:', mapData);
-
-    // const minVal = mapData.reduce((min, r) => Math.min(min, r.occurrences_count || Infinity), Infinity);
-    // const maxVal = mapData.reduce((max, r) => Math.max(max, r.occurrences_count || -Infinity), -Infinity);
-    const colorScale = d3.scaleSequential()
-      .domain([1, 10])
-      .interpolator(d3.interpolateViridis);
-
-    const recs = mapData.map(function (r) {
+    
+    let recs = mapData.filter(r => r.occurrences_count !== 0).map(function (r) {
       return {
         gr: r.square,
         id: r.square,
-        colour: colorScale(r.decile || 0),
+        val: r.occurrences_count,
         caption: `${r.square}: ${r.occurrences_count || 0} records`
       };
     });
+    recs = resolveColours(recs, "deciles", "viridis");
     resolve({ records: recs, size: 1, precision: 2000, shape: 'circle', opacity });
   });
 }
@@ -417,23 +408,15 @@ function createRecordNumberData(opacity = 1) {
 function createSpeciesNumberData(opacity = 1) {
   return new Promise(function (resolve) {
 
-    mapData = assignDeciles(mapData.filter(r => r.species_count !== 0), 'species_count');
- 
-
-    //const minVal = mapData.reduce((min, r) => Math.min(min, r.species_count || Infinity), Infinity);
-    //const maxVal = mapData.reduce((max, r) => Math.max(max, r.species_count || -Infinity), -Infinity);
-    const colorScale = d3.scaleSequential()
-      .domain([1, 10])
-      .interpolator(d3.interpolateCividis);
-
-    const recs = mapData.map(function (r) {
+    let recs = mapData.filter(r => r.species_count !== 0).map(function (r) {
       return {
         gr: r.square,
         id: r.square,
-        colour: colorScale(r.decile || 0),
+        val: r.species_count,
         caption: `${r.square}: ${r.species_count || 0} species`
       };
     });
+    recs = resolveColours(recs, "deciles", "cividis");
     resolve({ records: recs, size: 1, precision: 2000, shape: 'circle', opacity });
   });
 }

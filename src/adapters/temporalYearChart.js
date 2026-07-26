@@ -263,9 +263,11 @@ function getBrcChartsGlobal() {
 }
 
 function getD3Global() {
-  if (typeof window === 'undefined') {
+  // Resolve D3 from the same global context used in tests so the adapter
+  // behaves consistently in both the browser and Vitest.
+  if (typeof window === 'undefined' && typeof globalThis === 'undefined') {
     return null;
   }
 
-  return window.d3 || null;
+  return globalThis.d3 || window?.d3 || null;
 }

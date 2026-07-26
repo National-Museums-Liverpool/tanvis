@@ -12,8 +12,8 @@ import {
   normalizeMapTypeMode,
   resolveActiveMapType
 } from './map/mapTypeSwitchControl.js';
+import { resolveColours } from '../utils/colourMapDots.js';
 import { resolveApiBase } from '../config/apiBase.js';
-import { assignDeciles } from '../utils/assignDeciles.js';
 
 const OCCURRENCES_RESOURCE = 'occurrences';
 const OCCURRENCES_MAP_TYPE_KEY = 'occurrences';
@@ -207,46 +207,6 @@ export function applyOccurrenceDataToMap(map, occurrenceRows = []) {
   return map;
 }
 
-export function createOccurrenceMapTypeAdapter(opacity = 1) {
-  return function occurrenceMapTypeAdapter() {
-    return createOccurrenceData(mapData, opacity);
-  };
-}
-
-function createOccurrenceData(occurrenceRows = [], opacity = 1) {
-  return new Promise((resolve) => {
-    const byGridRef = new Map();
-
-    (Array.isArray(occurrenceRows) ? occurrenceRows : []).forEach((row) => {
-      const gridRef = row.grid_ref_2km || '';
-      if (!gridRef) {
-        return;
-      }
-
-      const key = String(gridRef);
-      const existing = byGridRef.get(key);
-      if (existing) {
-        existing.count += 1;
-        existing.caption = `${key}: ${existing.count} records`;
-        return;
-      }
-
-      const record = {
-        gr: key,
-        id: key,
-        count: 1,
-        colour: 'red',
-        caption: `${key}: 1 record`
-      };
-
-      byGridRef.set(key, record);
-    });
-
-    const records = Array.from(byGridRef.values());
-    resolve({ records, size: 1, precision: 2000, shape: 'circle', opacity });
-  });
-}
-
 function getEffectiveArea(config) {
   if (!config.control) {
     return config.area;
@@ -377,7 +337,7 @@ function getListData(payload) {
   return [];
 }
 
-function createRecordNumberData(opacity = 1) {
+export function createOccurrenceData(opacity = 1) {
   return new Promise(function (resolve) {
 
     console.log('got here')
@@ -387,7 +347,7 @@ function createRecordNumberData(opacity = 1) {
     // have one record per grid reference, with the number of occurrences 
     // for each grid reference. This is done by grouping the data by grid 
     // reference and counting the occurrences.
-    const recs = [];
+    let recs = [];
     mapData.forEach(r => {
       if (!r.grid_ref_2km) {
         // Filter out records with no grid reference
@@ -395,21 +355,21 @@ function createRecordNumberData(opacity = 1) {
       } 
       const existing = recs.find(item => item.gr === r.grid_ref_2km);
       if (existing) {
-        existing.count += 1;
+        existing.val += 1;
       } else {
         recs.push({ 
           gr: r.grid_ref_2km, 
-          count: 1
+          val: 1
         });
       }
     });
 
     // Enrich with colour and caption
     recs.forEach(r => {
-      r.colour = 'red';
-      r.caption = `${r.gr}: ${r.count} records`;
+      r.caption = `${r.gr}: ${r.val} records`;
     });
 
+    recs = resolveColours(recs, "deciles", "viridis");
 
     resolve({ records: recs, size: 1, precision: 2000, shape: 'circle', opacity });
   });

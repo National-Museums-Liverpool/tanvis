@@ -2533,7 +2533,69 @@ var Tanvis = (function (exports) {
     }
   }
 
-  function assignDeciles(arr, key) {
+  function getD3() {
+    // Expose D3 via the global object so unit tests can provide it without
+    // bundling D3 into the library build used by Rollup.
+    const globalD3 = globalThis.d3 ?? globalThis.window?.d3;
+
+    if (!globalD3?.scaleSequential || !globalD3?.interpolateCividis || !globalD3?.interpolateViridis) {
+      throw new Error('D3 is not available. Provide it via globalThis.d3 in tests or the browser runtime.');
+    }
+
+    return globalD3;
+  }
+
+  function resolveColours(recs, transform, colourScale) {
+    const d3 = getD3();
+
+    let colouredRecs = recs.map(r => ({ ...r }));
+
+    // Carry out any mathematical transformation requested
+    switch (transform) {
+      case "deciles":
+        colouredRecs = transDeciles(colouredRecs, 'val');
+        break;
+      case "sqrt":
+        colouredRecs = colouredRecs.map(r => ({ ...r, val: Math.sqrt(r.val) }));
+        break;
+      case "cbrt":
+        colouredRecs = colouredRecs.map(r => ({ ...r, val: Math.cbrt(r.val) }));
+        break;
+      case "log":
+        colouredRecs = colouredRecs.map(r => ({ ...r, val: Math.log(r.val) }));
+        break;
+      case "log10":
+        colouredRecs = colouredRecs.map(r => ({ ...r, val: Math.log10(r.val) }));
+        break;
+    }
+
+    const minVal = Math.min(...colouredRecs.map(r => r.val));
+    const maxVal = Math.max(...colouredRecs.map(r => r.val));
+
+    const colourTrans = d3.scaleSequential()
+      .domain([minVal, maxVal]);
+
+    switch (colourScale) {
+      case "cividis":
+        colourTrans.interpolator(d3.interpolateCividis);
+        colouredRecs = colouredRecs.map(r => ({ ...r, colour: colourTrans(r.val) }));
+        break;
+      case "viridis":
+        colourTrans.interpolator(d3.interpolateViridis);
+        colouredRecs = colouredRecs.map(r => ({ ...r, colour: colourTrans(r.val) }));
+        break;
+      default:
+        colouredRecs = colouredRecs.map(r => ({ ...r, colour: colourScale }));
+        break;
+    }
+
+    console.log('colouredRecs', colouredRecs);
+
+    return colouredRecs;
+  }
+
+
+  function transDeciles(arr, key) {
     // 1. Create a shallow copy and sort by the target key ascending
     const sorted = [...arr].sort((a, b) => a[key] - b[key]);
     const total = sorted.length;
@@ -2567,11 +2629,12 @@ var Tanvis = (function (exports) {
       valueToDecile[val] = decile;
     }
     
-    // 4. Map the deciles back to the original array structure
-    return arr.map(item => ({
-      ...item,
-      decile: valueToDecile[item[key]]
-    }));
+    // 4. Replace the original values with their corresponding deciles in the array
+    arr.forEach(item => {
+      item[key] = valueToDecile[item[key]];
+    });
+
+    return arr;
   }
 
   const OCCURRENCES_RESOURCE = 'occurrences';
@@ -2679,9 +2742,8 @@ var Tanvis = (function (exports) {
   function renderMapBackend$1(element, config) {
     const mapTypeMode = normalizeMapTypeMode(config.mapType);
     const activeMapType = resolveActiveMapType(element, mapTypeMode, 'tanvisSpeciesMapActiveMapType');
-    const pointOpacity = activeMapType === 'leaflet' ? 0.7 : 1;
     const mapTypesSel = {
-      [OCCURRENCES_MAP_TYPE_KEY]: () => createOccurrenceData(mapData$1, pointOpacity),
+      [OCCURRENCES_MAP_TYPE_KEY]: () => createOccurrenceData(mapData$1),
     };
 
     let map;
@@ -2764,40 +2826,6 @@ var Tanvis = (function (exports) {
     map.redrawMap();
 
     return map;
-  }
-
-  function createOccurrenceData(occurrenceRows = [], opacity = 1) {
-    return new Promise((resolve) => {
-      const byGridRef = new Map();
-
-      (Array.isArray(occurrenceRows) ? occurrenceRows : []).forEach((row) => {
-        const gridRef = row.grid_ref_2km || '';
-        if (!gridRef) {
-          return;
-        }
-
-        const key = String(gridRef);
-        const existing = byGridRef.get(key);
-        if (existing) {
-          existing.count += 1;
-          existing.caption = `${key}: ${existing.count} records`;
-          return;
-        }
-
-        const record = {
-          gr: key,
-          id: key,
-          count: 1,
-          colour: 'red',
-          caption: `${key}: 1 record`
-        };
-
-        byGridRef.set(key, record);
-      });
-
-      const records = Array.from(byGridRef.values());
-      resolve({ records, size: 1, precision: 2000, shape: 'circle', opacity });
-    });
   }
 
   function getEffectiveArea$1(config) {
@@ -2928,6 +2956,44 @@ var Tanvis = (function (exports) {
     }
 
     return [];
+  }
+
+  function createOccurrenceData(opacity = 1) {
+    return new Promise(function (resolve) {
+
+      console.log('got here');
+
+      // mapData contains occurrence data which obviously can include many
+      // records for a single grid reference. So we need to convert this to
+      // have one record per grid reference, with the number of occurrences 
+      // for each grid reference. This is done by grouping the data by grid 
+      // reference and counting the occurrences.
+      let recs = [];
+      mapData$1.forEach(r => {
+        if (!r.grid_ref_2km) {
+          // Filter out records with no grid reference
+          return;
+        } 
+        const existing = recs.find(item => item.gr === r.grid_ref_2km);
+        if (existing) {
+          existing.val += 1;
+        } else {
+          recs.push({ 
+            gr: r.grid_ref_2km, 
+            val: 1
+          });
+        }
+      });
+
+      // Enrich with colour and caption
+      recs.forEach(r => {
+        r.caption = `${r.gr}: ${r.val} records`;
+      });
+
+      recs = resolveColours(recs, "deciles", "viridis");
+
+      resolve({ records: recs, size: 1, precision: 2000, shape: 'circle', opacity });
+    });
   }
 
   const speciesMapAdapter = createSpeciesMapAdapter();
@@ -3310,25 +3376,16 @@ var Tanvis = (function (exports) {
 
   function createRecordNumberData(opacity = 1) {
     return new Promise(function (resolve) {
-
-      mapData = assignDeciles(mapData.filter(r => r.occurrences_count !== 0), 'occurrences_count');
-
-      console.log('[grid-stats-map] mapData with decile ranks:', mapData);
-
-      // const minVal = mapData.reduce((min, r) => Math.min(min, r.occurrences_count || Infinity), Infinity);
-      // const maxVal = mapData.reduce((max, r) => Math.max(max, r.occurrences_count || -Infinity), -Infinity);
-      const colorScale = d3.scaleSequential()
-        .domain([1, 10])
-        .interpolator(d3.interpolateViridis);
-
-      const recs = mapData.map(function (r) {
+      
+      let recs = mapData.filter(r => r.occurrences_count !== 0).map(function (r) {
         return {
           gr: r.square,
           id: r.square,
-          colour: colorScale(r.decile || 0),
+          val: r.occurrences_count,
           caption: `${r.square}: ${r.occurrences_count || 0} records`
         };
       });
+      recs = resolveColours(recs, "deciles", "viridis");
       resolve({ records: recs, size: 1, precision: 2000, shape: 'circle', opacity });
     });
   }
@@ -3336,23 +3393,15 @@ var Tanvis = (function (exports) {
   function createSpeciesNumberData(opacity = 1) {
     return new Promise(function (resolve) {
 
-      mapData = assignDeciles(mapData.filter(r => r.species_count !== 0), 'species_count');
-   
-
-      //const minVal = mapData.reduce((min, r) => Math.min(min, r.species_count || Infinity), Infinity);
-      //const maxVal = mapData.reduce((max, r) => Math.max(max, r.species_count || -Infinity), -Infinity);
-      const colorScale = d3.scaleSequential()
-        .domain([1, 10])
-        .interpolator(d3.interpolateCividis);
-
-      const recs = mapData.map(function (r) {
+      let recs = mapData.filter(r => r.species_count !== 0).map(function (r) {
         return {
           gr: r.square,
           id: r.square,
-          colour: colorScale(r.decile || 0),
+          val: r.species_count,
           caption: `${r.square}: ${r.species_count || 0} species`
         };
       });
+      recs = resolveColours(recs, "deciles", "cividis");
       resolve({ records: recs, size: 1, precision: 2000, shape: 'circle', opacity });
     });
   }
