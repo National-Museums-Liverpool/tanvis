@@ -105,13 +105,9 @@ var Tanvis = (function (exports) {
       return ['Missing data-vis-start-date for new-species-table'];
     }
 
-    if ((config.type === 'species-map' || config.type === 'grid-stats-map' || config.type === 'species-absent-since') && !Number.isFinite(config.year)) {
-      return ['Missing data-vis-year for species-map and grid-stats-map'];
+    if (config.type === 'species-absent-since' && !Number.isFinite(config.year)) {
+      return ['Missing data-vis-year for species-absent-since'];
     }
-
-    // if (config.type === 'temporal-year-chart' && !config.taxonId) {
-    //   return ['Missing data-vis-taxonid for temporal-year-chart'];
-    // }
 
     return [];
   }

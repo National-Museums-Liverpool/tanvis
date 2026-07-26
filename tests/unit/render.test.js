@@ -36,14 +36,4 @@ describe('render', () => {
       errors: []
     });
   });
-
-  it('requires data-vis-year for species-map', () => {
-    const element = document.createElement('div');
-    element.dataset.visType = 'species-map';
-
-    expect(render(element)).toEqual({
-      rendered: false,
-      errors: ['Missing data-vis-year for species-map and grid-stats-map']
-    });
-  });
 });
