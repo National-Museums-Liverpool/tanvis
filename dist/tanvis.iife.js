@@ -2646,6 +2646,7 @@ var Tanvis = (function (exports) {
     return {
       name: 'species-map',
       render(element, config) {
+        clearLinkedTableSubscription$1(element);
         clearControlSubscription$1(element);
         const status = createVisStatusReporter(element);
         clearElement(element);
@@ -2666,6 +2667,7 @@ var Tanvis = (function (exports) {
         element.__tanvisSpeciesMapLoadId = loadId;
         element.dataset.visArea = renderConfig.area;
         element.dataset.visTaxonGroup = taxonGroupExternalKey;
+        element.dataset.visSpecies = speciesCode;
 
         console.log('[species-map] selected species code:', speciesCode);
 
@@ -2687,6 +2689,20 @@ var Tanvis = (function (exports) {
             createSpeciesMapAdapter().render(element, {
               ...renderConfig,
               area: nextArea
+            });
+          });
+        }
+
+        if (renderConfig.linkedTable) {
+          element.__tanvisLinkedTableCleanup = subscribeToLinkedTable$1(renderConfig.linkedTable, (speciesId) => {
+            if (!speciesId || speciesId === element.dataset.visSpecies) {
+              return;
+            }
+
+            element.dataset.visSpecies = speciesId;
+            createSpeciesMapAdapter().render(element, {
+              ...renderConfig,
+              species: speciesId
             });
           });
         }
@@ -2815,6 +2831,40 @@ var Tanvis = (function (exports) {
     }
 
     delete element.__tanvisControlCleanup;
+  }
+
+  function clearLinkedTableSubscription$1(element) {
+    const cleanup = element?.__tanvisLinkedTableCleanup;
+    if (typeof cleanup === 'function') {
+      cleanup();
+    }
+
+    delete element.__tanvisLinkedTableCleanup;
+  }
+
+  function subscribeToLinkedTable$1(linkedTableId, onSpeciesSelected) {
+    if (typeof document === 'undefined') {
+      return undefined;
+    }
+
+    const linkedTableElement = document.getElementById(linkedTableId);
+    if (!linkedTableElement) {
+      return undefined;
+    }
+
+    const onRowSelected = (event) => {
+      const speciesId = event?.detail?.speciesId;
+      if (typeof speciesId !== 'string' || !speciesId.trim()) {
+        return;
+      }
+
+      onSpeciesSelected(speciesId.trim());
+    };
+
+    linkedTableElement.addEventListener('species-row-selected', onRowSelected);
+    return () => {
+      linkedTableElement.removeEventListener('species-row-selected', onRowSelected);
+    };
   }
 
   function getDotStyleOptions$1(hostElement) {

@@ -6,16 +6,16 @@ describe('mock species data', () => {
     const speciesIds = listMockSpeciesIds();
 
     expect(speciesIds).toEqual(expect.arrayContaining([
-      'NBNSYS0000008324',
-      'NBNSYS0000166146',
-      'NBNSYS0000009861',
-      'NBNSYS0100003682',
-      'NHMSYS0000875595',
-      'NBNSYS0000031091',
-      'NHMSYS0001387317',
-      'NBNSYS0000030351',
-      'NBNSYS0000009230',
-      'NBNSYS0000007559'
+      'NBNORG0000094747',
+      'NBNORG0000010184',
+      'NBNORG0000010180',
+      'NBNORG0000010181',
+      'NBNORG0000052153',
+      'NBNORG0000008998',
+      'NBNORG0000010143',
+      'NBNORG0000101258',
+      'NBNORG0000010147',
+      'NBNORG0000010123'
     ]));
   });
 });

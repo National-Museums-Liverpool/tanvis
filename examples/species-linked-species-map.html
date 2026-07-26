@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Tanvis Species Map Example</title>
+    <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/biologicalrecordscentre/brc-atlas/dist/brcatlas.umd.js"></script>
+    <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/gh/biologicalrecordscentre/brc-atlas/dist/brcatlas.umd.css" />
+    <script src="https://unpkg.com/tabulator-tables@6.3.0/dist/js/tabulator.min.js"></script>
+    <link rel="stylesheet" href="https://unpkg.com/tabulator-tables@6.3.0/dist/css/tabulator.min.css" />
+    
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        margin: 20px;
+      }
+
+      .tanvis {
+        margin-top: 1rem;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Tanvis Table-linked Species Map Example</h1>
+    <p>This renders a species map linked to a species table.</p>
+
+    <div
+      id="vc-control"
+      class="tanvis"
+      data-vis-type="control-block"
+      data-vis-area="vc-58-59-60"
+    ></div>
+
+    <div
+      id="my-increasing-species-table"
+      class="tanvis"
+      data-vis-type="increasing-species-table"
+      data-vis-top-n="25"
+      data-vis-control="vc-control"
+    ></div>
+
+    <div
+      class="tanvis"
+      data-vis-type="species-map"
+      data-vis-species="NBNORG0000052153"
+      data-vis-linked-table="my-increasing-species-table"
+      data-vis-map-type="switch"
+      data-vis-control="vc-control"
+      data-vis-width="500"
+      data-vis-height="500"
+      data-vis-expand="false"
+      data-vis-boundaries="true"
+      data-vis-dot-colour="cividis"
+      data-vis-transformation="deciles"
+      data-vis-dot-shape="square"
+    ></div>
+
+    <script src="../dist/tanvis.iife.js"></script>
+    <script type="module">
+
+      import { installSpeciesStatsMockApi } from './mock/speciesStatsMockApi.js';
+
+      installSpeciesStatsMockApi({ baseUrl: '/api', latencyMs: 150 });
+
+      window.Tanvis.init();
+    </script>
+  </body>
+</html>

@@ -147,4 +147,61 @@ describe('species map redraw flow', () => {
     expect(payload.shape).toBe('triangle');
     expect(payload.records[0]).toMatchObject({ colour: 'orange' });
   });
+
+  it('re-renders the species map after a linked table row selection', async () => {
+    const mapTypeHandlers = {};
+    const requestedSpecies = [];
+
+    window.brcatlas = {
+      svgMap: (opts) => {
+        Object.assign(mapTypeHandlers, opts.mapTypesSel);
+        return {
+          setMapType() {},
+          redrawMap() {}
+        };
+      }
+    };
+
+    vi.spyOn(globalThis, 'fetch').mockImplementation(async (url) => {
+      const parsedUrl = new URL(url);
+      const speciesCode = parsedUrl.searchParams.get('taxon_identifier[eq]');
+      requestedSpecies.push(speciesCode);
+
+      const payloadRows = speciesCode === 'XYZ999'
+        ? [{ grid_ref_2km: 'SJ99' }]
+        : [{ grid_ref_2km: 'SJ58' }];
+
+      return {
+        ok: true,
+        json: async () => ({ data: payloadRows })
+      };
+    });
+
+    const linkedTable = document.createElement('div');
+    linkedTable.id = 'linked-table';
+    document.body.appendChild(linkedTable);
+
+    const element = document.createElement('div');
+    renderSpeciesMap(element, {
+      type: 'species-map',
+      area: 'vc-58',
+      species: 'ABC123',
+      linkedTable: 'linked-table'
+    });
+
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    linkedTable.dispatchEvent(new CustomEvent('species-row-selected', {
+      detail: { speciesId: 'XYZ999' }
+    }));
+
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    const payload = await mapTypeHandlers.occurrences();
+
+    expect(requestedSpecies).toEqual(['ABC123', 'XYZ999']);
+    expect(payload.records[0]).toMatchObject({ gr: 'SJ99', val: 1 });
+
+    linkedTable.remove();
+  });
 });
