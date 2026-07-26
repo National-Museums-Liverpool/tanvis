@@ -117,21 +117,20 @@ function createTableContainer(records, Tabulator) {
     placeholder: 'No records found',
   });
 
-  table.on("rowClick", function(e, row) {
-    // Triggered whenever a user clicks a row
-    const rowData = row.getData();
-    const speciesId = rowData.speciesId; 
+  if (table && typeof table.on === 'function') {
+    table.on('rowClick', function (e, row) {
+      const rowData = row.getData();
+      const speciesId = rowData.speciesId;
 
-    // Create a custom event containing the ID in the 'detail' property
-    const rowSelectedEvent = new CustomEvent("species-row-selected", {
-        detail: { speciesId: speciesId },
-        bubbles: true, // Allows the event to bubble up the DOM tree
+      const rowSelectedEvent = new CustomEvent('species-row-selected', {
+        detail: { speciesId },
+        bubbles: true,
         cancelable: true
-    });
+      });
 
-    // Dispatch the event from the table element (or window / document)
-    container.dispatchEvent(rowSelectedEvent);
-  });
+      container.dispatchEvent(rowSelectedEvent);
+    });
+  }
 
   return container;
 }

@@ -3,7 +3,7 @@ import { DEFAULT_API_BASE, resolveApiBase } from '../../src/config/apiBase.js';
 
 describe('apiBase config', () => {
   it('exports the shared default api base', () => {
-    expect(DEFAULT_API_BASE).toBe('/api/v1');
+    expect(DEFAULT_API_BASE).toBe('https://tanhub.biodiverseit.co.uk/api/v1');
   });
 
   it('uses the provided source when present and otherwise falls back to the shared default', () => {

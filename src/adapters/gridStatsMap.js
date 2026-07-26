@@ -151,6 +151,9 @@ function renderMapBackend(mapElement, config) {
     showGridStatsSwitch,
     onMapTypeChange: (nextMapType) => {
       mapElement.dataset.tanvisGridStatsActiveMapType = nextMapType;
+      if (mapElement.parentElement) {
+        mapElement.parentElement.dataset.tanvisGridStatsActiveMapType = nextMapType;
+      }
       renderMapBackend(mapElement, config);
     },
     onGridStatsTypeChange: (nextMapTypeKey) => {
@@ -279,7 +282,7 @@ async function fetchGridSquareStats({ apiBase, geographicRegionIdentifier }) {
     const pageUrl = new URL(resourceUrl.toString());
     pageUrl.searchParams.set('include', 'geographic-region');
     if (Number.isFinite(geographicRegionIdentifier)) {
-      pageUrl.searchParams.set('geographic_region_identifier[eq]', String(geographicRegionIdentifier));
+      pageUrl.searchParams.set('higher_geography_identifier[in]', String(geographicRegionIdentifier));
     }
     pageUrl.searchParams.set('limit', String(DEFAULT_PAGE_LIMIT));
     pageUrl.searchParams.set('offset', String(offset));

@@ -16,6 +16,7 @@ import { resolveApiBase } from '../config/apiBase.js';
 import { assignDeciles } from '../utils/assignDeciles.js';
 
 const OCCURRENCES_RESOURCE = 'occurrences';
+const OCCURRENCES_MAP_TYPE_KEY = 'occurrences';
 const DEFAULT_PAGE_LIMIT = 1000;
 let mapData = [];
 
@@ -121,7 +122,7 @@ function renderMapBackend(element, config) {
   const activeMapType = resolveActiveMapType(element, mapTypeMode, 'tanvisSpeciesMapActiveMapType');
   const pointOpacity = activeMapType === 'leaflet' ? 0.7 : 1;
   const mapTypesSel = {
-    'occurrence-adapter': () => createRecordNumberData(pointOpacity),
+    [OCCURRENCES_MAP_TYPE_KEY]: () => createOccurrenceData(mapData, pointOpacity),
   };
 
   let map;
@@ -131,22 +132,25 @@ function renderMapBackend(element, config) {
       idPrefix: 'tanvis-species-map',
       errorMessage: 'Failed to render species map',
       mapTypesSel,
-      mapTypesKey: 'occurrence-adapter'
+      mapTypesKey: OCCURRENCES_MAP_TYPE_KEY
     });
   } else {
     map = renderStaticAtlasMap(element, config, {
       idPrefix: 'tanvis-species-map',
       errorMessage: 'Failed to render species map',
       mapTypesSel,
-      mapTypesKey: 'occurrence-adapter'
+      mapTypesKey: OCCURRENCES_MAP_TYPE_KEY
     });
   }
 
-  renderMapTypeControlGroup(element, {
+  renderMapControlGroup(element, {
     activeMapType,
     showMapTypeSwitch: mapTypeMode === 'switch',
     onMapTypeChange: (nextMapType) => {
       element.dataset.tanvisSpeciesMapActiveMapType = nextMapType;
+      if (element.parentElement) {
+        element.parentElement.dataset.tanvisSpeciesMapActiveMapType = nextMapType;
+      }
       renderMapBackend(element, config);
     }
   });
@@ -154,7 +158,7 @@ function renderMapBackend(element, config) {
   return map;
 }
 
-function renderMapTypeControlGroup(mapElement, options) {
+function renderMapControlGroup(mapElement, options) {
   if (typeof document === 'undefined') {
     return;
   }
@@ -197,7 +201,7 @@ export function applyOccurrenceDataToMap(map, occurrenceRows = []) {
     return;
   }
 
-  map.setMapType('occurrence-adapter');
+  map.setMapType(OCCURRENCES_MAP_TYPE_KEY);
   map.redrawMap();
 
   return map;
@@ -205,8 +209,42 @@ export function applyOccurrenceDataToMap(map, occurrenceRows = []) {
 
 export function createOccurrenceMapTypeAdapter(opacity = 1) {
   return function occurrenceMapTypeAdapter() {
-    return Promise.resolve(createOccurrenceData(mapData, opacity));
+    return createOccurrenceData(mapData, opacity);
   };
+}
+
+function createOccurrenceData(occurrenceRows = [], opacity = 1) {
+  return new Promise((resolve) => {
+    const byGridRef = new Map();
+
+    (Array.isArray(occurrenceRows) ? occurrenceRows : []).forEach((row) => {
+      const gridRef = row.grid_ref_2km || '';
+      if (!gridRef) {
+        return;
+      }
+
+      const key = String(gridRef);
+      const existing = byGridRef.get(key);
+      if (existing) {
+        existing.count += 1;
+        existing.caption = `${key}: ${existing.count} records`;
+        return;
+      }
+
+      const record = {
+        gr: key,
+        id: key,
+        count: 1,
+        colour: 'red',
+        caption: `${key}: 1 record`
+      };
+
+      byGridRef.set(key, record);
+    });
+
+    const records = Array.from(byGridRef.values());
+    resolve({ records, size: 1, precision: 2000, shape: 'circle', opacity });
+  });
 }
 
 function getEffectiveArea(config) {
@@ -342,35 +380,36 @@ function getListData(payload) {
 function createRecordNumberData(opacity = 1) {
   return new Promise(function (resolve) {
 
-    // mapData = assignDeciles(mapData.filter(r => r.occurrences_count !== 0), 'occurrences_count');
+    console.log('got here')
 
-    // console.log('[grid-stats-map] mapData with decile ranks:', mapData);
-
-    // // const minVal = mapData.reduce((min, r) => Math.min(min, r.occurrences_count || Infinity), Infinity);
-    // // const maxVal = mapData.reduce((max, r) => Math.max(max, r.occurrences_count || -Infinity), -Infinity);
-    // const colorScale = d3.scaleSequential()
-    //   .domain([1, 10])
-    //   .interpolator(d3.interpolateViridis);
-
-    // There can be grid reference in returned data which are blank, so
-    // filter those out.
-    const recs = mapData.filter(r => r.grid_ref_2km).map(function (r) {
-      return {
-        gr: r.grid_ref_2km,
-        id: r.grid_ref_2km,
-        colour: 'red', //colorScale(r.decile || 0),
-        caption: `${r.grid_ref_2km}: ${r.occurrences_count || 0} records`
-      };
+    // mapData contains occurrence data which obviously can include many
+    // records for a single grid reference. So we need to convert this to
+    // have one record per grid reference, with the number of occurrences 
+    // for each grid reference. This is done by grouping the data by grid 
+    // reference and counting the occurrences.
+    const recs = [];
+    mapData.forEach(r => {
+      if (!r.grid_ref_2km) {
+        // Filter out records with no grid reference
+        return;
+      } 
+      const existing = recs.find(item => item.gr === r.grid_ref_2km);
+      if (existing) {
+        existing.count += 1;
+      } else {
+        recs.push({ 
+          gr: r.grid_ref_2km, 
+          count: 1
+        });
+      }
     });
 
-    // Check if there are any invalid tetrad grid reference
-    const invalidGridRefs = recs.filter(r => !r.gr || typeof r.gr !== 'string' || r.gr.length !== 5);
-    if (invalidGridRefs.length > 0) {
-      console.warn('[species-map] Invalid tetrad grid references found:', invalidGridRefs);
-    }
+    // Enrich with colour and caption
+    recs.forEach(r => {
+      r.colour = 'red';
+      r.caption = `${r.gr}: ${r.count} records`;
+    });
 
-
-    console.log('[species-map] records for map rendering:', recs);
 
     resolve({ records: recs, size: 1, precision: 2000, shape: 'circle', opacity });
   });

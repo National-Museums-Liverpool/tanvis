@@ -60,6 +60,7 @@ describe('renderIncreasingSpeciesTable', () => {
         commonName: 'Thick-legged Hoverfly'
       }
     ]);
+    expect(element.textContent).toContain('species returned');
     expect(element.textContent).toContain('top 25');
   });
 

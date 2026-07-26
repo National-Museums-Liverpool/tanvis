@@ -13,7 +13,7 @@ describe('species map redraw flow', () => {
       }
     };
 
-    applyOccurrenceDataToMap(map, [{ grid_square: 'SJ58' }]);
+    applyOccurrenceDataToMap(map, [{ grid_ref_2km: 'SJ58' }]);
 
     expect(calls).toEqual([
       ['setMapType', 'occurrences'],
@@ -22,7 +22,7 @@ describe('species map redraw flow', () => {
   });
 
   it('uses the latest occurrence rows in the occurrences adapter', async () => {
-    applyOccurrenceDataToMap({ setMapType() {}, redrawMap() {} }, [{ grid_square: 'SJ58' }]);
+    applyOccurrenceDataToMap({ setMapType() {}, redrawMap() {} }, [{ grid_ref_2km: 'SJ58' }]);
 
     const adapter = createOccurrenceMapTypeAdapter();
     const payload = await adapter();
@@ -31,5 +31,14 @@ describe('species map redraw flow', () => {
       gr: 'SJ58',
       id: 'SJ58'
     });
+  });
+
+  it('ignores rows without grid_ref_2km', async () => {
+    applyOccurrenceDataToMap({ setMapType() {}, redrawMap() {} }, [{ grid_square: 'SJ58' }]);
+
+    const adapter = createOccurrenceMapTypeAdapter();
+    const payload = await adapter();
+
+    expect(payload.records).toEqual([]);
   });
 });

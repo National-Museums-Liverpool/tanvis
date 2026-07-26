@@ -18,14 +18,35 @@ export function normalizeBaseMapType(value) {
   return String(value || '').trim().toLowerCase() === 'leaflet' ? 'leaflet' : 'static';
 }
 
+function getStoredBaseMapType(value) {
+  const normalized = String(value || '').trim().toLowerCase();
+
+  if (normalized === 'leaflet') {
+    return 'leaflet';
+  }
+
+  if (normalized === 'static') {
+    return 'static';
+  }
+
+  return '';
+}
+
 export function resolveActiveMapType(mapElement, mapTypeMode, datasetKey) {
   if (mapTypeMode !== 'switch') {
     return mapTypeMode;
   }
 
-  const savedMapType = normalizeBaseMapType(mapElement?.dataset?.[datasetKey]);
-  mapElement.dataset[datasetKey] = savedMapType;
-  return savedMapType;
+  const savedMapType = getStoredBaseMapType(getDatasetValue(mapElement, datasetKey));
+  const fallbackMapType = getStoredBaseMapType(getDatasetValue(mapElement?.parentElement, datasetKey));
+  const effectiveMapType = savedMapType || fallbackMapType || 'static';
+
+  setDatasetValue(mapElement, datasetKey, effectiveMapType);
+  if (!savedMapType && fallbackMapType && mapElement?.parentElement) {
+    setDatasetValue(mapElement.parentElement, datasetKey, fallbackMapType);
+  }
+
+  return effectiveMapType;
 }
 
 export function ensureMapControlsContainer(hostElement, className = 'tanvis-grid-stats-map-controls') {
@@ -72,4 +93,30 @@ export function createMapTypeSwitchControl({
 function getMapTypeSwitchName(mapElement, fallbackId) {
   const base = mapElement.id || fallbackId;
   return `${base}-map-type-switch`;
+}
+
+function getDatasetValue(element, datasetKey) {
+  if (!element) {
+    return '';
+  }
+
+  const attributeName = `data-${datasetKey.replace(/([A-Z])/g, '-$1').toLowerCase()}`;
+  const attributeValue = element.getAttribute?.(attributeName);
+  if (attributeValue !== null && attributeValue !== undefined && attributeValue !== '') {
+    return attributeValue;
+  }
+
+  return element.dataset?.[datasetKey] || '';
+}
+
+function setDatasetValue(element, datasetKey, value) {
+  if (!element) {
+    return;
+  }
+
+  const attributeName = `data-${datasetKey.replace(/([A-Z])/g, '-$1').toLowerCase()}`;
+  element.setAttribute?.(attributeName, value);
+  if (element.dataset) {
+    element.dataset[datasetKey] = value;
+  }
 }

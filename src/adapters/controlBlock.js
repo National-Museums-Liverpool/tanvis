@@ -21,7 +21,7 @@ export function createControlBlockAdapter() {
       panel.dataset.tanvisControls = 'data-options';
       element.appendChild(panel);
 
-      element.appendChild(createAreaControls({
+      createAreaControls({
         element,
         selectedValue: config.area,
         body,
@@ -31,14 +31,14 @@ export function createControlBlockAdapter() {
             area: value
           });
         }
-      }));
+      });
 
-      element.appendChild(createTaxonGroupControls({
+      createTaxonGroupControls({
         rootElement: element,
         apiBase: resolveApiBase(config.source),
         body,
         loadToken
-      }));
+      });
 
       publishControlEvent(element.id, {
         type: 'area-change',

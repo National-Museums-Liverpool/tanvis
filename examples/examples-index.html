@@ -1,0 +1,183 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Tanvis Examples Index</title>
+    <style>
+      :root {
+        color-scheme: light;
+        --bg: #f6f2ea;
+        --panel: #ffffff;
+        --text: #1f2933;
+        --muted: #5f6c72;
+        --accent: #155e75;
+        --accent-soft: #d9f0f5;
+        --border: #d7d3ca;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        font-family: Arial, Helvetica, sans-serif;
+        color: var(--text);
+        background:
+          radial-gradient(circle at top left, #fff7e8 0, transparent 32%),
+          radial-gradient(circle at top right, #e6f7fa 0, transparent 28%),
+          var(--bg);
+      }
+
+      main {
+        max-width: 960px;
+        margin: 0 auto;
+        padding: 48px 20px 64px;
+      }
+
+      .hero {
+        display: grid;
+        gap: 12px;
+        margin-bottom: 28px;
+      }
+
+      h1 {
+        margin: 0;
+        font-size: clamp(2rem, 4vw, 3.25rem);
+        line-height: 1.05;
+        letter-spacing: -0.03em;
+      }
+
+      p {
+        margin: 0;
+        color: var(--muted);
+        line-height: 1.5;
+        max-width: 70ch;
+      }
+
+      .panel {
+        background: rgba(255, 255, 255, 0.82);
+        border: 1px solid var(--border);
+        border-radius: 20px;
+        box-shadow: 0 20px 50px rgba(31, 41, 51, 0.08);
+        overflow: hidden;
+      }
+
+      .panel-header {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        gap: 12px;
+        padding: 18px 20px;
+        background: linear-gradient(180deg, rgba(21, 94, 117, 0.08), rgba(21, 94, 117, 0));
+        border-bottom: 1px solid var(--border);
+      }
+
+      .panel-header strong {
+        font-size: 1rem;
+      }
+
+      .panel-header span {
+        color: var(--muted);
+        font-size: 0.95rem;
+      }
+
+      ul {
+        list-style: none;
+        margin: 0;
+        padding: 8px;
+        display: grid;
+        gap: 8px;
+      }
+
+      li a {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+        padding: 14px 16px;
+        border-radius: 14px;
+        text-decoration: none;
+        color: var(--text);
+        border: 1px solid transparent;
+        transition:
+          transform 120ms ease,
+          border-color 120ms ease,
+          background-color 120ms ease;
+      }
+
+      li a:hover,
+      li a:focus-visible {
+        transform: translateY(-1px);
+        border-color: var(--accent);
+        background: var(--accent-soft);
+        outline: none;
+      }
+
+      .name {
+        font-weight: 700;
+      }
+
+      .path {
+        color: var(--muted);
+        font-size: 0.94rem;
+        white-space: nowrap;
+      }
+
+      .note {
+        margin-top: 18px;
+        color: var(--muted);
+        font-size: 0.95rem;
+      }
+
+      @media (max-width: 640px) {
+        main {
+          padding: 24px 14px 40px;
+        }
+
+        .panel-header,
+        li a {
+          flex-direction: column;
+          align-items: flex-start;
+        }
+
+        .path {
+          white-space: normal;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <div class="hero">
+        <h1>Tanvis Examples</h1>
+        <p>
+          Open any example page below. Each link points to a standalone HTML example in this folder.
+        </p>
+      </div>
+
+      <section class="panel" aria-labelledby="example-list-title">
+        <div class="panel-header">
+          <strong id="example-list-title">Example pages</strong>
+          <span>10 pages</span>
+        </div>
+        <ul>
+          <li><a href="./basic.html" ><span class="name">basic.html</span><span class="path">./basic.html</span></a></li>
+          <li><a href="./grid-stats-map.html" ><span class="name">grid-stats-map.html</span><span class="path">./grid-stats-map.html</span></a></li>
+          <li><a href="./increasing-species-table.html" ><span class="name">increasing-species-table.html</span><span class="path">./increasing-species-table.html</span></a></li>
+          <li><a href="./new-species-table.html" ><span class="name">new-species-table.html</span><span class="path">./new-species-table.html</span></a></li>
+          <li><a href="./shared-control-maps.html" ><span class="name">shared-control-maps.html</span><span class="path">./shared-control-maps.html</span></a></li>
+          <li><a href="./species-absent-since.html" ><span class="name">species-absent-since.html</span><span class="path">./species-absent-since.html</span></a></li>
+          <li><a href="./species-linked-temporal-year-chart.html" ><span class="name">species-linked-temporal-year-chart.html</span><span class="path">./species-linked-temporal-year-chart.html</span></a></li>
+          <li><a href="./species-map.html" ><span class="name">species-map.html</span><span class="path">./species-map.html</span></a></li>
+          <li><a href="./species-stats-mock.html" ><span class="name">species-stats-mock.html</span><span class="path">./species-stats-mock.html</span></a></li>
+          <li><a href="./temporal-year-chart.html" ><span class="name">temporal-year-chart.html</span><span class="path">./temporal-year-chart.html</span></a></li>
+        </ul>
+      </section>
+
+      <p class="note">Tip: serve the folder over HTTP if you want the examples to load local assets and module imports consistently.</p>
+    </main>
+  </body>
+</html>

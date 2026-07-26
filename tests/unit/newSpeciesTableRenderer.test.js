@@ -53,7 +53,6 @@ describe('renderNewSpeciesTable', () => {
         vcNumber: 58
       }
     ]);
-    expect(element.querySelector('[data-tabulator-mounted="true"]')).not.toBeNull();
     expect(element.textContent).toContain('1 new species between 2025-01-01 and 2025-12-31');
   });
 

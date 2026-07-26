@@ -105,8 +105,8 @@ var Tanvis = (function (exports) {
       return ['Missing data-vis-start-date for new-species-table'];
     }
 
-    if (config.type === 'species-absent-since' && !Number.isFinite(config.year)) {
-      return ['Missing data-vis-year for species-absent-since'];
+    if ((config.type === 'species-map' || config.type === 'grid-stats-map' || config.type === 'species-absent-since') && !Number.isFinite(config.year)) {
+      return ['Missing data-vis-year for species-map and grid-stats-map'];
     }
 
     // if (config.type === 'temporal-year-chart' && !config.taxonId) {
@@ -1468,7 +1468,7 @@ var Tanvis = (function (exports) {
         panel.dataset.tanvisControls = 'data-options';
         element.appendChild(panel);
 
-        element.appendChild(createAreaControls({
+        createAreaControls({
           element,
           selectedValue: config.area,
           body,
@@ -1478,14 +1478,14 @@ var Tanvis = (function (exports) {
               area: value
             });
           }
-        }));
+        });
 
-        element.appendChild(createTaxonGroupControls({
+        createTaxonGroupControls({
           rootElement: element,
           apiBase: resolveApiBase(config.source),
           body,
           loadToken
-        }));
+        });
 
         publishControlEvent(element.id, {
           type: 'area-change',
@@ -1598,15 +1598,6 @@ var Tanvis = (function (exports) {
   function createTableContainer$2(records, Tabulator) {
     const container = document.createElement('div');
 
-    new Tabulator(container, {
-      data: records,
-      columns: columns$2,
-      layout: 'fitColumns',
-      pagination: true,
-      paginationSize: 10,
-      placeholder: 'No records found'
-    });
-
     const table = new Tabulator(container, {
       data: records,
       columns: columns$2,
@@ -1616,21 +1607,20 @@ var Tanvis = (function (exports) {
       placeholder: 'No records found'
     });
 
-    table.on("rowClick", function(e, row) {
-      // Triggered whenever a user clicks a row
-      const rowData = row.getData();
-      const speciesId = rowData.speciesId; 
+    if (table && typeof table.on === 'function') {
+      table.on('rowClick', function (e, row) {
+        const rowData = row.getData();
+        const speciesId = rowData.speciesId;
 
-      // Create a custom event containing the ID in the 'detail' property
-      const rowSelectedEvent = new CustomEvent("species-row-selected", {
-          detail: { speciesId: speciesId },
-          bubbles: true, // Allows the event to bubble up the DOM tree
+        const rowSelectedEvent = new CustomEvent('species-row-selected', {
+          detail: { speciesId },
+          bubbles: true,
           cancelable: true
-      });
+        });
 
-      // Dispatch the event from the table element (or window / document)
-      container.dispatchEvent(rowSelectedEvent);
-    });
+        container.dispatchEvent(rowSelectedEvent);
+      });
+    }
 
     return container;
   }
@@ -1925,21 +1915,20 @@ var Tanvis = (function (exports) {
       placeholder: 'No records found',
     });
 
-    table.on("rowClick", function(e, row) {
-      // Triggered whenever a user clicks a row
-      const rowData = row.getData();
-      const speciesId = rowData.speciesId; 
+    if (table && typeof table.on === 'function') {
+      table.on('rowClick', function (e, row) {
+        const rowData = row.getData();
+        const speciesId = rowData.speciesId;
 
-      // Create a custom event containing the ID in the 'detail' property
-      const rowSelectedEvent = new CustomEvent("species-row-selected", {
-          detail: { speciesId: speciesId },
-          bubbles: true, // Allows the event to bubble up the DOM tree
+        const rowSelectedEvent = new CustomEvent('species-row-selected', {
+          detail: { speciesId },
+          bubbles: true,
           cancelable: true
-      });
+        });
 
-      // Dispatch the event from the table element (or window / document)
-      container.dispatchEvent(rowSelectedEvent);
-    });
+        container.dispatchEvent(rowSelectedEvent);
+      });
+    }
 
     return container;
   }
@@ -2445,14 +2434,35 @@ var Tanvis = (function (exports) {
     return String(value || '').trim().toLowerCase() === 'leaflet' ? 'leaflet' : 'static';
   }
 
+  function getStoredBaseMapType(value) {
+    const normalized = String(value || '').trim().toLowerCase();
+
+    if (normalized === 'leaflet') {
+      return 'leaflet';
+    }
+
+    if (normalized === 'static') {
+      return 'static';
+    }
+
+    return '';
+  }
+
   function resolveActiveMapType(mapElement, mapTypeMode, datasetKey) {
     if (mapTypeMode !== 'switch') {
       return mapTypeMode;
     }
 
-    const savedMapType = normalizeBaseMapType(mapElement?.dataset?.[datasetKey]);
-    mapElement.dataset[datasetKey] = savedMapType;
-    return savedMapType;
+    const savedMapType = getStoredBaseMapType(getDatasetValue(mapElement, datasetKey));
+    const fallbackMapType = getStoredBaseMapType(getDatasetValue(mapElement?.parentElement, datasetKey));
+    const effectiveMapType = savedMapType || fallbackMapType || 'static';
+
+    setDatasetValue(mapElement, datasetKey, effectiveMapType);
+    if (!savedMapType && fallbackMapType && mapElement?.parentElement) {
+      setDatasetValue(mapElement.parentElement, datasetKey, fallbackMapType);
+    }
+
+    return effectiveMapType;
   }
 
   function ensureMapControlsContainer(hostElement, className = 'tanvis-grid-stats-map-controls') {
@@ -2501,6 +2511,32 @@ var Tanvis = (function (exports) {
     return `${base}-map-type-switch`;
   }
 
+  function getDatasetValue(element, datasetKey) {
+    if (!element) {
+      return '';
+    }
+
+    const attributeName = `data-${datasetKey.replace(/([A-Z])/g, '-$1').toLowerCase()}`;
+    const attributeValue = element.getAttribute?.(attributeName);
+    if (attributeValue !== null && attributeValue !== undefined && attributeValue !== '') {
+      return attributeValue;
+    }
+
+    return element.dataset?.[datasetKey] || '';
+  }
+
+  function setDatasetValue(element, datasetKey, value) {
+    if (!element) {
+      return;
+    }
+
+    const attributeName = `data-${datasetKey.replace(/([A-Z])/g, '-$1').toLowerCase()}`;
+    element.setAttribute?.(attributeName, value);
+    if (element.dataset) {
+      element.dataset[datasetKey] = value;
+    }
+  }
+
   function assignDeciles(arr, key) {
     // 1. Create a shallow copy and sort by the target key ascending
     const sorted = [...arr].sort((a, b) => a[key] - b[key]);
@@ -2543,6 +2579,7 @@ var Tanvis = (function (exports) {
   }
 
   const OCCURRENCES_RESOURCE = 'occurrences';
+  const OCCURRENCES_MAP_TYPE_KEY = 'occurrences';
   const DEFAULT_PAGE_LIMIT$2 = 1000;
   let mapData$1 = [];
 
@@ -2648,7 +2685,7 @@ var Tanvis = (function (exports) {
     const activeMapType = resolveActiveMapType(element, mapTypeMode, 'tanvisSpeciesMapActiveMapType');
     const pointOpacity = activeMapType === 'leaflet' ? 0.7 : 1;
     const mapTypesSel = {
-      'occurrence-adapter': () => createRecordNumberData$1(pointOpacity),
+      [OCCURRENCES_MAP_TYPE_KEY]: () => createOccurrenceData(mapData$1, pointOpacity),
     };
 
     let map;
@@ -2658,22 +2695,25 @@ var Tanvis = (function (exports) {
         idPrefix: 'tanvis-species-map',
         errorMessage: 'Failed to render species map',
         mapTypesSel,
-        mapTypesKey: 'occurrence-adapter'
+        mapTypesKey: OCCURRENCES_MAP_TYPE_KEY
       });
     } else {
       map = renderStaticAtlasMap(element, config, {
         idPrefix: 'tanvis-species-map',
         errorMessage: 'Failed to render species map',
         mapTypesSel,
-        mapTypesKey: 'occurrence-adapter'
+        mapTypesKey: OCCURRENCES_MAP_TYPE_KEY
       });
     }
 
-    renderMapTypeControlGroup(element, {
+    renderMapControlGroup$1(element, {
       activeMapType,
       showMapTypeSwitch: mapTypeMode === 'switch',
       onMapTypeChange: (nextMapType) => {
         element.dataset.tanvisSpeciesMapActiveMapType = nextMapType;
+        if (element.parentElement) {
+          element.parentElement.dataset.tanvisSpeciesMapActiveMapType = nextMapType;
+        }
         renderMapBackend$1(element, config);
       }
     });
@@ -2681,7 +2721,7 @@ var Tanvis = (function (exports) {
     return map;
   }
 
-  function renderMapTypeControlGroup(mapElement, options) {
+  function renderMapControlGroup$1(mapElement, options) {
     if (typeof document === 'undefined') {
       return;
     }
@@ -2724,10 +2764,44 @@ var Tanvis = (function (exports) {
       return;
     }
 
-    map.setMapType('occurrence-adapter');
+    map.setMapType(OCCURRENCES_MAP_TYPE_KEY);
     map.redrawMap();
 
     return map;
+  }
+
+  function createOccurrenceData(occurrenceRows = [], opacity = 1) {
+    return new Promise((resolve) => {
+      const byGridRef = new Map();
+
+      (Array.isArray(occurrenceRows) ? occurrenceRows : []).forEach((row) => {
+        const gridRef = row.grid_ref_2km || '';
+        if (!gridRef) {
+          return;
+        }
+
+        const key = String(gridRef);
+        const existing = byGridRef.get(key);
+        if (existing) {
+          existing.count += 1;
+          existing.caption = `${key}: ${existing.count} records`;
+          return;
+        }
+
+        const record = {
+          gr: key,
+          id: key,
+          count: 1,
+          colour: 'red',
+          caption: `${key}: 1 record`
+        };
+
+        byGridRef.set(key, record);
+      });
+
+      const records = Array.from(byGridRef.values());
+      resolve({ records, size: 1, precision: 2000, shape: 'circle', opacity });
+    });
   }
 
   function getEffectiveArea$1(config) {
@@ -2858,43 +2932,6 @@ var Tanvis = (function (exports) {
     }
 
     return [];
-  }
-
-  function createRecordNumberData$1(opacity = 1) {
-    return new Promise(function (resolve) {
-
-      // mapData = assignDeciles(mapData.filter(r => r.occurrences_count !== 0), 'occurrences_count');
-
-      // console.log('[grid-stats-map] mapData with decile ranks:', mapData);
-
-      // // const minVal = mapData.reduce((min, r) => Math.min(min, r.occurrences_count || Infinity), Infinity);
-      // // const maxVal = mapData.reduce((max, r) => Math.max(max, r.occurrences_count || -Infinity), -Infinity);
-      // const colorScale = d3.scaleSequential()
-      //   .domain([1, 10])
-      //   .interpolator(d3.interpolateViridis);
-
-      // There can be grid reference in returned data which are blank, so
-      // filter those out.
-      const recs = mapData$1.filter(r => r.grid_ref_2km).map(function (r) {
-        return {
-          gr: r.grid_ref_2km,
-          id: r.grid_ref_2km,
-          colour: 'red', //colorScale(r.decile || 0),
-          caption: `${r.grid_ref_2km}: ${r.occurrences_count || 0} records`
-        };
-      });
-
-      // Check if there are any invalid tetrad grid reference
-      const invalidGridRefs = recs.filter(r => !r.gr || typeof r.gr !== 'string' || r.gr.length !== 5);
-      if (invalidGridRefs.length > 0) {
-        console.warn('[species-map] Invalid tetrad grid references found:', invalidGridRefs);
-      }
-
-
-      console.log('[species-map] records for map rendering:', recs);
-
-      resolve({ records: recs, size: 1, precision: 2000, shape: 'circle', opacity });
-    });
   }
 
   const speciesMapAdapter = createSpeciesMapAdapter();
@@ -3037,6 +3074,9 @@ var Tanvis = (function (exports) {
       showGridStatsSwitch,
       onMapTypeChange: (nextMapType) => {
         mapElement.dataset.tanvisGridStatsActiveMapType = nextMapType;
+        if (mapElement.parentElement) {
+          mapElement.parentElement.dataset.tanvisGridStatsActiveMapType = nextMapType;
+        }
         renderMapBackend(mapElement, config);
       },
       onGridStatsTypeChange: (nextMapTypeKey) => {
@@ -3165,7 +3205,7 @@ var Tanvis = (function (exports) {
       const pageUrl = new URL(resourceUrl.toString());
       pageUrl.searchParams.set('include', 'geographic-region');
       if (Number.isFinite(geographicRegionIdentifier)) {
-        pageUrl.searchParams.set('geographic_region_identifier[eq]', String(geographicRegionIdentifier));
+        pageUrl.searchParams.set('higher_geography_identifier[in]', String(geographicRegionIdentifier));
       }
       pageUrl.searchParams.set('limit', String(DEFAULT_PAGE_LIMIT$1));
       pageUrl.searchParams.set('offset', String(offset));
