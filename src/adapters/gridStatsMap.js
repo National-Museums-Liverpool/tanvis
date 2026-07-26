@@ -20,6 +20,7 @@ const GRID_SQUARE_STATS_RESOURCE = 'grid-square-stats';
 const DEFAULT_PAGE_LIMIT = 1000;
 const GRID_STATS_RECORDS_KEY = 'grid-stats-records';
 const GRID_STATS_SPECIES_KEY = 'grid-stats-species';
+const GRID_STATS_RARITY_KEY = 'grid-stats-rarity';
 
 let mapData = [];
 
@@ -122,6 +123,7 @@ function renderMapBackend(mapElement, config, hostElement) {
   const mapTypesSel = {
     [GRID_STATS_RECORDS_KEY]: () => createRecordNumberData(pointOpacity, dotStyleOptions),
     [GRID_STATS_SPECIES_KEY]: () => createSpeciesNumberData(pointOpacity, dotStyleOptions),
+    [GRID_STATS_RARITY_KEY]: () => createRarityNumberData(pointOpacity, dotStyleOptions),
   };
 
   let map;
@@ -202,13 +204,18 @@ function renderMapControlGroup(mapElement, options) {
 function createGridStatsTypeSwitchControl(mapElement, selectedMapTypeKey, onChange) {
   const group = createRadioGroup({
     name: getGridStatsSwitchName(mapElement),
-    selectedValue: selectedMapTypeKey === GRID_STATS_SPECIES_KEY ? 'species' : 'records',
+    selectedValue: selectedMapTypeKey === GRID_STATS_SPECIES_KEY ? 'species' : selectedMapTypeKey === GRID_STATS_RARITY_KEY ? 'rarity' : 'records',
     items: [
       { value: 'records', label: 'Records' },
-      { value: 'species', label: 'Species' }
+      { value: 'species', label: 'Species' },
+      { value: 'rarity', label: 'Rarity' }
     ],
     onChange: (value) => {
-      const mapTypeKey = value === 'species' ? GRID_STATS_SPECIES_KEY : GRID_STATS_RECORDS_KEY;
+      const mapTypeKey = value === 'species'
+        ? GRID_STATS_SPECIES_KEY
+        : value === 'rarity'
+          ? GRID_STATS_RARITY_KEY
+          : GRID_STATS_RECORDS_KEY;
       onChange(mapTypeKey);
     }
   });
@@ -242,6 +249,10 @@ function normalizeGridStatsType(value) {
     return 'records';
   }
 
+  if (normalized === 'rarity') {
+    return 'rarity';
+  }
+
   return 'switch';
 }
 
@@ -256,8 +267,13 @@ function resolveSelectedMapTypeKey(mapElement, gridStatsType) {
     return GRID_STATS_RECORDS_KEY;
   }
 
+  if (gridStatsType === 'rarity') {
+    mapElement.dataset.tanvisGridStatsSelectedMapTypeKey = GRID_STATS_RARITY_KEY;
+    return GRID_STATS_RARITY_KEY;
+  }
+
   const saved = mapElement?.dataset?.tanvisGridStatsSelectedMapTypeKey;
-  if (saved === GRID_STATS_SPECIES_KEY || saved === GRID_STATS_RECORDS_KEY) {
+  if (saved === GRID_STATS_SPECIES_KEY || saved === GRID_STATS_RECORDS_KEY || saved === GRID_STATS_RARITY_KEY) {
     return saved;
   }
 
@@ -436,6 +452,18 @@ function createSpeciesNumberData(opacity = 1, options = {}) {
     const resolvedTransform = transformation || '';
     const resolvedColourScale = dotColour || 'black';
     recs = resolveColours(recs, resolvedTransform, resolvedColourScale);
+    resolve({ records: recs, size: 1, precision: 2000, shape, opacity });
+  });
+}
+
+function createRarityNumberData(opacity = 1, options = {}) {
+  return new Promise(function (resolve) {
+    const { dotColour = '', transformation = '', shape = 'circle' } = options || {};
+    const resolvedTransform = transformation || '';
+    const resolvedColourScale = dotColour || 'black';
+
+    // Temporary placeholder until the API exposes rarity values for each row.
+    const recs = [];
     resolve({ records: recs, size: 1, precision: 2000, shape, opacity });
   });
 }

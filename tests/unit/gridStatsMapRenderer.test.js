@@ -96,6 +96,38 @@ describe('renderGridStatsMap', () => {
     expect(element.querySelector('.tanvis-grid-stats-switch')).toBeNull();
   });
 
+  it('uses the rarity map type when gridStatsType is rarity', async () => {
+    const svgMapCalls = [];
+
+    window.brcatlas = {
+      svgMap: (opts) => {
+        svgMapCalls.push(opts);
+        return {
+          redrawMap: () => {}
+        };
+      }
+    };
+
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue({
+      ok: true,
+      json: async () => ({ data: [] })
+    });
+
+    const element = document.createElement('div');
+    renderGridStatsMap(element, {
+      type: 'grid-stats-map',
+      mapType: 'static',
+      area: 'vc-58',
+      gridStatsType: 'rarity'
+    });
+
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    expect(svgMapCalls).toHaveLength(1);
+    expect(svgMapCalls[0].mapTypesKey).toBe('grid-stats-rarity');
+    expect(element.querySelector('.tanvis-grid-stats-switch')).toBeNull();
+  });
+
   it('supports mapType switch with initial static render and toggles to leaflet without refetching', async () => {
     const svgMapCalls = [];
     const leafletMapCalls = [];
@@ -160,6 +192,51 @@ describe('renderGridStatsMap', () => {
     expect(svgMapCalls).toHaveLength(1);
     expect(leafletMapCalls).toHaveLength(1);
     expect(leafletMapCalls[0].mapTypesKey).toBe('grid-stats-records');
+  });
+
+  it('includes a rarity option and resolves an empty payload for it', async () => {
+    const mapTypeHandlers = {};
+
+    window.brcatlas = {
+      svgMap: (opts) => {
+        Object.assign(mapTypeHandlers, opts.mapTypesSel);
+        return {
+          setMapType() {},
+          redrawMap() {}
+        };
+      }
+    };
+
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        data: [
+          {
+            square: 'SJ58',
+            occurrences_count: 12,
+            species_count: 4
+          }
+        ]
+      })
+    });
+
+    const element = document.createElement('div');
+
+    renderGridStatsMap(element, {
+      type: 'grid-stats-map',
+      mapType: 'static',
+      area: 'vc-58',
+      gridStatsType: 'switch'
+    });
+
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    const rarityInput = element.querySelector('input[type="radio"][value="rarity"]');
+    expect(rarityInput).not.toBeNull();
+
+    const payload = await mapTypeHandlers['grid-stats-rarity']();
+
+    expect(payload.records).toEqual([]);
   });
 
   it('uses host element dataset values for grid stats dot styling', async () => {
