@@ -69,7 +69,8 @@ export function createSpeciesMapAdapter() {
 
       if (renderConfig.control) {
         if (!shouldPreserveControlSubscription) {
-          element.__tanvisControlCleanup = subscribeToControl(renderConfig.control, (event) => {
+          const controlElement = document.getElementById(renderConfig.control);
+          const controlBusCleanup = subscribeToControl(renderConfig.control, (event) => {
             if (!event || (event.type !== 'area-change' && event.type !== 'taxon-group-change')) {
               return;
             }
@@ -88,6 +89,35 @@ export function createSpeciesMapAdapter() {
               area: nextArea
             });
           });
+
+          const onSpeciesSelection = (event) => {
+            const speciesId = event?.detail?.speciesId;
+            if (typeof speciesId !== 'string' || !speciesId.trim()) {
+              return;
+            }
+
+            if (speciesId.trim() === element.dataset.visSpecies) {
+              return;
+            }
+
+            element.dataset.visSpecies = speciesId.trim();
+            createSpeciesMapAdapter().render(element, {
+              ...renderConfig,
+              species: speciesId.trim(),
+              reuseExistingMap: true
+            });
+          };
+
+          if (controlElement) {
+            controlElement.addEventListener('species-row-selected', onSpeciesSelection);
+          }
+
+          element.__tanvisControlCleanup = () => {
+            controlBusCleanup?.();
+            if (controlElement) {
+              controlElement.removeEventListener('species-row-selected', onSpeciesSelection);
+            }
+          };
           element.__tanvisControlId = renderConfig.control;
         }
       }

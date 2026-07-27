@@ -124,6 +124,31 @@ const SHARED_STYLES = `
   cursor: not-allowed;
 }
 
+.tanvis-controls-text-input {
+  width: 100%;
+  min-width: 14rem;
+  min-height: 2.25rem;
+  padding: 0.45rem 0.9rem;
+  border: 1px solid #9ca3af;
+  border-radius: 0;
+  background: #ffffff;
+  color: #1f2937;
+  font: 600 0.95rem/1.2 system-ui, sans-serif;
+  box-sizing: border-box;
+  transition: background-color 160ms ease, border-color 160ms ease, color 160ms ease, box-shadow 160ms ease;
+}
+
+.tanvis-controls-text-input:hover {
+  border-color: #6b7280;
+  background: #f8fafc;
+}
+
+.tanvis-controls-text-input:focus-visible {
+  outline: 0;
+  border-color: #6b7280;
+  box-shadow: 0 0 0 3px rgba(15, 118, 110, 0.18);
+}
+
 .tanvis-controls-row {
   display: flex;
   align-items: stretch;
@@ -208,6 +233,45 @@ const SHARED_STYLES = `
   content: attr(data-placeholder);
   color: #9ca3af;
 }
+
+.tanvis-species-search-list {
+  padding-inline-start: 0;
+}
+
+.tanvis-species-search-list {
+  margin-top: 0;
+}
+
+.tanvis-species-search-item {
+  list-style-type: none;
+  cursor: pointer;
+}
+
+.tanvis-species-search-item div {
+  padding: 0.5rem;
+}
+
+.tanvis-species-search-result em {
+  font-style: italic;
+}
+
+.tanvis-species-search-item:nth-child(odd) {
+  background-color: #f2f2f2;
+}
+
+.tanvis-species-search-item:nth-child(even) {
+  background-color: #ffffff;
+}
+
+.tanvis-controls-group {
+  max-width: max-content;
+}
+
+div[data-tanvis-controls="species-selector"] {
+  min-width: 20rem;
+}
+
+
 `;
 
 export function ensureSharedStyles() {

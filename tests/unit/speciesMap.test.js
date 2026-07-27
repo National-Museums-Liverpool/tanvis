@@ -388,6 +388,52 @@ describe('species map redraw flow', () => {
     linkedTable.remove();
   });
 
+  it('re-renders the species map after a control-block species selection', async () => {
+    const requestedSpecies = [];
+
+    window.brcatlas = {
+      svgMap: () => ({
+        setMapType() {},
+        redrawMap() {}
+      })
+    };
+
+    vi.spyOn(globalThis, 'fetch').mockImplementation(async (url) => {
+      const parsedUrl = new URL(url);
+      const speciesCode = parsedUrl.searchParams.get('taxon_identifier[eq]');
+      requestedSpecies.push(speciesCode);
+
+      return {
+        ok: true,
+        json: async () => ({ data: [{ grid_ref_2km: speciesCode === 'XYZ999' ? 'SJ99' : 'SJ58' }] })
+      };
+    });
+
+    const controlElement = document.createElement('div');
+    controlElement.id = 'control';
+    document.body.appendChild(controlElement);
+
+    const element = document.createElement('div');
+    renderSpeciesMap(element, {
+      type: 'species-map',
+      area: 'vc-58',
+      species: 'ABC123',
+      control: 'control'
+    });
+
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    controlElement.dispatchEvent(new CustomEvent('species-row-selected', {
+      detail: { speciesId: 'XYZ999' }
+    }));
+
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    expect(requestedSpecies).toEqual(['ABC123', 'XYZ999']);
+
+    controlElement.remove();
+  });
+
   it('keeps linked-table updates working after a control-driven re-render', async () => {
     const requestedSpecies = [];
 
