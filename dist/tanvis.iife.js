@@ -22,7 +22,7 @@ var Tanvis = (function (exports) {
     const gridStatsType = dataset.visGridStatsType;
 
     return {
-      type: dataset.visType || 'table',
+      type: dataset.visType,
       source: dataset.visSource,
       control: dataset.visControl,
       linkedTable: dataset.visLinkedTable,
@@ -1743,7 +1743,7 @@ div[data-tanvis-controls="species-selector"] {
       if (!Array.isArray(taxa) || taxa.length === 0) {
         const emptyState = document.createElement('div');
         emptyState.className = 'tanvis-species-search-empty';
-        emptyState.textContent = 'No species found';
+        emptyState.textContent = '';
         results.appendChild(emptyState);
         return;
       }

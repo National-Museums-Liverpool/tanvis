@@ -11,7 +11,7 @@ export function parseOptions(element) {
   const gridStatsType = dataset.visGridStatsType;
 
   return {
-    type: dataset.visType || 'table',
+    type: dataset.visType,
     source: dataset.visSource,
     control: dataset.visControl,
     linkedTable: dataset.visLinkedTable,

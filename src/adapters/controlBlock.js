@@ -163,7 +163,7 @@ function createSpeciesSelectorControl({ rootElement, apiBase, body, loadToken })
     if (!Array.isArray(taxa) || taxa.length === 0) {
       const emptyState = document.createElement('div');
       emptyState.className = 'tanvis-species-search-empty';
-      emptyState.textContent = 'No species found';
+      emptyState.textContent = '';
       results.appendChild(emptyState);
       return;
     }
