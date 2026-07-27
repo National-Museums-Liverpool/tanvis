@@ -144,7 +144,7 @@ describe('renderSpeciesAbsentSince', () => {
 
     const controlElement = document.createElement('div');
     controlElement.id = 'vc-control-species-absent';
-    controlElement.dataset.visArea = 'vc-58-59-60';
+    controlElement.dataset.visArea = 'vc-all';
     controlElement.dataset.visTaxonGroup = '';
     document.body.appendChild(controlElement);
 

@@ -20,7 +20,7 @@ export function parseOptions(element) {
     taxonId: dataset.visTaxonid,
     startDate: dataset.visStartDate,
     endDate: dataset.visEndDate,
-    area: dataset.visArea || 'vc-58-59-60',
+    area: dataset.visArea || 'vc-all',
     ctl: parseBoolean(dataset.visCtl),
     boundaries: parseBoolean(dataset.visBoundaries),
     gridStatsType,

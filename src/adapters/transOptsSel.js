@@ -1,8 +1,8 @@
 export const transOptsSel = {
   // Different views for the three VCs in the Cheshire/Lancashire area
   // and a combined view for all of them together.
-  'vc-58-59-60': {
-    id: 'vc-58-59-60',
+  'vc-all': {
+    id: 'vc-all',
     caption: 'Cheshire Lancashire VCs',
     initZoom: 8,
     bounds: {

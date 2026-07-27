@@ -76,7 +76,7 @@ Use `data-vis-type="static-map"`.
 Supported attributes:
 
 - `data-vis-source`: optional source string passed to `setIdentfier(...)`
-- `data-vis-area`: one of `vc-58`, `vc-59`, `vc-60`, `vc-58-59-60` (default: `vc-58-59-60`)
+- `data-vis-area`: one of `vc-58`, `vc-59`, `vc-60`, `vc-all` (default: `vc-all`)
 - `data-vis-control`: optional id of a `control-block` element used to drive area changes
 - `data-vis-hectads`: `true`/`false` to include hectad grid (default: `true`)
 - `data-vis-expand`: `true`/`false` (optional)
@@ -93,14 +93,14 @@ A separate `control-block` visualization can render radio options (`vc58`, `vc59
   id="vc-control"
   class="tanvis"
   data-vis-type="control-block"
-  data-vis-area="vc-58-59-60"
+  data-vis-area="vc-all"
 ></div>
 
 <div
   class="tanvis"
   data-vis-type="static-map"
   data-vis-source="/example-hectads-1.csv"
-  data-vis-area="vc-58-59-60"
+  data-vis-area="vc-all"
   data-vis-control="vc-control"
   data-vis-hectads="true"
   data-vis-width="600"

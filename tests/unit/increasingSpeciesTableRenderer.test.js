@@ -92,7 +92,7 @@ describe('renderIncreasingSpeciesTable', () => {
 
     const controlElement = document.createElement('div');
     controlElement.id = 'vc-control-increasing';
-    controlElement.dataset.visArea = 'vc-58-59-60';
+    controlElement.dataset.visArea = 'vc-all';
     controlElement.dataset.visTaxonGroup = '';
     document.body.appendChild(controlElement);
 

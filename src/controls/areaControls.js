@@ -5,7 +5,7 @@ export const areaOptions = [
   { label: 'vc58', value: 'vc-58' },
   { label: 'vc59', value: 'vc-59' },
   { label: 'vc60', value: 'vc-60' },
-  { label: 'all', value: 'vc-58-59-60' }
+  { label: 'all', value: 'vc-all' }
 ];
 
 export function createAreaControls({ element, selectedValue, onAreaChange, body }) {

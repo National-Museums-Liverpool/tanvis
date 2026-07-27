@@ -11,7 +11,7 @@ describe('parseOptions', () => {
     expect(parseOptions(element)).toMatchObject({
       type: 'chart',
       source: '/data.json',
-      area: 'vc-58-59-60',
+      area: 'vc-all',
       ctl: true,
       boundaries: false,
       gridStatsType: undefined,

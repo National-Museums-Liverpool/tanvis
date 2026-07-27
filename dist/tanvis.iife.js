@@ -31,7 +31,7 @@ var Tanvis = (function (exports) {
       taxonId: dataset.visTaxonid,
       startDate: dataset.visStartDate,
       endDate: dataset.visEndDate,
-      area: dataset.visArea || 'vc-58-59-60',
+      area: dataset.visArea || 'vc-all',
       ctl: parseBoolean(dataset.visCtl),
       boundaries: parseBoolean(dataset.visBoundaries),
       gridStatsType,
@@ -702,8 +702,8 @@ div[data-tanvis-controls="species-selector"] {
   const transOptsSel = {
     // Different views for the three VCs in the Cheshire/Lancashire area
     // and a combined view for all of them together.
-    'vc-58-59-60': {
-      id: 'vc-58-59-60',
+    'vc-all': {
+      id: 'vc-all',
       caption: 'Cheshire Lancashire VCs',
       initZoom: 8,
       bounds: {
@@ -1352,7 +1352,7 @@ div[data-tanvis-controls="species-selector"] {
     { label: 'vc58', value: 'vc-58' },
     { label: 'vc59', value: 'vc-59' },
     { label: 'vc60', value: 'vc-60' },
-    { label: 'all', value: 'vc-58-59-60' }
+    { label: 'all', value: 'vc-all' }
   ];
 
   function createAreaControls({ element, selectedValue, onAreaChange, body }) {
@@ -3498,7 +3498,7 @@ div[data-tanvis-controls="species-selector"] {
     }
 
     // Combined VC selection means "all relevant areas", so no additional filter is required.
-    if (area === 'vc-58-59-60' || area === 'vc-58-69-60') {
+    if (area === 'vc-all' || area === 'vc-58-69-60') {
       return [];
     }
 

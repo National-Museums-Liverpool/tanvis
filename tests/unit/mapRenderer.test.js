@@ -21,13 +21,13 @@ describe('renderStaticMap', () => {
 
     const controlElement = document.createElement('div');
     controlElement.id = 'vc-control-static';
-    controlElement.dataset.visArea = 'vc-58-59-60';
+    controlElement.dataset.visArea = 'vc-all';
     document.body.appendChild(controlElement);
 
     const element = document.createElement('div');
     const config = {
       type: 'map',
-      area: 'vc-58-59-60',
+      area: 'vc-all',
       source: '/example.csv',
       control: 'vc-control-static'
     };
@@ -37,8 +37,8 @@ describe('renderStaticMap', () => {
     expect(svgMapCalls).toHaveLength(1);
     expect(svgMapCalls[0].selector).toMatch(/^#tanvis-map-/);
     expect(svgMapCalls[0].transOptsControl).toBe(false);
-    expect(svgMapCalls[0].transOptsKey).toBe('vc-58-59-60');
-    expect(svgMapCalls[0].gridGjson).toBe('/data/vcs/hectad-grids/vc-58-59-60-hectads.geojson');
+    expect(svgMapCalls[0].transOptsKey).toBe('vc-all');
+    expect(svgMapCalls[0].gridGjson).toBe('/data/vcs/hectad-grids/vc-all-hectads.geojson');
     expect(svgMapCalls[0].gridLineStyle).toBeUndefined();
     expect(setIdentfierCalls).toEqual(['/example.csv']);
     expect(redrawCalls).toHaveLength(1);
@@ -194,13 +194,13 @@ describe('renderLeafletMap', () => {
 
     const controlElement = document.createElement('div');
     controlElement.id = 'vc-control-leaflet';
-    controlElement.dataset.visArea = 'vc-58-59-60';
+    controlElement.dataset.visArea = 'vc-all';
     document.body.appendChild(controlElement);
 
     const element = document.createElement('div');
     renderLeafletMap(element, {
       type: 'leaflet-map',
-      area: 'vc-58-59-60',
+      area: 'vc-all',
       control: 'vc-control-leaflet'
     });
 
@@ -230,7 +230,7 @@ describe('renderLeafletMap', () => {
 
     publishControlEvent('vc-control-leaflet', {
       type: 'area-change',
-      area: 'vc-58-59-60'
+      area: 'vc-all'
     });
     expect(setViewCalls[4]).toEqual({ coords: [53.585317, -2.549048], zoom: 8 });
   });

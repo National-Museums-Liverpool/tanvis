@@ -128,7 +128,7 @@ describe('renderNewSpeciesTable', () => {
 
     const controlElement = document.createElement('div');
     controlElement.id = 'vc-control-new-species';
-    controlElement.dataset.visArea = 'vc-58-59-60';
+    controlElement.dataset.visArea = 'vc-all';
     controlElement.dataset.visTaxonGroup = 'diptera';
     document.body.appendChild(controlElement);
 
