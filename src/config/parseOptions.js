@@ -1,82 +1,27 @@
+import { getVisAttributeSchema } from './visAttributeSchema.js';
+
 export function parseOptions(element) {
   const dataset = element?.dataset || {};
-  const expand = parseOptionalBoolean(dataset.visExpand);
-  const width = parseOptionalPositiveNumber(dataset.visWidth);
-  const height = parseOptionalPositiveNumber(dataset.visHeight);
-  const topN = parseOptionalPositiveInteger(dataset.visTopN);
-  const year = parseOptionalPositiveInteger(dataset.visYear);
-  const mapType = dataset.visMapType;
-  const startYear = parseOptionalPositiveInteger(dataset.visStartYear);
-  const endYear = parseOptionalPositiveInteger(dataset.visEndYear);
-  const gridStatsType = dataset.visGridStatsType;
+  const schema = getVisAttributeSchema(dataset.visType);
+  const config = {};
 
-  return {
-    type: dataset.visType || 'table',
-    source: dataset.visSource,
-    control: dataset.visControl,
-    linkedTable: dataset.visLinkedTable,
-    species: dataset.visSpecies,
-    mapType,
-    taxonId: dataset.visTaxonid,
-    startDate: dataset.visStartDate,
-    endDate: dataset.visEndDate,
-    area: dataset.visArea || 'vc-all',
-    ctl: parseBoolean(dataset.visCtl),
-    boundaries: parseBoolean(dataset.visBoundaries),
-    gridStatsType,
-    hectads: parseBooleanDefaultTrue(dataset.visHectads),
-    ...(topN !== undefined ? { topN } : {}),
-    ...(year !== undefined ? { year } : {}),
-    ...(startYear !== undefined ? { startYear } : {}),
-    ...(endYear !== undefined ? { endYear } : {}),
-    ...(expand !== undefined ? { expand } : {}),
-    ...(width !== undefined ? { width } : {}),
-    ...(height !== undefined ? { height } : {})
-  };
-}
+  for (const rule of schema.rules) {
+    if (rule.kind === 'conditional' && !rule.when?.(config, dataset)) {
+      continue;
+    }
 
-function parseBoolean(value) {
-  return String(value).toLowerCase() === 'true';
-}
+    const rawValue = dataset[rule.datasetName];
+    const parsedValue = rule.parser?.(rawValue, dataset, config);
 
-function parseBooleanDefaultTrue(value) {
-  if (value === undefined || value === null || value === '') {
-    return true;
+    if (parsedValue === undefined) {
+      if (rule.includeUndefined) {
+        config[rule.key] = undefined;
+      }
+      continue;
+    }
+
+    config[rule.key] = parsedValue;
   }
 
-  return String(value).toLowerCase() === 'true';
-}
-
-function parseOptionalBoolean(value) {
-  if (value === undefined || value === null || value === '') {
-    return undefined;
-  }
-
-  return String(value).toLowerCase() === 'true';
-}
-
-function parseOptionalPositiveNumber(value) {
-  if (value === undefined || value === null || value === '') {
-    return undefined;
-  }
-
-  const parsed = Number(value);
-  if (!Number.isFinite(parsed) || parsed <= 0) {
-    return undefined;
-  }
-
-  return parsed;
-}
-
-function parseOptionalPositiveInteger(value) {
-  if (value === undefined || value === null || value === '') {
-    return undefined;
-  }
-
-  const parsed = Number(value);
-  if (!Number.isFinite(parsed) || parsed <= 0) {
-    return undefined;
-  }
-
-  return Math.floor(parsed);
+  return config;
 }

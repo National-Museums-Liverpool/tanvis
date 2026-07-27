@@ -4,12 +4,13 @@ import { registerRenderer } from '../../src/core/registry.js';
 
 describe('render', () => {
   it('uses the registered renderer', () => {
-    registerRenderer('table', (element) => {
+    registerRenderer('control-block', (element) => {
       element.textContent = 'rendered';
     });
 
     const element = document.createElement('div');
-    element.dataset.visType = 'table';
+    element.id = 'control-block-test';
+    element.dataset.visType = 'control-block';
 
     expect(render(element)).toEqual({ rendered: true, errors: [] });
     expect(element.textContent).toBe('rendered');

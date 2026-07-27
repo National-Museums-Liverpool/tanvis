@@ -16,7 +16,7 @@ test('control-block drives map area changes', async ({ page }) => {
 
     <div
       class="tanvis"
-      data-vis-type="static-map"
+      data-vis-type="species-map"
       data-vis-area="vc-60"
       data-vis-source="/example.csv"
       data-vis-control="map-controls"
@@ -27,6 +27,7 @@ test('control-block drives map area changes', async ({ page }) => {
     window.__svgMapCalls = [];
     window.__setIdentifierCalls = [];
     window.__redrawCalls = 0;
+    window.d3 = {};
     window.brcatlas = {
       svgMap: (opts) => {
         window.__svgMapCalls.push({
@@ -73,7 +74,7 @@ test('control-block drives map area changes', async ({ page }) => {
   await page.getByLabel('vc59').check();
 
   await expect(page.getByLabel('vc59')).toBeChecked();
-  await expect(page.locator('.tanvis[data-vis-type="static-map"]')).toHaveAttribute('data-vis-area', 'vc-59');
+  await expect(page.locator('.tanvis[data-vis-type="species-map"]')).toHaveAttribute('data-vis-area', 'vc-59');
 
   const calls = await page.evaluate(() => ({
     svgMapCalls: window.__svgMapCalls,

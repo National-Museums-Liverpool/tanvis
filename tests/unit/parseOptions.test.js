@@ -4,12 +4,12 @@ import { parseOptions } from '../../src/config/parseOptions.js';
 describe('parseOptions', () => {
   it('reads data attributes', () => {
     const element = document.createElement('div');
-    element.dataset.visType = 'chart';
+    element.dataset.visType = 'control-block';
     element.dataset.visSource = '/data.json';
     element.dataset.visCtl = 'true';
 
     expect(parseOptions(element)).toMatchObject({
-      type: 'chart',
+      type: 'control-block',
       source: '/data.json',
       area: 'vc-all',
       ctl: true,
@@ -17,6 +17,12 @@ describe('parseOptions', () => {
       gridStatsType: undefined,
       hectads: true
     });
+  });
+
+  it('does not default to a supported vis-type when data-vis-type is missing', () => {
+    const element = document.createElement('div');
+
+    expect(parseOptions(element).type).toBeUndefined();
   });
 
   it('defaults ctl to false when not supplied', () => {

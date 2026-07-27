@@ -446,7 +446,7 @@ function areaToHigherGeographyIdentifiers(area) {
   }
 
   // Combined VC selection means "all relevant areas", so no additional filter is required.
-  if (area === 'vc-all' || area === 'vc-58-69-60') {
+  if (area === 'vc-all') {
     return [];
   }
 

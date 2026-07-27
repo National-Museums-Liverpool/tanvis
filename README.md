@@ -41,15 +41,14 @@ console.log(window.Tanvis.version);
 ## Browser Example
 
 ```html
-<div class="tanvis" data-vis-type="table" data-vis-source="/data.json"></div>
+<div class="tanvis" data-vis-type="species-map" data-vis-source="/data.json"></div>
 <script src="dist/tanvis.iife.js"></script>
 <script>
   window.Tanvis.init();
 </script>
 ```
 
-This snippet demonstrates the wiring pattern (`.tanvis` + `data-*` attributes + `init()`); the `table` renderer is currently scaffold-only.
-For working end-to-end examples, use `static-map`, `new-species-table`, `increasing-species-table`, `species-absent-since`, `species-map`, `grid-stats-map`, or `temporal-year-chart` (see `examples/static-map.html`, `examples/new-species-table.html`, `examples/increasing-species-table.html`, `examples/species-absent-since.html`, `examples/species-map.html`, `examples/grid-stats-map.html`, and `examples/temporal-year-chart.html`).
+This snippet demonstrates the wiring pattern (`.tanvis` + `data-*` attributes + `init()`); for working end-to-end examples, use `control-block`, `new-species-table`, `increasing-species-table`, `species-absent-since`, `species-map`, `grid-stats-map`, or `temporal-year-chart` (see `examples/new-species-table.html`, `examples/increasing-species-table.html`, `examples/species-absent-since.html`, `examples/species-map.html`, `examples/grid-stats-map.html`, and `examples/temporal-year-chart.html`).
 
 To see a shared control block driving two map outputs together, open `examples/shared-control-maps.html`.
 
@@ -57,9 +56,7 @@ To see a shared control block driving two map outputs together, open `examples/s
 
 Tanvis currently registers these renderer types:
 
-- `table`
-- `chart`
-- `static-map`
+- `control-block`
 - `new-species-table`
 - `increasing-species-table`
 - `species-absent-since`
@@ -67,11 +64,9 @@ Tanvis currently registers these renderer types:
 - `grid-stats-map`
 - `temporal-year-chart`
 
-`table` and `chart` are scaffolded but their adapters are not implemented yet.
+### Species Map Renderer (BRC Atlas)
 
-### Static Map Renderer (BRC Atlas)
-
-Use `data-vis-type="static-map"`.
+Use `data-vis-type="species-map"`.
 
 Supported attributes:
 
@@ -98,7 +93,7 @@ A separate `control-block` visualization can render radio options (`vc58`, `vc59
 
 <div
   class="tanvis"
-  data-vis-type="static-map"
+  data-vis-type="species-map"
   data-vis-source="/example-hectads-1.csv"
   data-vis-area="vc-all"
   data-vis-control="vc-control"

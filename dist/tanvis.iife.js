@@ -9,52 +9,17 @@ var Tanvis = (function (exports) {
     return Array.from(root.querySelectorAll(selector));
   }
 
-  function parseOptions(element) {
-    const dataset = element?.dataset || {};
-    const expand = parseOptionalBoolean(dataset.visExpand);
-    const width = parseOptionalPositiveNumber$1(dataset.visWidth);
-    const height = parseOptionalPositiveNumber$1(dataset.visHeight);
-    const topN = parseOptionalPositiveInteger(dataset.visTopN);
-    const year = parseOptionalPositiveInteger(dataset.visYear);
-    const mapType = dataset.visMapType;
-    const startYear = parseOptionalPositiveInteger(dataset.visStartYear);
-    const endYear = parseOptionalPositiveInteger(dataset.visEndYear);
-    const gridStatsType = dataset.visGridStatsType;
-
-    return {
-      type: dataset.visType || 'table',
-      source: dataset.visSource,
-      control: dataset.visControl,
-      linkedTable: dataset.visLinkedTable,
-      species: dataset.visSpecies,
-      mapType,
-      taxonId: dataset.visTaxonid,
-      startDate: dataset.visStartDate,
-      endDate: dataset.visEndDate,
-      area: dataset.visArea || 'vc-all',
-      ctl: parseBoolean(dataset.visCtl),
-      boundaries: parseBoolean(dataset.visBoundaries),
-      gridStatsType,
-      hectads: parseBooleanDefaultTrue(dataset.visHectads),
-      ...(topN !== undefined ? { topN } : {}),
-      ...(year !== undefined ? { year } : {}),
-      ...(startYear !== undefined ? { startYear } : {}),
-      ...(endYear !== undefined ? { endYear } : {}),
-      ...(expand !== undefined ? { expand } : {}),
-      ...(width !== undefined ? { width } : {}),
-      ...(height !== undefined ? { height } : {})
-    };
-  }
+  const KNOWN_VIS_TYPES = [
+    'control-block',
+    'species-map',
+    'new-species-table',
+    'increasing-species-table',
+    'species-absent-since',
+    'grid-stats-map',
+    'temporal-year-chart'
+  ];
 
   function parseBoolean(value) {
-    return String(value).toLowerCase() === 'true';
-  }
-
-  function parseBooleanDefaultTrue(value) {
-    if (value === undefined || value === null || value === '') {
-      return true;
-    }
-
     return String(value).toLowerCase() === 'true';
   }
 
@@ -92,21 +57,344 @@ var Tanvis = (function (exports) {
     return Math.floor(parsed);
   }
 
+  function parseOptionalString(value) {
+    if (value === undefined || value === null || value === '') {
+      return undefined;
+    }
+
+    return String(value);
+  }
+
+  function parseOptionalDate(value) {
+    if (value === undefined || value === null || value === '') {
+      return undefined;
+    }
+
+    return String(value);
+  }
+
+  function parseRequiredString(value) {
+    const parsed = parseOptionalString(value);
+    return parsed && parsed.trim() ? parsed : undefined;
+  }
+
+  const COMMON_RULES = [
+    {
+      key: 'type',
+      datasetName: 'visType',
+      kind: 'required',
+      parser: parseRequiredString,
+      validate: (value) => KNOWN_VIS_TYPES.includes(value),
+      message: 'Missing data-vis-type',
+      invalidMessage: 'Invalid data-vis-type',
+      includeUndefined: true
+    },
+    {
+      key: 'source',
+      datasetName: 'visSource',
+      kind: 'optional',
+      parser: parseOptionalString,
+      includeUndefined: true
+    },
+    {
+      key: 'control',
+      datasetName: 'visControl',
+      kind: 'optional',
+      parser: parseOptionalString,
+      includeUndefined: true
+    },
+    {
+      key: 'linkedTable',
+      datasetName: 'visLinkedTable',
+      kind: 'optional',
+      parser: parseOptionalString,
+      includeUndefined: true
+    },
+    {
+      key: 'species',
+      datasetName: 'visSpecies',
+      kind: 'optional',
+      parser: parseOptionalString,
+      includeUndefined: true
+    },
+    {
+      key: 'taxonId',
+      datasetName: 'visTaxonid',
+      kind: 'optional',
+      parser: parseOptionalString,
+      includeUndefined: true
+    },
+    {
+      key: 'startDate',
+      datasetName: 'visStartDate',
+      kind: 'optional',
+      parser: parseOptionalDate,
+      includeUndefined: true
+    },
+    {
+      key: 'endDate',
+      datasetName: 'visEndDate',
+      kind: 'optional',
+      parser: parseOptionalDate,
+      includeUndefined: true
+    },
+    {
+      key: 'area',
+      datasetName: 'visArea',
+      kind: 'optional',
+      parser: (value) => parseOptionalString(value) || 'vc-all',
+      includeUndefined: true
+    },
+    {
+      key: 'ctl',
+      datasetName: 'visCtl',
+      kind: 'optional',
+      parser: (value) => {
+        if (value === undefined || value === null || value === '') {
+          return false;
+        }
+
+        return String(value).toLowerCase() === 'true';
+      },
+      includeUndefined: true
+    },
+    {
+      key: 'boundaries',
+      datasetName: 'visBoundaries',
+      kind: 'optional',
+      parser: (value) => {
+        if (value === undefined || value === null || value === '') {
+          return false;
+        }
+
+        return String(value).toLowerCase() === 'true';
+      },
+      includeUndefined: true
+    },
+    {
+      key: 'gridStatsType',
+      datasetName: 'visGridStatsType',
+      kind: 'optional',
+      parser: parseOptionalString,
+      includeUndefined: true
+    },
+    {
+      key: 'hectads',
+      datasetName: 'visHectads',
+      kind: 'optional',
+      parser: (value) => {
+        if (value === undefined || value === null || value === '') {
+          return true;
+        }
+
+        return String(value).toLowerCase() === 'true';
+      },
+      includeUndefined: true
+    },
+    {
+      key: 'mapType',
+      datasetName: 'visMapType',
+      kind: 'optional',
+      parser: parseOptionalString,
+      includeUndefined: true
+    },
+    {
+      key: 'expand',
+      datasetName: 'visExpand',
+      kind: 'optional',
+      parser: parseOptionalBoolean
+    },
+    {
+      key: 'width',
+      datasetName: 'visWidth',
+      kind: 'optional',
+      parser: parseOptionalPositiveNumber$1
+    },
+    {
+      key: 'height',
+      datasetName: 'visHeight',
+      kind: 'optional',
+      parser: parseOptionalPositiveNumber$1
+    },
+    {
+      key: 'topN',
+      datasetName: 'visTopN',
+      kind: 'optional',
+      parser: parseOptionalPositiveInteger
+    },
+    {
+      key: 'year',
+      datasetName: 'visYear',
+      kind: 'optional',
+      parser: parseOptionalPositiveInteger
+    },
+    {
+      key: 'startYear',
+      datasetName: 'visStartYear',
+      kind: 'optional',
+      parser: parseOptionalPositiveInteger
+    },
+    {
+      key: 'endYear',
+      datasetName: 'visEndYear',
+      kind: 'optional',
+      parser: parseOptionalPositiveInteger
+    }
+  ];
+
+  const VIS_TYPE_RULES = {
+    'control-block': [],
+    'species-map': [
+      {
+        key: 'area',
+        datasetName: 'visArea',
+        kind: 'optional',
+        parser: (value) => parseOptionalString(value) || 'vc-all'
+      },
+      {
+        key: 'control',
+        datasetName: 'visControl',
+        kind: 'optional',
+        parser: parseOptionalString
+      },
+      {
+        key: 'species',
+        datasetName: 'visSpecies',
+        kind: 'optional',
+        parser: parseOptionalString
+      },
+      {
+        key: 'mapType',
+        datasetName: 'visMapType',
+        kind: 'optional',
+        parser: parseOptionalString
+      }
+    ],
+    'new-species-table': [
+      {
+        key: 'startDate',
+        datasetName: 'visStartDate',
+        kind: 'required',
+        parser: parseOptionalDate,
+        validate: (value) => Boolean(value),
+        message: 'Missing data-vis-start-date for new-species-table'
+      }
+    ],
+    'increasing-species-table': [],
+    'species-absent-since': [
+      {
+        key: 'year',
+        datasetName: 'visYear',
+        kind: 'required',
+        parser: parseOptionalPositiveInteger,
+        validate: (value) => Number.isFinite(value),
+        message: 'Missing data-vis-year for species-absent-since'
+      }
+    ],
+    'grid-stats-map': [],
+    'temporal-year-chart': [
+      {
+        key: 'startYear',
+        datasetName: 'visStartYear',
+        kind: 'optional',
+        parser: parseOptionalPositiveInteger
+      },
+      {
+        key: 'endYear',
+        datasetName: 'visEndYear',
+        kind: 'optional',
+        parser: parseOptionalPositiveInteger
+      },
+      {
+        key: 'ctl',
+        datasetName: 'visCtl',
+        kind: 'optional',
+        parser: parseBoolean
+      },
+      {
+        key: 'boundaries',
+        datasetName: 'visBoundaries',
+        kind: 'optional',
+        parser: parseBoolean
+      },
+      {
+        key: 'expand',
+        datasetName: 'visExpand',
+        kind: 'optional',
+        parser: parseOptionalBoolean
+      },
+      {
+        key: 'width',
+        datasetName: 'visWidth',
+        kind: 'optional',
+        parser: parseOptionalPositiveNumber$1
+      },
+      {
+        key: 'height',
+        datasetName: 'visHeight',
+        kind: 'optional',
+        parser: parseOptionalPositiveNumber$1
+      }
+    ]
+  };
+
+  function getVisAttributeSchema(visType) {
+    return {
+      visType,
+      rules: [
+        ...COMMON_RULES,
+        ...(VIS_TYPE_RULES[visType] || [])
+      ]
+    };
+  }
+
+  function parseOptions(element) {
+    const dataset = element?.dataset || {};
+    const schema = getVisAttributeSchema(dataset.visType);
+    const config = {};
+
+    for (const rule of schema.rules) {
+      if (rule.kind === 'conditional' && !rule.when?.(config, dataset)) {
+        continue;
+      }
+
+      const rawValue = dataset[rule.datasetName];
+      const parsedValue = rule.parser?.(rawValue, dataset, config);
+
+      if (parsedValue === undefined) {
+        if (rule.includeUndefined) {
+          config[rule.key] = undefined;
+        }
+        continue;
+      }
+
+      config[rule.key] = parsedValue;
+    }
+
+    return config;
+  }
+
   function validateAttributes(config, element) {
-    if (!config.type) {
-      return ['Missing data-vis-type'];
+    const schema = getVisAttributeSchema(config?.type);
+
+    for (const rule of schema.rules) {
+      if (rule.kind === 'conditional' && !rule.when?.(config, element?.dataset || {})) {
+        continue;
+      }
+
+      const value = config?.[rule.key];
+
+      if (rule.kind === 'required' && (value === undefined || value === null || value === '')) {
+        return [rule.message || `Missing data attribute ${rule.datasetName}`];
+      }
+
+      if (rule.validate && !rule.validate(value, config, element)) {
+        return [rule.invalidMessage || rule.message || `Invalid data attribute ${rule.datasetName}`];
+      }
     }
 
-    if (config.type === 'control-block' && !element?.id) {
+    if (config?.type === 'control-block' && !element?.id) {
       return ['Missing id attribute for control-block'];
-    }
-
-    if (config.type === 'new-species-table' && !config.startDate) {
-      return ['Missing data-vis-start-date for new-species-table'];
-    }
-
-    if (config.type === 'species-absent-since' && !Number.isFinite(config.year)) {
-      return ['Missing data-vis-year for species-absent-since'];
     }
 
     return [];
@@ -1078,13 +1366,6 @@ div[data-tanvis-controls="species-selector"] {
   function syncMapTetradInfoEmptyState$1(info) {
     const isEmpty = !String(info.textContent || '').trim();
     info.classList.toggle('tanvis-map-tetrad-info-empty', isEmpty);
-  }
-
-  function renderStaticMap(element, config) {
-    renderStaticAtlasMap(element, config, {
-      idPrefix: 'tanvis-map',
-      errorMessage: 'Failed to render static map'
-    });
   }
 
   function renderLeafletAtlasMap(element, config, options = {}) {
@@ -3498,7 +3779,7 @@ div[data-tanvis-controls="species-selector"] {
     }
 
     // Combined VC selection means "all relevant areas", so no additional filter is required.
-    if (area === 'vc-all' || area === 'vc-58-69-60') {
+    if (area === 'vc-all') {
       return [];
     }
 
@@ -4354,7 +4635,6 @@ div[data-tanvis-controls="species-selector"] {
       return;
     }
 
-    registerRenderer('static-map', renderStaticMap);
     registerRenderer('control-block', renderControlBlock);
     registerRenderer('new-species-table', renderNewSpeciesTable);
     registerRenderer('increasing-species-table', renderIncreasingSpeciesTable);
