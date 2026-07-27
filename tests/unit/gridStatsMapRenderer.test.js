@@ -5,11 +5,15 @@ import { renderGridStatsMap } from '../../src/renderers/gridStatsMap.js';
 describe('renderGridStatsMap', () => {
   beforeEach(() => {
     globalThis.d3 = d3;
+    globalThis.L = {};
+    window.L = globalThis.L;
   });
 
   afterEach(() => {
     vi.restoreAllMocks();
     delete window.brcatlas;
+    delete window.L;
+    delete globalThis.L;
   });
 
   it('uses setMapType and redrawMap when switching to Species without recreating map', async () => {

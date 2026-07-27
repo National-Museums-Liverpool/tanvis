@@ -34,6 +34,41 @@ describe('renderTemporalYearChart', () => {
     await new Promise((resolve) => setTimeout(resolve, 0));
 
     expect(element.textContent).toContain('D3 is not available');
+    expect(element.textContent).toContain('d3.v7.min.js');
+    expect(element.textContent).toContain('brccharts.umd.js');
+  });
+
+  it('shows an info message when the BRC Charts stylesheet is missing', async () => {
+    Array.from(document.head.querySelectorAll('link[rel="stylesheet"]')).forEach((link) => link.remove());
+    window.d3 = {
+      scaleSequential: () => ({
+        domain: () => ({
+          interpolator: () => ({})
+        })
+      }),
+      interpolateCividis: () => ({}),
+      interpolateViridis: () => ({})
+    };
+    window.brccharts = {
+      temporal: () => ({})
+    };
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue({
+      ok: true,
+      json: async () => ({ data: [] })
+    });
+    const element = document.createElement('div');
+
+    renderTemporalYearChart(element, {
+      type: 'temporal-year-chart',
+      taxonId: 'NHMSYS0001234567'
+    });
+
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    expect(element.textContent).toContain('BRC Charts stylesheet');
+    expect(element.textContent).toContain('brccharts.umd.css');
+    expect(element.firstElementChild?.classList.contains('tanvis-vis-status')).toBe(true);
+    expect(element.querySelector('[data-tanvis-temporal-year-chart="chart"]')).not.toBeNull();
   });
 
   it('queries taxon-year-stats and passes transformed yearly data to brccharts.temporal', async () => {

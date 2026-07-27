@@ -1,10 +1,12 @@
+export const D3_DEPENDENCY_MESSAGE = 'D3 is not available. Include d3.v7.min.js to use Tanvis mapping.';
+
 function getD3() {
   // Expose D3 via the global object so unit tests can provide it without
   // bundling D3 into the library build used by Rollup.
   const globalD3 = globalThis.d3 ?? globalThis.window?.d3;
 
   if (!globalD3?.scaleSequential || !globalD3?.interpolateCividis || !globalD3?.interpolateViridis) {
-    throw new Error('D3 is not available. Provide it via globalThis.d3 in tests or the browser runtime.');
+    throw new Error(D3_DEPENDENCY_MESSAGE);
   }
 
   return globalD3;

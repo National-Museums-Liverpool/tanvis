@@ -93,6 +93,31 @@ describe('renderNewSpeciesTable', () => {
     expect(element.textContent).toContain('Tabulator is not available');
   });
 
+  it('shows the stylesheet warning beneath the rendered table content when Tabulator CSS is missing', async () => {
+    Array.from(document.head.querySelectorAll('link[rel="stylesheet"]')).forEach((link) => link.remove());
+    window.Tabulator = function Tabulator(container) {
+      container.dataset.tabulatorMounted = 'true';
+    };
+
+    const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue({
+      ok: true,
+      json: async () => ({ data: [] })
+    });
+
+    const element = document.createElement('div');
+    renderNewSpeciesTable(element, {
+      type: 'new-species-table',
+      startDate: '2025-01-01',
+      endDate: '2025-12-31'
+    });
+
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(element.querySelector('.tanvis-vis-status')?.textContent).toContain('Tabulator stylesheet is missing');
+    expect(element.firstElementChild?.classList.contains('tanvis-vis-status')).toBe(true);
+  });
+
   it('includes the control-block taxon-group filter when a group is selected', async () => {
     window.Tabulator = function Tabulator() {};
 

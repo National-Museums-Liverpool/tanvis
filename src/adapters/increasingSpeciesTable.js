@@ -1,7 +1,7 @@
 import { clearElement } from '../utils/dom.js';
 import { getLatestControlEvent, subscribeToControl } from '../controls/controlBus.js';
 import { createApiError, normalizeErrorMessage, parseJsonSafe } from '../utils/apiError.js';
-import { createVisStatusReporter } from '../utils/visStatus.js';
+import { createVisStatusReporter, ensureStylesheetDependency } from '../utils/visStatus.js';
 import { resolveApiBase } from '../config/apiBase.js';
 import { logApiRequest } from '../utils/apiRequest.js';
 
@@ -82,7 +82,16 @@ export function createIncreasingSpeciesTableAdapter() {
           clearElement(element);
           element.appendChild(createSummary(topN, records.length));
           element.appendChild(createTableContainer(records, Tabulator));
-          status.clear();
+
+          const hasStylesheet = ensureStylesheetDependency(status, {
+            libraryName: 'Tabulator',
+            stylesheetHints: ['tabulator.min.css'],
+            message: 'Tabulator stylesheet is missing. Include tabulator.min.css to ensure the table is styled correctly.'
+          });
+
+          if (hasStylesheet) {
+            status.clear();
+          }
         })
         .catch((error) => {
           if (element.__tanvisIncreasingLoadId !== loadId) {

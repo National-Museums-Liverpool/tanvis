@@ -1,8 +1,9 @@
 import { clearElement } from '../utils/dom.js';
 import { createApiError, normalizeErrorMessage, parseJsonSafe } from '../utils/apiError.js';
-import { createVisStatusReporter } from '../utils/visStatus.js';
+import { createVisStatusReporter, ensureStylesheetDependency } from '../utils/visStatus.js';
 import { resolveApiBase } from '../config/apiBase.js';
 import { logApiRequest } from '../utils/apiRequest.js';
+import { D3_DEPENDENCY_MESSAGE } from '../utils/colourMapDots.js';
 
 // Adapter for Tanvis temporal year charts backed by BRC Charts.
 // Keeps all dependency checks and data-loading in one place.
@@ -39,13 +40,15 @@ export function createTemporalYearChartAdapter() {
       clearElement(element);
       status.showInfo('Loading...');
 
-      loadTemporalYearChart(element, renderConfig)
+      loadTemporalYearChart(element, renderConfig, status)
         .then(() => {
           if (element.__tanvisTemporalYearLoadId !== loadId) {
             return;
           }
 
-          status.clear();
+          if (element.__tanvisTemporalYearChartHasStylesheet !== false) {
+            status.clear();
+          }
         })
         .catch((error) => {
           if (element.__tanvisTemporalYearLoadId !== loadId) {
@@ -93,7 +96,7 @@ function clearLinkedTableSubscription(element) {
   delete element.__tanvisLinkedTableCleanup;
 }
 
-async function loadTemporalYearChart(element, config) {
+async function loadTemporalYearChart(element, config, status) {
 
   // If not taxonId is provided, we cannot load any data, 
   // so we just return early without rendering anything.
@@ -106,8 +109,16 @@ async function loadTemporalYearChart(element, config) {
   }
 
   if (!getD3Global()) {
-    throw new Error('D3 is not available. Include d3 before brccharts.umd.js and Tanvis.');
+    throw new Error('D3 is not available. Include d3.v7.min.js and brccharts.umd.js before using the Tanvis temporal year chart.');
   }
+
+  const hasStylesheet = ensureStylesheetDependency(status, {
+    libraryName: 'BRC Charts',
+    stylesheetHints: ['brccharts.umd.css'],
+    message: 'BRC Charts stylesheet is missing. Include brccharts.umd.css to ensure the chart is styled correctly.'
+  });
+
+  element.__tanvisTemporalYearChartHasStylesheet = hasStylesheet;
 
   if (typeof brcCharts.temporal !== 'function') {
     throw new Error('BRC Charts temporal chart is not available. Include a compatible brccharts.umd.js bundle.');
@@ -127,7 +138,13 @@ async function loadTemporalYearChart(element, config) {
     chartRecords
   });
 
+  const statusElement = element.__tanvisVisStatusElement;
   clearElement(element);
+
+  if (statusElement && statusElement.parentNode !== element) {
+    element.appendChild(statusElement);
+  }
+
   element.appendChild(chartContainer);
   console.log('Rendering temporal year chart with options:', chartOptions);
   brcCharts.temporal(chartOptions);

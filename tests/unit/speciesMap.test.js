@@ -2,15 +2,40 @@ import * as d3 from 'd3';
 import { beforeEach, describe, it, expect, vi, afterEach } from 'vitest';
 import { createOccurrenceData, applyOccurrenceDataToMap } from '../../src/adapters/speciesMap.js';
 import { renderSpeciesMap } from '../../src/renderers/speciesMap.js';
+import { publishControlEvent } from '../../src/controls/controlBus.js';
 
 describe('species map redraw flow', () => {
   beforeEach(() => {
     globalThis.d3 = d3;
+    globalThis.L = {};
+    window.L = globalThis.L;
   });
 
   afterEach(() => {
     vi.restoreAllMocks();
     delete window.brcatlas;
+    document.querySelectorAll('#linked-table, #control').forEach((node) => node.remove());
+  });
+
+  it('shows an explicit D3 dependency message when D3 is missing', async () => {
+    delete globalThis.d3;
+    delete window.d3;
+
+    window.brcatlas = {
+      svgMap: () => ({ setMapType() {}, redrawMap() {} })
+    };
+
+    const element = document.createElement('div');
+    renderSpeciesMap(element, {
+      type: 'species-map',
+      area: 'vc-58',
+      species: 'ABC123'
+    });
+
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    expect(element.textContent).toContain('D3 is not available');
+    expect(element.textContent).toContain('d3.v7.min.js');
   });
 
   it('switches the map to the occurrences type and redraws it', () => {
@@ -148,6 +173,40 @@ describe('species map redraw flow', () => {
     expect(payload.records[0]).toMatchObject({ colour: 'orange' });
   });
 
+  it('keeps the map-type toggle visible when a switch-based map is re-rendered as leaflet', async () => {
+    window.brcatlas = {
+      svgMap: () => ({ setMapType() {}, redrawMap() {} }),
+      leafletMap: () => ({ setMapType() {}, redrawMap() {} })
+    };
+
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue({
+      ok: true,
+      json: async () => ({ data: [{ grid_ref_2km: 'SJ58' }] })
+    });
+
+    const element = document.createElement('div');
+    renderSpeciesMap(element, {
+      type: 'species-map',
+      mapType: 'switch',
+      area: 'vc-58',
+      species: 'ABC123'
+    });
+
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    renderSpeciesMap(element, {
+      type: 'species-map',
+      mapType: 'leaflet',
+      area: 'vc-58',
+      species: 'ABC123'
+    });
+
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    expect(element.querySelector('input[type="radio"][value="static"]')).not.toBeNull();
+    expect(element.querySelector('input[type="radio"][value="leaflet"]')).not.toBeNull();
+  });
+
   it('re-renders the species map after a linked table row selection', async () => {
     const mapTypeHandlers = {};
     const requestedSpecies = [];
@@ -203,5 +262,190 @@ describe('species map redraw flow', () => {
     expect(payload.records[0]).toMatchObject({ gr: 'SJ99', val: 1 });
 
     linkedTable.remove();
+  });
+
+  it('reuses the existing map instance when a linked table row changes the species', async () => {
+    const createdMaps = [];
+
+    window.brcatlas = {
+      svgMap: () => {
+        const map = {
+          setMapType() {},
+          redrawMap() {}
+        };
+        createdMaps.push(map);
+        return map;
+      }
+    };
+
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue({
+      ok: true,
+      json: async () => ({ data: [{ grid_ref_2km: 'SJ58' }] })
+    });
+
+    const linkedTable = document.createElement('div');
+    linkedTable.id = 'linked-table';
+    document.body.appendChild(linkedTable);
+
+    const element = document.createElement('div');
+    renderSpeciesMap(element, {
+      type: 'species-map',
+      area: 'vc-58',
+      species: 'ABC123',
+      linkedTable: 'linked-table'
+    });
+
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    linkedTable.dispatchEvent(new CustomEvent('species-row-selected', {
+      detail: { speciesId: 'XYZ999' }
+    }));
+
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    expect(createdMaps).toHaveLength(1);
+
+    linkedTable.remove();
+  });
+
+  it('updates the currently visible map after switching map type and selecting a linked-table species', async () => {
+    const createdMaps = [];
+    const mapTypeHandlers = {};
+
+    window.brcatlas = {
+      svgMap: (opts) => {
+        Object.assign(mapTypeHandlers, opts.mapTypesSel);
+        const map = {
+          setMapType() {},
+          redrawMap() {},
+          redrawCount: 0
+        };
+        map.setMapType = () => {
+          map.redrawCount += 1;
+        };
+        map.redrawMap = () => {
+          map.redrawCount += 1;
+        };
+        createdMaps.push(map);
+        return map;
+      },
+      leafletMap: (opts) => {
+        Object.assign(mapTypeHandlers, opts.mapTypesSel);
+        const map = {
+          setMapType() {},
+          redrawMap() {},
+          redrawCount: 0
+        };
+        map.setMapType = () => {
+          map.redrawCount += 1;
+        };
+        map.redrawMap = () => {
+          map.redrawCount += 1;
+        };
+        createdMaps.push(map);
+        return map;
+      }
+    };
+
+    vi.spyOn(globalThis, 'fetch').mockImplementation(async (url) => {
+      const speciesCode = new URL(url).searchParams.get('taxon_identifier[eq]');
+      return {
+        ok: true,
+        json: async () => ({ data: [{ grid_ref_2km: speciesCode === 'XYZ999' ? 'SJ99' : 'SJ58' }] })
+      };
+    });
+
+    const linkedTable = document.createElement('div');
+    linkedTable.id = 'linked-table';
+    document.body.appendChild(linkedTable);
+
+    const element = document.createElement('div');
+    renderSpeciesMap(element, {
+      type: 'species-map',
+      mapType: 'switch',
+      area: 'vc-58',
+      species: 'ABC123',
+      linkedTable: 'linked-table'
+    });
+
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    const leafletInput = element.querySelector('input[type="radio"][value="leaflet"]');
+    leafletInput.checked = true;
+    leafletInput.dispatchEvent(new Event('change', { bubbles: true }));
+
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    linkedTable.dispatchEvent(new CustomEvent('species-row-selected', {
+      detail: { speciesId: 'XYZ999' }
+    }));
+
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    expect(createdMaps).toHaveLength(2);
+    expect(createdMaps[1].redrawCount).toBeGreaterThan(0);
+
+    linkedTable.remove();
+  });
+
+  it('keeps linked-table updates working after a control-driven re-render', async () => {
+    const requestedSpecies = [];
+
+    window.brcatlas = {
+      svgMap: () => ({
+        setMapType() {},
+        redrawMap() {}
+      })
+    };
+
+    vi.spyOn(globalThis, 'fetch').mockImplementation(async (url) => {
+      const parsedUrl = new URL(url);
+      const speciesCode = parsedUrl.searchParams.get('taxon_identifier[eq]');
+      requestedSpecies.push(speciesCode);
+
+      return {
+        ok: true,
+        json: async () => ({ data: [{ grid_ref_2km: speciesCode === 'XYZ999' ? 'SJ99' : 'SJ58' }] })
+      };
+    });
+
+    const linkedTable = document.createElement('div');
+    linkedTable.id = 'linked-table';
+    document.body.appendChild(linkedTable);
+
+    const controlElement = document.createElement('div');
+    controlElement.id = 'control';
+    controlElement.dataset.visArea = 'vc-58';
+    controlElement.dataset.visTaxonGroup = '';
+    document.body.appendChild(controlElement);
+
+    const element = document.createElement('div');
+    renderSpeciesMap(element, {
+      type: 'species-map',
+      area: 'vc-58',
+      species: 'ABC123',
+      control: 'control',
+      linkedTable: 'linked-table'
+    });
+
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    controlElement.dataset.visArea = 'vc-59';
+    publishControlEvent('control', { type: 'area-change', area: 'vc-59' });
+
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    linkedTable.dispatchEvent(new CustomEvent('species-row-selected', {
+      detail: { speciesId: 'XYZ999' }
+    }));
+
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    expect(requestedSpecies[0]).toBe('ABC123');
+    expect(requestedSpecies[requestedSpecies.length - 1]).toBe('XYZ999');
+    expect(requestedSpecies.length).toBeGreaterThanOrEqual(3);
+
+    linkedTable.remove();
+    controlElement.remove();
   });
 });

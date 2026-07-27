@@ -1,6 +1,6 @@
 import { clearElement } from '../../utils/dom.js';
 import { normalizeErrorMessage } from '../../utils/apiError.js';
-import { createVisStatusReporter } from '../../utils/visStatus.js';
+import { createVisStatusReporter, ensureStylesheetDependency } from '../../utils/visStatus.js';
 import { ensureSharedStyles } from '../../styles/sharedStyles.js';
 import {
   assignElementId,
@@ -29,6 +29,12 @@ export function renderStaticAtlasMap(element, config, options = {}) {
     if (!brcAtlas || typeof brcAtlas.svgMap !== 'function') {
       throw new Error('BRC Atlas is not available. Include brcatlas.umd.js before Tanvis.');
     }
+
+    const hasStylesheet = ensureStylesheetDependency(status, {
+      libraryName: 'BRC Atlas',
+      stylesheetHints: ['brcatlas.umd.css'],
+      message: 'BRC Atlas stylesheet is missing. Include brcatlas.umd.css to ensure the static map is styled correctly.'
+    });
 
     const idPrefix = options.idPrefix || 'tanvis-map';
     assignElementId(element, idPrefix);
@@ -70,7 +76,9 @@ export function renderStaticAtlasMap(element, config, options = {}) {
       });
     }
 
-    status.clear();
+    if (hasStylesheet) {
+      status.clear();
+    }
     return map;
   } catch (error) {
     clearElement(element);

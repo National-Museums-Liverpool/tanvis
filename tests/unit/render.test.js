@@ -25,6 +25,17 @@ describe('render', () => {
     });
   });
 
+  it('renders validation errors inline in the visualization container', () => {
+    const element = document.createElement('div');
+    element.dataset.visType = 'new-species-table';
+
+    render(element);
+
+    const status = element.querySelector('.tanvis-vis-status');
+    expect(status).not.toBeNull();
+    expect(status.textContent).toContain('Missing data-vis-start-date for new-species-table');
+  });
+
   it('renders temporal-year-chart when registered', () => {
     registerRenderer('temporal-year-chart', () => {});
 

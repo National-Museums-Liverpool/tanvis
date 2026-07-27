@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { afterEach, beforeEach, describe, it, expect } from 'vitest';
 import { renderStaticMap } from '../../src/renderers/map.js';
 import { renderLeafletMap } from '../../src/renderers/leafletMap.js';
 import { publishControlEvent } from '../../src/controls/controlBus.js';
@@ -135,6 +135,47 @@ describe('renderStaticMap', () => {
 });
 
 describe('renderLeafletMap', () => {
+  beforeEach(() => {
+    window.L = {};
+  });
+
+  afterEach(() => {
+    delete window.L;
+  });
+
+  it('shows a clear error when Leaflet is not available', () => {
+    const element = document.createElement('div');
+    delete window.L;
+    window.brcatlas = {
+      leafletMap: () => ({ lmap: {}, redrawMap: () => {} })
+    };
+
+    renderLeafletMap(element, {
+      type: 'leaflet-map',
+      area: 'vc-59'
+    });
+
+    expect(element.textContent).toContain('Leaflet is not available');
+    expect(element.textContent).toContain('leaflet.js');
+  });
+
+  it('shows an info message when Leaflet CSS is missing', () => {
+    const element = document.createElement('div');
+    Array.from(document.head.querySelectorAll('link[rel="stylesheet"]')).forEach((link) => link.remove());
+    window.L = {};
+    window.brcatlas = {
+      leafletMap: () => ({ lmap: {}, redrawMap: () => {} })
+    };
+
+    renderLeafletMap(element, {
+      type: 'leaflet-map',
+      area: 'vc-59'
+    });
+
+    expect(element.textContent).toContain('Leaflet stylesheet');
+    expect(element.textContent).toContain('leaflet.css');
+  });
+
   it('responds to control-block area changes', () => {
     const leafletMapCalls = [];
     const setViewCalls = [];

@@ -136,11 +136,137 @@ var Tanvis = (function (exports) {
     }
   }
 
+  const VIS_STATUS_CLASS = 'tanvis-vis-status';
+  const VIS_STATUS_STYLES_ID = 'tanvis-vis-status-styles';
+  const VIS_STATUS_STYLES = `
+.${VIS_STATUS_CLASS} {
+  margin: 0.5rem 0 0;
+  color: #4b5563;
+  font: 500 0.85rem/1.3 system-ui, sans-serif;
+}
+
+.${VIS_STATUS_CLASS}.is-error {
+  color: #9f1239;
+}
+
+.${VIS_STATUS_CLASS}.is-info {
+  color: #92400e;
+}
+`;
+
+  function createVisStatusReporter(container) {
+    ensureVisStatusStyles();
+
+    return {
+      showInfo(message) {
+        showStatus(container, message, 'info');
+      },
+      showError(message) {
+        showStatus(container, message, 'error');
+      },
+      clear() {
+        clearStatus(container);
+      }
+    };
+  }
+
+  function ensureStylesheetDependency(reporter, { libraryName, stylesheetHints, message }) {
+    if (typeof document === 'undefined' || !document.head) {
+      return true;
+    }
+
+    const hints = Array.isArray(stylesheetHints)
+      ? stylesheetHints.filter(Boolean)
+      : [stylesheetHints].filter(Boolean);
+
+    if (hints.length === 0) {
+      return true;
+    }
+
+    const hasStylesheet = hints.some((hint) => hasStylesheetLink(hint));
+    if (!hasStylesheet) {
+      const resolvedMessage = message || `${libraryName} stylesheet is missing. Include ${hints[0]} to ensure the visualization is styled correctly.`;
+      reporter?.showInfo?.(resolvedMessage);
+    }
+
+    return hasStylesheet;
+  }
+
+  function showStatus(container, message, tone) {
+    const status = ensureStatusElement(container);
+    const classNames = [VIS_STATUS_CLASS];
+
+    if (tone === 'error') {
+      classNames.push('is-error');
+    } else if (tone === 'info') {
+      classNames.push('is-info');
+    }
+
+    status.className = classNames.join(' ');
+    status.textContent = message || '';
+  }
+
+  function ensureStatusElement(container) {
+    if (container.__tanvisVisStatusElement) {
+      const status = container.__tanvisVisStatusElement;
+      if (!status.isConnected) {
+        container.insertBefore(status, container.firstChild);
+      } else if (status.nextSibling && status.parentNode?.firstChild !== status) {
+        container.insertBefore(status, container.firstChild);
+      }
+      return status;
+    }
+
+    const status = document.createElement('p');
+    status.className = VIS_STATUS_CLASS;
+    container.insertBefore(status, container.firstChild);
+    container.__tanvisVisStatusElement = status;
+    return status;
+  }
+
+  function clearStatus(container) {
+    const status = container.__tanvisVisStatusElement;
+    if (status?.parentNode) {
+      status.parentNode.removeChild(status);
+    }
+
+    delete container.__tanvisVisStatusElement;
+  }
+
+  function hasStylesheetLink(stylesheetHint) {
+    const normalizedHint = String(stylesheetHint || '').toLowerCase();
+    if (!normalizedHint) {
+      return false;
+    }
+
+    return Array.from(document.head.querySelectorAll('link[rel~="stylesheet"]')).some((link) => {
+      const href = String(link.getAttribute('href') || '').toLowerCase();
+      return href.includes(normalizedHint);
+    });
+  }
+
+  function ensureVisStatusStyles() {
+    if (typeof document === 'undefined') {
+      return;
+    }
+
+    if (document.getElementById(VIS_STATUS_STYLES_ID)) {
+      return;
+    }
+
+    const style = document.createElement('style');
+    style.id = VIS_STATUS_STYLES_ID;
+    style.textContent = VIS_STATUS_STYLES;
+    document.head.appendChild(style);
+  }
+
   function render(element) {
     const config = parseOptions(element);
     const errors = validateAttributes(config, element);
+    const status = createVisStatusReporter(element);
 
     if (errors.length > 0) {
+      status.showError(errors[0]);
       warn(errors[0]);
       return { rendered: false, errors };
     }
@@ -148,8 +274,10 @@ var Tanvis = (function (exports) {
     const renderer = getRenderer(config.type);
 
     if (!renderer) {
-      warn(`No renderer registered for type "${config.type}"`);
-      return { rendered: false, errors: [`No renderer registered for type "${config.type}"`] };
+      const message = `No renderer registered for type "${config.type}"`;
+      status.showError(message);
+      warn(message);
+      return { rendered: false, errors: [message] };
     }
 
     renderer(element, config);
@@ -223,78 +351,6 @@ var Tanvis = (function (exports) {
     }
 
     return message;
-  }
-
-  const VIS_STATUS_CLASS = 'tanvis-vis-status';
-  const VIS_STATUS_STYLES_ID = 'tanvis-vis-status-styles';
-  const VIS_STATUS_STYLES = `
-.${VIS_STATUS_CLASS} {
-  margin: 0.5rem 0 0;
-  color: #4b5563;
-  font: 500 0.85rem/1.3 system-ui, sans-serif;
-}
-
-.${VIS_STATUS_CLASS}.is-error {
-  color: #9f1239;
-}
-`;
-
-  function createVisStatusReporter(container) {
-    ensureVisStatusStyles();
-
-    return {
-      showInfo(message) {
-        showStatus(container, message, 'info');
-      },
-      showError(message) {
-        showStatus(container, message, 'error');
-      },
-      clear() {
-        clearStatus(container);
-      }
-    };
-  }
-
-  function showStatus(container, message, tone) {
-    const status = ensureStatusElement(container);
-    status.className = tone === 'error' ? `${VIS_STATUS_CLASS} is-error` : VIS_STATUS_CLASS;
-    status.textContent = message || '';
-  }
-
-  function ensureStatusElement(container) {
-    if (container.__tanvisVisStatusElement && container.__tanvisVisStatusElement.isConnected) {
-      return container.__tanvisVisStatusElement;
-    }
-
-    const status = document.createElement('p');
-    status.className = VIS_STATUS_CLASS;
-    container.appendChild(status);
-    container.__tanvisVisStatusElement = status;
-    return status;
-  }
-
-  function clearStatus(container) {
-    const status = container.__tanvisVisStatusElement;
-    if (status?.parentNode) {
-      status.parentNode.removeChild(status);
-    }
-
-    delete container.__tanvisVisStatusElement;
-  }
-
-  function ensureVisStatusStyles() {
-    if (typeof document === 'undefined') {
-      return;
-    }
-
-    if (document.getElementById(VIS_STATUS_STYLES_ID)) {
-      return;
-    }
-
-    const style = document.createElement('style');
-    style.id = VIS_STATUS_STYLES_ID;
-    style.textContent = VIS_STATUS_STYLES;
-    document.head.appendChild(style);
   }
 
   const SHARED_STYLES_ID = 'tanvis-shared-styles';
@@ -828,6 +884,12 @@ var Tanvis = (function (exports) {
         throw new Error('BRC Atlas is not available. Include brcatlas.umd.js before Tanvis.');
       }
 
+      const hasStylesheet = ensureStylesheetDependency(status, {
+        libraryName: 'BRC Atlas',
+        stylesheetHints: ['brcatlas.umd.css'],
+        message: 'BRC Atlas stylesheet is missing. Include brcatlas.umd.css to ensure the static map is styled correctly.'
+      });
+
       const idPrefix = options.idPrefix || 'tanvis-map';
       assignElementId(element, idPrefix);
       ensureMapTetradInfo$1(element);
@@ -868,7 +930,9 @@ var Tanvis = (function (exports) {
         });
       }
 
-      status.clear();
+      if (hasStylesheet) {
+        status.clear();
+      }
       return map;
     } catch (error) {
       clearElement(element);
@@ -974,6 +1038,16 @@ var Tanvis = (function (exports) {
         throw new Error('BRC Atlas is not available. Include brcatlas.umd.js before Tanvis.');
       }
 
+      if (typeof window === 'undefined' || typeof window.L === 'undefined') {
+        throw new Error('Leaflet is not available. Include leaflet.js before using the Tanvis Leaflet mapping.');
+      }
+
+      const hasStylesheet = ensureStylesheetDependency(status, {
+        libraryName: 'Leaflet',
+        stylesheetHints: ['leaflet.css'],
+        message: 'Leaflet stylesheet is missing. Include leaflet.css to ensure the map is styled correctly.'
+      });
+
       const idPrefix = options.idPrefix || 'tanvis-leaflet-map';
       assignElementId(element, idPrefix);
       ensureMapTetradInfo(element);
@@ -1015,7 +1089,9 @@ var Tanvis = (function (exports) {
         });
       }
 
-      status.clear();
+      if (hasStylesheet) {
+        status.clear();
+      }
       return map;
     } catch (error) {
       clearElement(element);
@@ -1571,7 +1647,16 @@ var Tanvis = (function (exports) {
             clearElement(element);
             element.appendChild(createSummary$3(startDate, endDate, records.length));
             element.appendChild(createTableContainer$2(records, Tabulator));
-            status.clear();
+
+            const hasStylesheet = ensureStylesheetDependency(status, {
+              libraryName: 'Tabulator',
+              stylesheetHints: ['tabulator.min.css'],
+              message: 'Tabulator stylesheet is missing. Include tabulator.min.css to ensure the table is styled correctly.'
+            });
+
+            if (hasStylesheet) {
+              status.clear();
+            }
           })
           .catch((error) => {
             if (element.__tanvisNewSpeciesLoadId !== loadId) {
@@ -1876,7 +1961,16 @@ var Tanvis = (function (exports) {
             clearElement(element);
             element.appendChild(createSummary$2(topN, records.length));
             element.appendChild(createTableContainer$1(records, Tabulator));
-            status.clear();
+
+            const hasStylesheet = ensureStylesheetDependency(status, {
+              libraryName: 'Tabulator',
+              stylesheetHints: ['tabulator.min.css'],
+              message: 'Tabulator stylesheet is missing. Include tabulator.min.css to ensure the table is styled correctly.'
+            });
+
+            if (hasStylesheet) {
+              status.clear();
+            }
           })
           .catch((error) => {
             if (element.__tanvisIncreasingLoadId !== loadId) {
@@ -2190,7 +2284,16 @@ var Tanvis = (function (exports) {
             clearElement(element);
             element.appendChild(createSummary$1(year, records.length));
             element.appendChild(createTableContainer(records, Tabulator));
-            status.clear();
+
+            const hasStylesheet = ensureStylesheetDependency(status, {
+              libraryName: 'Tabulator',
+              stylesheetHints: ['tabulator.min.css'],
+              message: 'Tabulator stylesheet is missing. Include tabulator.min.css to ensure the table is styled correctly.'
+            });
+
+            if (hasStylesheet) {
+              status.clear();
+            }
           })
           .catch((error) => {
             if (element.__tanvisSpeciesAbsentLoadId !== loadId) {
@@ -2533,13 +2636,15 @@ var Tanvis = (function (exports) {
     }
   }
 
+  const D3_DEPENDENCY_MESSAGE = 'D3 is not available. Include d3.v7.min.js to use Tanvis mapping.';
+
   function getD3() {
     // Expose D3 via the global object so unit tests can provide it without
     // bundling D3 into the library build used by Rollup.
     const globalD3 = globalThis.d3 ?? globalThis.window?.d3;
 
     if (!globalD3?.scaleSequential || !globalD3?.interpolateCividis || !globalD3?.interpolateViridis) {
-      throw new Error('D3 is not available. Provide it via globalThis.d3 in tests or the browser runtime.');
+      throw new Error(D3_DEPENDENCY_MESSAGE);
     }
 
     return globalD3;
@@ -2646,12 +2751,6 @@ var Tanvis = (function (exports) {
     return {
       name: 'species-map',
       render(element, config) {
-        clearLinkedTableSubscription$1(element);
-        clearControlSubscription$1(element);
-        const status = createVisStatusReporter(element);
-        clearElement(element);
-        status.showInfo('Loading...');
-
         const effectiveArea = getEffectiveArea$1(config);
         const renderConfig = effectiveArea === config.area
           ? config
@@ -2659,9 +2758,35 @@ var Tanvis = (function (exports) {
               ...config,
               area: effectiveArea
             };
+        const linkedTableId = renderConfig.linkedTable || '';
+        const shouldPreserveLinkedTableSubscription = Boolean(
+          element.__tanvisLinkedTableCleanup &&
+          element.__tanvisLinkedTableId === linkedTableId
+        );
+        const shouldPreserveControlSubscription = Boolean(
+          element.__tanvisControlCleanup &&
+          element.__tanvisControlId === renderConfig.control
+        );
+        if (!shouldPreserveLinkedTableSubscription) {
+          clearLinkedTableSubscription$1(element);
+        }
+        if (!shouldPreserveControlSubscription) {
+          clearControlSubscription$1(element);
+        }
+        const status = createVisStatusReporter(element);
+        const existingMap = element.__tanvisSpeciesMapInstance;
+        const shouldReuseExistingMap = Boolean(
+          config.reuseExistingMap && existingMap && !config.forceCreateMap
+        );
+        status.showInfo('Loading...');
 
         const speciesCode = renderConfig.species || '';
         const apiBase = resolveApiBase(renderConfig.source);
+
+        if (!hasD3Dependency()) {
+          status.showError(D3_DEPENDENCY_MESSAGE);
+          return;
+        }
         const taxonGroupExternalKey = getEffectiveTaxonGroup(renderConfig);
         const loadId = (element.__tanvisSpeciesMapLoadId || 0) + 1;
         element.__tanvisSpeciesMapLoadId = loadId;
@@ -2669,54 +2794,71 @@ var Tanvis = (function (exports) {
         element.dataset.visTaxonGroup = taxonGroupExternalKey;
         element.dataset.visSpecies = speciesCode;
 
-        console.log('[species-map] selected species code:', speciesCode);
-
         if (renderConfig.control) {
-          element.__tanvisControlCleanup = subscribeToControl(renderConfig.control, (event) => {
-            if (!event || (event.type !== 'area-change' && event.type !== 'taxon-group-change')) {
-              return;
-            }
+          if (!shouldPreserveControlSubscription) {
+            element.__tanvisControlCleanup = subscribeToControl(renderConfig.control, (event) => {
+              if (!event || (event.type !== 'area-change' && event.type !== 'taxon-group-change')) {
+                return;
+              }
 
-            const nextArea = getEffectiveArea$1(renderConfig);
-            const nextTaxonGroupExternalKey = getEffectiveTaxonGroup(renderConfig);
+              const nextArea = getEffectiveArea$1(renderConfig);
+              const nextTaxonGroupExternalKey = getEffectiveTaxonGroup(renderConfig);
 
-            if (nextArea === element.dataset.visArea && nextTaxonGroupExternalKey === (element.dataset.visTaxonGroup || '')) {
-              return;
-            }
+              if (nextArea === element.dataset.visArea && nextTaxonGroupExternalKey === (element.dataset.visTaxonGroup || '')) {
+                return;
+              }
 
-            element.dataset.visArea = nextArea;
-            element.dataset.visTaxonGroup = nextTaxonGroupExternalKey;
-            createSpeciesMapAdapter().render(element, {
-              ...renderConfig,
-              area: nextArea
+              element.dataset.visArea = nextArea;
+              element.dataset.visTaxonGroup = nextTaxonGroupExternalKey;
+              createSpeciesMapAdapter().render(element, {
+                ...renderConfig,
+                area: nextArea
+              });
             });
-          });
+            element.__tanvisControlId = renderConfig.control;
+          }
         }
 
         if (renderConfig.linkedTable) {
-          element.__tanvisLinkedTableCleanup = subscribeToLinkedTable$1(renderConfig.linkedTable, (speciesId) => {
-            if (!speciesId || speciesId === element.dataset.visSpecies) {
-              return;
-            }
+          if (!shouldPreserveLinkedTableSubscription) {
+            element.__tanvisLinkedTableCleanup = subscribeToLinkedTable$1(linkedTableId, (speciesId) => {
+              if (!speciesId || speciesId === element.dataset.visSpecies) {
+                return;
+              }
 
-            element.dataset.visSpecies = speciesId;
-            createSpeciesMapAdapter().render(element, {
-              ...renderConfig,
-              species: speciesId
+              element.dataset.visSpecies = speciesId;
+              createSpeciesMapAdapter().render(element, {
+                ...renderConfig,
+                species: speciesId,
+                reuseExistingMap: true
+              });
             });
-          });
+            element.__tanvisLinkedTableId = linkedTableId;
+          }
         }
 
-        clearElement(element);
-        const mapContainer = document.createElement('div');
-        mapContainer.dataset.tanvisSpeciesMap = 'map';
-        element.appendChild(mapContainer);
+        let map = existingMap;
+        let mapContainer = element.__tanvisSpeciesMapContainer || null;
+
+        if (!mapContainer || !mapContainer.isConnected) {
+          mapContainer = document.createElement('div');
+          mapContainer.dataset.tanvisSpeciesMap = 'map';
+          element.appendChild(mapContainer);
+        }
+
+        if (!shouldReuseExistingMap) {
+          clearElement(mapContainer);
+          map = null;
+        }
+
+        element.__tanvisSpeciesMapContainer = mapContainer;
         status.clear();
 
-        let map;
-
         try {
-          map = renderMapBackend$1(mapContainer, renderConfig, element);
+          if (!map || !shouldReuseExistingMap) {
+            map = renderMapBackend$1(mapContainer, renderConfig, element);
+            element.__tanvisSpeciesMapInstance = map;
+          }
         } catch (error) {
           if (element.__tanvisSpeciesMapLoadId !== loadId) {
             return;
@@ -2739,7 +2881,6 @@ var Tanvis = (function (exports) {
             }
 
             const occurrenceRows = Array.isArray(rows) ? rows : [];
-            console.log('[species-map] occurrences:', occurrenceRows);
 
             applyOccurrenceDataToMap(map, occurrenceRows);
           })
@@ -2755,8 +2896,15 @@ var Tanvis = (function (exports) {
     };
   }
 
+  function hasD3Dependency() {
+    return typeof globalThis.d3 !== 'undefined' || typeof globalThis.window?.d3 !== 'undefined';
+  }
+
   function renderMapBackend$1(element, config, hostElement) {
     const mapTypeMode = normalizeMapTypeMode(config.mapType);
+    const shouldShowMapTypeSwitch = mapTypeMode === 'switch'
+      || hostElement?.dataset?.tanvisSpeciesMapControlMode === 'switch'
+      || element?.dataset?.tanvisSpeciesMapControlMode === 'switch';
     const activeMapType = resolveActiveMapType(element, mapTypeMode, 'tanvisSpeciesMapActiveMapType');
     const pointOpacity = activeMapType === 'leaflet' ? 0.7 : 1;
     const dotStyleOptions = getDotStyleOptions$1(hostElement);
@@ -2782,15 +2930,37 @@ var Tanvis = (function (exports) {
       });
     }
 
+    if (shouldShowMapTypeSwitch) {
+      element.dataset.tanvisSpeciesMapControlMode = 'switch';
+      if (hostElement) {
+        hostElement.dataset.tanvisSpeciesMapControlMode = 'switch';
+      }
+    } else {
+      delete element.dataset.tanvisSpeciesMapControlMode;
+      if (hostElement) {
+        delete hostElement.dataset.tanvisSpeciesMapControlMode;
+      }
+    }
+
     renderMapControlGroup$1(element, {
       activeMapType,
-      showMapTypeSwitch: mapTypeMode === 'switch',
+      showMapTypeSwitch: shouldShowMapTypeSwitch,
       onMapTypeChange: (nextMapType) => {
         element.dataset.tanvisSpeciesMapActiveMapType = nextMapType;
-        if (element.parentElement) {
-          element.parentElement.dataset.tanvisSpeciesMapActiveMapType = nextMapType;
+        if (hostElement) {
+          hostElement.dataset.tanvisSpeciesMapActiveMapType = nextMapType;
         }
-        renderMapBackend$1(element, config, element.parentElement);
+
+        createSpeciesMapAdapter().render(hostElement, {
+          ...config,
+          area: hostElement?.dataset?.visArea || config.area,
+          species: hostElement?.dataset?.visSpecies || config.species,
+          mapType: 'switch',
+          linkedTable: config.linkedTable,
+          control: config.control,
+          source: config.source,
+          forceCreateMap: true
+        });
       }
     });
 
@@ -2831,6 +3001,7 @@ var Tanvis = (function (exports) {
     }
 
     delete element.__tanvisControlCleanup;
+    delete element.__tanvisControlId;
   }
 
   function clearLinkedTableSubscription$1(element) {
@@ -2840,6 +3011,7 @@ var Tanvis = (function (exports) {
     }
 
     delete element.__tanvisLinkedTableCleanup;
+    delete element.__tanvisLinkedTableId;
   }
 
   function subscribeToLinkedTable$1(linkedTableId, onSpeciesSelected) {
@@ -3026,7 +3198,9 @@ var Tanvis = (function (exports) {
     return new Promise(function (resolve) {
       const { dotColour = '', transformation = '', shape = 'circle' } = options || {};
 
-      console.log('got here');
+      if (!hasD3Dependency()) {
+        throw new Error(D3_DEPENDENCY_MESSAGE);
+      }
 
       // mapData contains occurrence data which obviously can include many
       // records for a single grid reference. So we need to convert this to
@@ -3559,13 +3733,15 @@ var Tanvis = (function (exports) {
         clearElement(element);
         status.showInfo('Loading...');
 
-        loadTemporalYearChart(element, renderConfig)
+        loadTemporalYearChart(element, renderConfig, status)
           .then(() => {
             if (element.__tanvisTemporalYearLoadId !== loadId) {
               return;
             }
 
-            status.clear();
+            if (element.__tanvisTemporalYearChartHasStylesheet !== false) {
+              status.clear();
+            }
           })
           .catch((error) => {
             if (element.__tanvisTemporalYearLoadId !== loadId) {
@@ -3613,7 +3789,7 @@ var Tanvis = (function (exports) {
     delete element.__tanvisLinkedTableCleanup;
   }
 
-  async function loadTemporalYearChart(element, config) {
+  async function loadTemporalYearChart(element, config, status) {
 
     // If not taxonId is provided, we cannot load any data, 
     // so we just return early without rendering anything.
@@ -3626,8 +3802,16 @@ var Tanvis = (function (exports) {
     }
 
     if (!getD3Global()) {
-      throw new Error('D3 is not available. Include d3 before brccharts.umd.js and Tanvis.');
+      throw new Error('D3 is not available. Include d3.v7.min.js and brccharts.umd.js before using the Tanvis temporal year chart.');
     }
+
+    const hasStylesheet = ensureStylesheetDependency(status, {
+      libraryName: 'BRC Charts',
+      stylesheetHints: ['brccharts.umd.css'],
+      message: 'BRC Charts stylesheet is missing. Include brccharts.umd.css to ensure the chart is styled correctly.'
+    });
+
+    element.__tanvisTemporalYearChartHasStylesheet = hasStylesheet;
 
     if (typeof brcCharts.temporal !== 'function') {
       throw new Error('BRC Charts temporal chart is not available. Include a compatible brccharts.umd.js bundle.');
@@ -3647,7 +3831,13 @@ var Tanvis = (function (exports) {
       chartRecords
     });
 
+    const statusElement = element.__tanvisVisStatusElement;
     clearElement(element);
+
+    if (statusElement && statusElement.parentNode !== element) {
+      element.appendChild(statusElement);
+    }
+
     element.appendChild(chartContainer);
     console.log('Rendering temporal year chart with options:', chartOptions);
     brcCharts.temporal(chartOptions);

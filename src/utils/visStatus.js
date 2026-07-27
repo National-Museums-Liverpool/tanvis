@@ -10,6 +10,10 @@ const VIS_STATUS_STYLES = `
 .${VIS_STATUS_CLASS}.is-error {
   color: #9f1239;
 }
+
+.${VIS_STATUS_CLASS}.is-info {
+  color: #92400e;
+}
 `;
 
 export function createVisStatusReporter(container) {
@@ -28,20 +32,56 @@ export function createVisStatusReporter(container) {
   };
 }
 
+export function ensureStylesheetDependency(reporter, { libraryName, stylesheetHints, message }) {
+  if (typeof document === 'undefined' || !document.head) {
+    return true;
+  }
+
+  const hints = Array.isArray(stylesheetHints)
+    ? stylesheetHints.filter(Boolean)
+    : [stylesheetHints].filter(Boolean);
+
+  if (hints.length === 0) {
+    return true;
+  }
+
+  const hasStylesheet = hints.some((hint) => hasStylesheetLink(hint));
+  if (!hasStylesheet) {
+    const resolvedMessage = message || `${libraryName} stylesheet is missing. Include ${hints[0]} to ensure the visualization is styled correctly.`;
+    reporter?.showInfo?.(resolvedMessage);
+  }
+
+  return hasStylesheet;
+}
+
 function showStatus(container, message, tone) {
   const status = ensureStatusElement(container);
-  status.className = tone === 'error' ? `${VIS_STATUS_CLASS} is-error` : VIS_STATUS_CLASS;
+  const classNames = [VIS_STATUS_CLASS];
+
+  if (tone === 'error') {
+    classNames.push('is-error');
+  } else if (tone === 'info') {
+    classNames.push('is-info');
+  }
+
+  status.className = classNames.join(' ');
   status.textContent = message || '';
 }
 
 function ensureStatusElement(container) {
-  if (container.__tanvisVisStatusElement && container.__tanvisVisStatusElement.isConnected) {
-    return container.__tanvisVisStatusElement;
+  if (container.__tanvisVisStatusElement) {
+    const status = container.__tanvisVisStatusElement;
+    if (!status.isConnected) {
+      container.insertBefore(status, container.firstChild);
+    } else if (status.nextSibling && status.parentNode?.firstChild !== status) {
+      container.insertBefore(status, container.firstChild);
+    }
+    return status;
   }
 
   const status = document.createElement('p');
   status.className = VIS_STATUS_CLASS;
-  container.appendChild(status);
+  container.insertBefore(status, container.firstChild);
   container.__tanvisVisStatusElement = status;
   return status;
 }
@@ -53,6 +93,18 @@ function clearStatus(container) {
   }
 
   delete container.__tanvisVisStatusElement;
+}
+
+function hasStylesheetLink(stylesheetHint) {
+  const normalizedHint = String(stylesheetHint || '').toLowerCase();
+  if (!normalizedHint) {
+    return false;
+  }
+
+  return Array.from(document.head.querySelectorAll('link[rel~="stylesheet"]')).some((link) => {
+    const href = String(link.getAttribute('href') || '').toLowerCase();
+    return href.includes(normalizedHint);
+  });
 }
 
 function ensureVisStatusStyles() {
