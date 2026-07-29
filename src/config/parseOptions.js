@@ -6,23 +6,11 @@ export function parseOptions(element) {
   const config = {};
 
   for (const rule of schema.rules) {
-    if (rule.kind === 'conditional' && !rule.when?.(config, dataset)) {
-      continue;
-    }
-
     const rawValue = dataset[rule.datasetName];
-    const parsedValue = rule.parser?.(rawValue, dataset, config);
+    const result = rule.parseAndValidate?.(rawValue, dataset, config, element, rule);
+    const resolvedValue = result?.value ?? rule.defaultValue;
 
-    if (parsedValue === undefined) {
-      if (rule.defaultValue !== undefined) {
-        config[rule.key] = rule.defaultValue;
-      } else if (rule.includeUndefined) {
-        config[rule.key] = undefined;
-      }
-      continue;
-    }
-
-    config[rule.key] = parsedValue;
+    config[rule.key] = resolvedValue;
   }
 
   return config;

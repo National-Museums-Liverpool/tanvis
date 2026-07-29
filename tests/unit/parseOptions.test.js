@@ -2,21 +2,17 @@ import { describe, it, expect } from 'vitest';
 import { parseOptions } from '../../src/config/parseOptions.js';
 
 describe('parseOptions', () => {
-  it('reads data attributes', () => {
+  it('reads the supported data attributes without a source override', () => {
     const element = document.createElement('div');
     element.dataset.visType = 'control-block';
-    element.dataset.visSource = '/data.json';
-    element.dataset.visCtl = 'true';
 
-    expect(parseOptions(element)).toMatchObject({
+    const parsed = parseOptions(element);
+
+    expect(parsed).toMatchObject({
       type: 'control-block',
-      source: '/data.json',
       area: 'vc-all',
-      ctl: true,
-      boundaries: false,
-      gridStatsType: undefined,
-      hectads: true
     });
+    expect(parsed).not.toHaveProperty('source');
   });
 
   it('does not default to a supported vis-type when data-vis-type is missing', () => {
@@ -57,10 +53,12 @@ describe('parseOptions', () => {
     expect(parseOptions(element).hectads).toBe(false);
   });
 
-  it('does not include expand when not supplied', () => {
+  it('includes expand as undefined when not supplied', () => {
     const element = document.createElement('div');
+    const parsed = parseOptions(element);
 
-    expect(parseOptions(element)).not.toHaveProperty('expand');
+    expect(parsed).toHaveProperty('expand');
+    expect(parsed.expand).toBeUndefined();
   });
 
   it('parses expand true when supplied as true', () => {
@@ -77,10 +75,12 @@ describe('parseOptions', () => {
     expect(parseOptions(element).expand).toBe(false);
   });
 
-  it('does not include width when not supplied', () => {
+  it('includes width as undefined when not supplied', () => {
     const element = document.createElement('div');
+    const parsed = parseOptions(element);
 
-    expect(parseOptions(element)).not.toHaveProperty('width');
+    expect(parsed).toHaveProperty('width');
+    expect(parsed.width).toBeUndefined();
   });
 
   it('parses width when supplied as a positive number', () => {
@@ -90,17 +90,21 @@ describe('parseOptions', () => {
     expect(parseOptions(element).width).toBe(640);
   });
 
-  it('ignores width when supplied as a non-positive number', () => {
+  it('includes width as undefined when supplied as a non-positive number', () => {
     const element = document.createElement('div');
     element.dataset.visWidth = '0';
+    const parsed = parseOptions(element);
 
-    expect(parseOptions(element)).not.toHaveProperty('width');
+    expect(parsed).toHaveProperty('width');
+    expect(parsed.width).toBeUndefined();
   });
 
-  it('does not include height when not supplied', () => {
+  it('includes height as undefined when not supplied', () => {
     const element = document.createElement('div');
+    const parsed = parseOptions(element);
 
-    expect(parseOptions(element)).not.toHaveProperty('height');
+    expect(parsed).toHaveProperty('height');
+    expect(parsed.height).toBeUndefined();
   });
 
   it('parses height when supplied as a positive number', () => {
@@ -110,11 +114,13 @@ describe('parseOptions', () => {
     expect(parseOptions(element).height).toBe(480);
   });
 
-  it('ignores height when supplied as a non-positive number', () => {
+  it('includes height as undefined when supplied as a non-positive number', () => {
     const element = document.createElement('div');
     element.dataset.visHeight = '-10';
+    const parsed = parseOptions(element);
 
-    expect(parseOptions(element)).not.toHaveProperty('height');
+    expect(parsed).toHaveProperty('height');
+    expect(parsed.height).toBeUndefined();
   });
 
   it('reads start and end date attributes for new-species-table', () => {
@@ -175,6 +181,18 @@ describe('parseOptions', () => {
     });
   });
 
+  it('defaults dot styling properties when data attributes are absent', () => {
+    const element = document.createElement('div');
+    element.dataset.visType = 'species-map';
+
+    expect(parseOptions(element)).toMatchObject({
+      type: 'species-map',
+      dotColour: '',
+      transformation: '',
+      dotShape: 'circle'
+    });
+  });
+
   it('reads data-vis-map-type for map renderers', () => {
     const element = document.createElement('div');
     element.dataset.visType = 'species-map';
@@ -186,14 +204,14 @@ describe('parseOptions', () => {
     });
   });
 
-  it('reads data-vis-species for species-map', () => {
+  it('reads data-vis-taxonid for species-map', () => {
     const element = document.createElement('div');
     element.dataset.visType = 'species-map';
-    element.dataset.visSpecies = 'NHMSYS0000001001';
+    element.dataset.visTaxonid = 'NHMSYS0000001001';
 
     expect(parseOptions(element)).toMatchObject({
       type: 'species-map',
-      species: 'NHMSYS0000001001'
+      taxonId: 'NHMSYS0000001001'
     });
   });
 
@@ -205,6 +223,16 @@ describe('parseOptions', () => {
     expect(parseOptions(element)).toMatchObject({
       type: 'grid-stats-map',
       gridStatsType: 'species'
+    });
+  });
+
+  it('defaults grid-stats-map mapType to static when data-vis-map-type is absent', () => {
+    const element = document.createElement('div');
+    element.dataset.visType = 'grid-stats-map';
+
+    expect(parseOptions(element)).toMatchObject({
+      type: 'grid-stats-map',
+      mapType: 'static'
     });
   });
 

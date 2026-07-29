@@ -4,18 +4,15 @@ export function validateAttributes(config, element) {
   const schema = getVisAttributeSchema(config?.type);
 
   for (const rule of schema.rules) {
-    if (rule.kind === 'conditional' && !rule.when?.(config, element?.dataset || {})) {
-      continue;
-    }
-
     const value = config?.[rule.key];
+    const result = rule.parseAndValidate?.(datasetValueForRule(rule, config, element), config, config, element, rule);
+
+    if (result?.error) {
+      return [result.message];
+    }
 
     if (rule.kind === 'required' && (value === undefined || value === null || value === '')) {
-      return [rule.message || `Missing data attribute ${rule.datasetName}`];
-    }
-
-    if (rule.validate && !rule.validate(value, config, element)) {
-      return [rule.invalidMessage || rule.message || `Invalid data attribute ${rule.datasetName}`];
+      return [`Missing required data attribute ${rule.datasetName}`];
     }
   }
 
@@ -24,4 +21,8 @@ export function validateAttributes(config, element) {
   }
 
   return [];
+}
+
+function datasetValueForRule(rule, config, element) {
+  return element?.dataset?.[rule.datasetName];
 }

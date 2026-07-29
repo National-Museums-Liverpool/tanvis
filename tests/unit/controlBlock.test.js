@@ -112,8 +112,7 @@ describe('control block species selector', () => {
 
     const adapter = createControlBlockAdapter();
     adapter.render(element, {
-      area: 'vc-58',
-      source: 'https://example.test/api/'
+      area: 'vc-58'
     });
 
     await new Promise((resolve) => setTimeout(resolve, 0));
@@ -178,8 +177,7 @@ describe('control block species selector', () => {
 
     const adapter = createControlBlockAdapter();
     adapter.render(element, {
-      area: 'vc-58',
-      source: 'https://example.test/api/'
+      area: 'vc-58'
     });
 
     await new Promise((resolve) => setTimeout(resolve, 0));
@@ -235,8 +233,7 @@ describe('control block species selector', () => {
 
     const adapter = createControlBlockAdapter();
     adapter.render(element, {
-      area: 'vc-58',
-      source: 'https://example.test/api/'
+      area: 'vc-58'
     });
 
     await new Promise((resolve) => setTimeout(resolve, 0));
@@ -291,8 +288,7 @@ describe('control block species selector', () => {
 
     const adapter = createControlBlockAdapter();
     adapter.render(element, {
-      area: 'vc-58',
-      source: 'https://example.test/api/'
+      area: 'vc-58'
     });
 
     await new Promise((resolve) => setTimeout(resolve, 0));

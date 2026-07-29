@@ -125,7 +125,7 @@ async function loadTemporalYearChart(element, config, status) {
   }
 
   const chartRecords = await fetchTaxonYearStats({
-    apiBase: resolveApiBase(config.source),
+    apiBase: resolveApiBase(),
     taxonIdentifier: config.taxonId,
     startYear: config.startYear,
     endYear: config.endYear

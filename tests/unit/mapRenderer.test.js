@@ -28,7 +28,6 @@ describe('renderStaticMap', () => {
     const config = {
       type: 'map',
       area: 'vc-all',
-      source: '/example.csv',
       control: 'vc-control-static'
     };
 
@@ -40,7 +39,7 @@ describe('renderStaticMap', () => {
     expect(svgMapCalls[0].transOptsKey).toBe('vc-all');
     expect(svgMapCalls[0].gridGjson).toBe('/data/vcs/hectad-grids/vc-all-hectads.geojson');
     expect(svgMapCalls[0].gridLineStyle).toBeUndefined();
-    expect(setIdentfierCalls).toEqual(['/example.csv']);
+    expect(setIdentfierCalls).toEqual([]);
     expect(redrawCalls).toHaveLength(1);
 
     publishControlEvent('vc-control-static', {
@@ -71,7 +70,6 @@ describe('renderStaticMap', () => {
     renderStaticMap(element, {
       type: 'map',
       area: 'vc-58',
-      source: '/example.csv',
       ctl: false,
       hectads: false
     });

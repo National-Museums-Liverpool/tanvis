@@ -33,7 +33,7 @@ export function createSpeciesAbsentSinceAdapter() {
           };
 
       const year = Number(renderConfig.year);
-      const apiBase = resolveApiBase(renderConfig.source);
+      const apiBase = resolveApiBase();
       const geographicRegionIdentifier = areaToGeographicRegionIdentifier(renderConfig.area);
       const taxonGroupExternalKey = getEffectiveTaxonGroup(renderConfig);
       const loadId = (element.__tanvisSpeciesAbsentLoadId || 0) + 1;

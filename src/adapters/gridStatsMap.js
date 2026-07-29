@@ -41,7 +41,7 @@ export function createGridStatsMapAdapter() {
             area: effectiveArea
           };
 
-      const apiBase = resolveApiBase(renderConfig.source);
+      const apiBase = resolveApiBase();
       const geographicRegionIdentifier = areaToGeographicRegionIdentifier(renderConfig.area);
       const loadId = (element.__tanvisGridStatsMapLoadId || 0) + 1;
       element.__tanvisGridStatsMapLoadId = loadId;
@@ -119,7 +119,7 @@ function renderMapBackend(mapElement, config, hostElement) {
   const showGridStatsSwitch = gridStatsType === 'switch';
   const showMapTypeSwitch = mapTypeMode === 'switch';
   const selectedMapTypeKey = resolveSelectedMapTypeKey(mapElement, gridStatsType);
-  const dotStyleOptions = getDotStyleOptions(hostElement);
+  const dotStyleOptions = getDotStyleOptions(config, hostElement);
   const mapTypesSel = {
     [GRID_STATS_RECORDS_KEY]: () => createRecordNumberData(pointOpacity, dotStyleOptions),
     [GRID_STATS_SPECIES_KEY]: () => createSpeciesNumberData(pointOpacity, dotStyleOptions),
@@ -406,15 +406,19 @@ function clearControlSubscription(element) {
   delete element.__tanvisControlCleanup;
 }
 
-function getDotStyleOptions(hostElement) {
+function getDotStyleOptions(config = {}, hostElement) {
   if (!hostElement || typeof hostElement.dataset !== 'object') {
-    return {};
+    return {
+      dotColour: config.dotColour || '',
+      transformation: config.transformation || '',
+      shape: config.dotShape || 'circle'
+    };
   }
 
   return {
-    dotColour: hostElement.dataset.visDotColour || '',
-    transformation: hostElement.dataset.visTransformation || '',
-    shape: hostElement.dataset.visDotShape || 'circle'
+    dotColour: config.dotColour ?? hostElement.dataset.visDotColour ?? '',
+    transformation: config.transformation ?? hostElement.dataset.visTransformation ?? '',
+    shape: config.dotShape ?? hostElement.dataset.visDotShape ?? 'circle'
   };
 }
 

@@ -29,7 +29,7 @@ describe('species map redraw flow', () => {
     renderSpeciesMap(element, {
       type: 'species-map',
       area: 'vc-58',
-      species: 'ABC123'
+      taxonId: 'ABC123'
     });
 
     await new Promise((resolve) => setTimeout(resolve, 0));
@@ -107,7 +107,7 @@ describe('species map redraw flow', () => {
     renderSpeciesMap(element, {
       type: 'species-map',
       area: 'vc-58',
-      species: 'ABC123'
+      taxonId: 'ABC123'
     });
 
     await new Promise((resolve) => setTimeout(resolve, 0));
@@ -156,7 +156,7 @@ describe('species map redraw flow', () => {
       type: 'species-map',
       mapType: 'switch',
       area: 'vc-58',
-      species: 'ABC123'
+      taxonId: 'ABC123'
     });
 
     await new Promise((resolve) => setTimeout(resolve, 0));
@@ -189,7 +189,7 @@ describe('species map redraw flow', () => {
       type: 'species-map',
       mapType: 'switch',
       area: 'vc-58',
-      species: 'ABC123'
+      taxonId: 'ABC123'
     });
 
     await new Promise((resolve) => setTimeout(resolve, 0));
@@ -198,7 +198,7 @@ describe('species map redraw flow', () => {
       type: 'species-map',
       mapType: 'leaflet',
       area: 'vc-58',
-      species: 'ABC123'
+      taxonId: 'ABC123'
     });
 
     await new Promise((resolve) => setTimeout(resolve, 0));
@@ -244,7 +244,7 @@ describe('species map redraw flow', () => {
     renderSpeciesMap(element, {
       type: 'species-map',
       area: 'vc-58',
-      species: 'ABC123',
+      taxonId: 'ABC123',
       linkedTable: 'linked-table'
     });
 
@@ -291,7 +291,7 @@ describe('species map redraw flow', () => {
     renderSpeciesMap(element, {
       type: 'species-map',
       area: 'vc-58',
-      species: 'ABC123',
+      taxonId: 'ABC123',
       linkedTable: 'linked-table'
     });
 
@@ -364,7 +364,7 @@ describe('species map redraw flow', () => {
       type: 'species-map',
       mapType: 'switch',
       area: 'vc-58',
-      species: 'ABC123',
+      taxonId: 'ABC123',
       linkedTable: 'linked-table'
     });
 
@@ -417,7 +417,7 @@ describe('species map redraw flow', () => {
     renderSpeciesMap(element, {
       type: 'species-map',
       area: 'vc-58',
-      species: 'ABC123',
+      taxonId: 'ABC123',
       control: 'control'
     });
 
@@ -469,7 +469,7 @@ describe('species map redraw flow', () => {
     renderSpeciesMap(element, {
       type: 'species-map',
       area: 'vc-58',
-      species: 'ABC123',
+      taxonId: 'ABC123',
       control: 'control',
       linkedTable: 'linked-table'
     });

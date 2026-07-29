@@ -6,8 +6,8 @@ describe('apiBase config', () => {
     expect(DEFAULT_API_BASE).toBe('https://tanhub.biodiverseit.co.uk/api/v1');
   });
 
-  it('uses the provided source when present and otherwise falls back to the shared default', () => {
+  it('always returns the shared default api base', () => {
     expect(resolveApiBase()).toBe(DEFAULT_API_BASE);
-    expect(resolveApiBase('https://example.com/api/v2')).toBe('https://example.com/api/v2');
+    expect(resolveApiBase('https://example.com/api/v2')).toBe(DEFAULT_API_BASE);
   });
 });

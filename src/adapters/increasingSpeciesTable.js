@@ -37,7 +37,7 @@ export function createIncreasingSpeciesTableAdapter() {
           };
 
       const topN = parseTopN(renderConfig.topN) ?? DEFAULT_TOP_N;
-      const apiBase = resolveApiBase(renderConfig.source);
+      const apiBase = resolveApiBase();
       const geographicRegionIdentifier = areaToGeographicRegionIdentifier(renderConfig.area);
       const taxonGroupExternalKey = getEffectiveTaxonGroup(renderConfig);
       const loadId = (element.__tanvisIncreasingLoadId || 0) + 1;

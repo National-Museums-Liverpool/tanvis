@@ -53,9 +53,6 @@ export function renderStaticAtlasMap(element, config, options = {}) {
     console.log('config', createStaticMapOptions(element, renderConfig, options));
     const map = brcAtlas.svgMap(createStaticMapOptions(element, renderConfig, options));
 
-    if (map && typeof map.setIdentfier === 'function' && renderConfig.source) {
-      map.setIdentfier(renderConfig.source);
-    }
 
     if (map && typeof map.redrawMap === 'function') {
       console.log('redrawing map for area:', renderConfig.area);

@@ -34,7 +34,7 @@ export function createNewSpeciesTableAdapter() {
 
       const startDate = renderConfig.startDate;
       const endDate = renderConfig.endDate || getCurrentIsoDate();
-      const apiBase = resolveApiBase(renderConfig.source);
+      const apiBase = resolveApiBase();
       const geographicRegionIdentifier = areaToGeographicRegionIdentifier(renderConfig.area);
       const taxonGroupExternalKey = getEffectiveTaxonGroup(renderConfig);
       const loadId = (element.__tanvisNewSpeciesLoadId || 0) + 1;

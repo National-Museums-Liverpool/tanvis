@@ -41,14 +41,14 @@ export function createControlBlockAdapter() {
 
       createTaxonGroupControls({
         rootElement: element,
-        apiBase: resolveApiBase(config.source),
+        apiBase: resolveApiBase(),
         body,
         loadToken
       });
 
       createSpeciesSelectorControl({
         rootElement: element,
-        apiBase: resolveApiBase(config.source),
+        apiBase: resolveApiBase(),
         body,
         loadToken
       });

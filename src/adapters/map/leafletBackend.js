@@ -65,9 +65,6 @@ export function renderLeafletAtlasMap(element, config, options = {}) {
 
     panToAreaCentroid(renderConfig.area, map);
 
-    if (map && typeof map.setIdentfier === 'function' && renderConfig.source) {
-      map.setIdentfier(renderConfig.source);
-    }
 
     if (map && typeof map.redrawMap === 'function') {
       map.redrawMap();

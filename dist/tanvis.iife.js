@@ -86,225 +86,300 @@ var Tanvis = (function (exports) {
     key,
     datasetName,
     kind = 'optional',
-    parser,
-    validate,
-    message,
-    invalidMessage,
-    defaultValue,
-    includeUndefined = false
+    parseAndValidate,
+    defaultValue
   }) {
     return {
       key,
       datasetName,
       kind,
-      parser,
-      validate,
-      message,
-      invalidMessage,
-      defaultValue,
-      includeUndefined
+      parseAndValidate,
+      defaultValue
     };
   }
 
-  const COMMON_RULES = {
+  function createPv({
+    parser,
+    validate = undefined,
+    messageBuilder = undefined
+  }) {
+    return (value, dataset, config, element, rule) => {
+      const parsedValue = parser?.(value, dataset, config, element, rule);
+      const resolvedValue = parsedValue === undefined ? undefined : parsedValue;
+
+      if (parsedValue === undefined) {
+        if (rule.kind === 'required') {
+          return {
+            value: rule.defaultValue,
+            error: true,
+            message: messageBuilder?.(rule, value, dataset, config, element) || `Missing required data attribute ${rule.datasetName}`
+          };
+        }
+
+        return {
+          value: rule.defaultValue,
+          error: false,
+          message: undefined
+        };
+      }
+
+      if (validate && !validate(resolvedValue, dataset, config, element, rule)) {
+        return {
+          value: resolvedValue,
+          error: true,
+          message: messageBuilder?.(rule, resolvedValue, dataset, config, element) || `Invalid data attribute ${rule.datasetName}`
+        };
+      }
+
+      return {
+        value: resolvedValue,
+        error: false,
+        message: undefined
+      };
+    };
+  }
+
+  const RULES = {
     type: createRule({
       key: 'type',
       datasetName: 'visType',
       kind: 'required',
-      parser: parseRequiredString,
-      validate: (value) => KNOWN_VIS_TYPES.includes(value),
-      message: 'Missing data-vis-type',
-      invalidMessage: 'Invalid data-vis-type',
-      defaultValue: undefined,
-      includeUndefined: true
-    }),
-    source: createRule({
-      key: 'source',
-      datasetName: 'visSource',
-      parser: parseOptionalString,
-      defaultValue: undefined,
-      includeUndefined: true
+      parseAndValidate: createPv({
+        parser: parseRequiredString,
+        validate: (value) => KNOWN_VIS_TYPES.includes(value),
+        messageBuilder: (rule) => `Missing required data attribute ${rule.datasetName}`
+      }),
+      defaultValue: undefined
     }),
     control: createRule({
       key: 'control',
       datasetName: 'visControl',
-      parser: parseOptionalString,
-      defaultValue: undefined,
-      includeUndefined: true
+      parseAndValidate: createPv({
+        parser: parseOptionalString
+      }),
+      defaultValue: undefined
     }),
     linkedTable: createRule({
       key: 'linkedTable',
       datasetName: 'visLinkedTable',
-      parser: parseOptionalString,
-      defaultValue: undefined,
-      includeUndefined: true
-    }),
-    species: createRule({
-      key: 'species',
-      datasetName: 'visSpecies',
-      parser: parseOptionalString,
-      defaultValue: undefined,
-      includeUndefined: true
+      parseAndValidate: createPv({
+        parser: parseOptionalString
+      }),
+      defaultValue: undefined
     }),
     taxonId: createRule({
       key: 'taxonId',
       datasetName: 'visTaxonid',
-      parser: parseOptionalString,
-      defaultValue: undefined,
-      includeUndefined: true
+      parseAndValidate: createPv({
+        parser: parseOptionalString
+      }),
+      defaultValue: undefined
+    }),
+    startDate: createRule({
+      key: 'startDate',
+      datasetName: 'visStartDate',
+      kind: 'required',
+      parseAndValidate: createPv({
+        parser: parseOptionalDate,
+        validate: (value) => Boolean(value),
+        messageBuilder: (rule) => `Missing required data attribute ${rule.datasetName}`
+      }),
+      defaultValue: undefined
     }),
     endDate: createRule({
       key: 'endDate',
       datasetName: 'visEndDate',
-      parser: parseOptionalDate,
-      defaultValue: undefined,
-      includeUndefined: true
+      parseAndValidate: createPv({
+        parser: parseOptionalDate
+      }),
+      defaultValue: undefined
     }),
     area: createRule({
       key: 'area',
       datasetName: 'visArea',
-      parser: (value) => parseOptionalString(value) || 'vc-all',
-      defaultValue: 'vc-all',
-      includeUndefined: true
+      parseAndValidate: createPv({
+        parser: (value) => parseOptionalString(value)
+      }),
+      defaultValue: 'vc-all'
     }),
     ctl: createRule({
       key: 'ctl',
       datasetName: 'visCtl',
-      parser: parseBoolean,
-      defaultValue: false,
-      includeUndefined: true
+      parseAndValidate: createPv({
+        parser: parseBoolean
+      }),
+      defaultValue: false
     }),
     boundaries: createRule({
       key: 'boundaries',
       datasetName: 'visBoundaries',
-      parser: parseBoolean,
-      defaultValue: false,
-      includeUndefined: true
+      parseAndValidate: createPv({
+        parser: parseBoolean
+      }),
+      defaultValue: false
     }),
     gridStatsType: createRule({
       key: 'gridStatsType',
       datasetName: 'visGridStatsType',
-      parser: parseOptionalString,
-      defaultValue: undefined,
-      includeUndefined: true
+      parseAndValidate: createPv({
+        parser: parseOptionalString,
+        validate: undefined,
+        messageBuilder: undefined
+      }),
+      defaultValue: undefined
     }),
     hectads: createRule({
       key: 'hectads',
       datasetName: 'visHectads',
-      parser: parseBoolean,
-      defaultValue: true,
-      includeUndefined: true
+      parseAndValidate: createPv({
+        parser: parseBoolean,
+        validate: undefined,
+        messageBuilder: undefined
+      }),
+      defaultValue: true
     }),
     mapType: createRule({
       key: 'mapType',
       datasetName: 'visMapType',
-      parser: parseOptionalString,
-      defaultValue: undefined,
-      includeUndefined: true
+      parseAndValidate: createPv({
+        parser: parseOptionalString,
+        messageBuilder: undefined
+      }),
+      defaultValue: 'static'
+    }),
+    dotColour: createRule({
+      key: 'dotColour',
+      datasetName: 'visDotColour',
+      parseAndValidate: createPv({parser: parseOptionalString}),
+      defaultValue: ''
+    }),
+    transformation: createRule({
+      key: 'transformation',
+      datasetName: 'visTransformation',
+      parseAndValidate: createPv({
+        parser: parseOptionalString,
+        validate: undefined,
+        messageBuilder: undefined
+      }),
+      defaultValue: ''
+    }),
+    dotShape: createRule({
+      key: 'dotShape',
+      datasetName: 'visDotShape',
+      parseAndValidate: createPv({
+        parser: parseOptionalString,
+        validate: undefined,
+        messageBuilder: undefined
+      }),
+      defaultValue: 'circle'
+    }),
+    taxonGroup: createRule({
+      key: 'taxonGroup',
+      datasetName: 'visTaxonGroup',
+      parseAndValidate: createPv({
+        parser: parseOptionalString,
+        validate: undefined,
+        messageBuilder: undefined
+      }),
+      defaultValue: ''
     }),
     expand: createRule({
       key: 'expand',
       datasetName: 'visExpand',
-      parser: parseOptionalBoolean,
-      defaultValue: undefined,
-      includeUndefined: false
+      parseAndValidate: createPv({
+        parser: parseOptionalBoolean,
+        validate: undefined,
+        messageBuilder: undefined
+      }),
+      defaultValue: undefined
     }),
     width: createRule({
       key: 'width',
       datasetName: 'visWidth',
-      parser: parseOptionalPositiveNumber$1,
-      defaultValue: undefined,
-      includeUndefined: false
+      parseAndValidate: createPv({
+        parser: parseOptionalPositiveNumber$1,
+        validate: undefined,
+        messageBuilder: undefined
+      }),
+      defaultValue: undefined
     }),
     height: createRule({
       key: 'height',
       datasetName: 'visHeight',
-      parser: parseOptionalPositiveNumber$1,
-      defaultValue: undefined,
-      includeUndefined: false
+      parseAndValidate: createPv({
+        parser: parseOptionalPositiveNumber$1,
+        validate: undefined,
+        messageBuilder: undefined
+      }),
+      defaultValue: undefined
     }),
     topN: createRule({
       key: 'topN',
       datasetName: 'visTopN',
-      parser: parseOptionalPositiveInteger,
-      defaultValue: undefined,
-      includeUndefined: false
+      parseAndValidate: createPv({
+        parser: parseOptionalPositiveInteger,
+        validate: undefined,
+        messageBuilder: undefined
+      }),
+      defaultValue: undefined
     }),
     year: createRule({
       key: 'year',
       datasetName: 'visYear',
-      parser: parseOptionalPositiveInteger,
-      defaultValue: undefined,
-      includeUndefined: false
+      kind: 'required',
+      parseAndValidate: createPv({
+        parser: parseOptionalPositiveInteger,
+        validate: (value) => Number.isFinite(value),
+        messageBuilder: (rule) => `Missing required data attribute ${rule.datasetName}`
+      }),
+      defaultValue: undefined
     }),
     startYear: createRule({
       key: 'startYear',
       datasetName: 'visStartYear',
-      parser: parseOptionalPositiveInteger,
-      defaultValue: undefined,
-      includeUndefined: false
+      parseAndValidate: createPv({
+        parser: parseOptionalPositiveInteger,
+        validate: undefined,
+        messageBuilder: undefined
+      }),
+      defaultValue: undefined
     }),
     endYear: createRule({
       key: 'endYear',
       datasetName: 'visEndYear',
-      parser: parseOptionalPositiveInteger,
-      defaultValue: undefined,
-      includeUndefined: false
+      parseAndValidate: createPv({
+        parser: parseOptionalPositiveInteger,
+        validate: undefined,
+        messageBuilder: undefined
+      }),
+      defaultValue: undefined
     })
   };
 
-  const VIS_TYPE_RULES = {
-    'control-block': ['type', 'source', 'area', 'ctl', 'boundaries', 'gridStatsType', 'hectads', 'expand', 'width', 'height'],
-    'species-map': ['type', 'source', 'control', 'species', 'area', 'hectads', 'mapType', 'expand', 'width', 'height'],
-    'new-species-table': [
-      'type',
-      'source',
-      {
-        key: 'startDate',
-        datasetName: 'visStartDate',
-        kind: 'required',
-        parser: parseOptionalDate,
-        validate: (value) => Boolean(value),
-        message: 'Missing data-vis-start-date for new-species-table',
-        defaultValue: undefined,
-        includeUndefined: true
-      },
-      'endDate',
-      'expand',
-      'width',
-      'height'
-    ],
-    'increasing-species-table': ['type', 'source', 'topN', 'expand', 'width', 'height'],
-    'species-absent-since': [
-      'type',
-      'source',
-      {
-        key: 'year',
-        datasetName: 'visYear',
-        kind: 'required',
-        parser: parseOptionalPositiveInteger,
-        validate: (value) => Number.isFinite(value),
-        message: 'Missing data-vis-year for species-absent-since',
-        defaultValue: undefined,
-        includeUndefined: true
-      },
-      'expand',
-      'width',
-      'height'
-    ],
-    'grid-stats-map': ['type', 'source', 'area', 'control', 'gridStatsType', 'hectads', 'mapType', 'expand', 'width', 'height'],
-    'temporal-year-chart': ['type', 'source', 'taxonId', 'linkedTable', 'startYear', 'endYear', 'ctl', 'boundaries', 'expand', 'width', 'height']
+  // Need to add comments to rule definitions to describe what they do or maybe add it to the rule
+  // structure so that it can be reported.
+
+  const VIS_TYPE_RULE_SETS = {
+    'control-block': ['area'],
+    'species-map': ['taxonId', 'control', 'area', 'hectads', 'mapType', 'boundaries', 'dotShape', 'dotColour', 'transformation', 'dotShape', 'expand', 'width', 'height'],
+    'grid-stats-map': ['gridStatsType', 'control', 'area', 'hectads', 'mapType', 'boundaries', 'dotShape', 'dotColour', 'transformation', 'expand', 'width', 'height'],
+    'temporal-year-chart': ['taxonId', 'linkedTable', 'startYear', 'endYear', 'ctl', 'expand', 'width', 'height'],
+    'new-species-table': ['startDate', 'endDate'],
+    'increasing-species-table': ['topN'],
+    'species-absent-since': ['year']
   };
 
   function getVisAttributeSchema(visType) {
-    const configuredRuleNames = VIS_TYPE_RULES[visType] || Object.keys(COMMON_RULES);
+    const configuredRuleNames = VIS_TYPE_RULE_SETS[visType] || Object.keys(RULES);
     const configuredRules = configuredRuleNames
-      .map((ruleName) => typeof ruleName === 'string' ? COMMON_RULES[ruleName] : ruleName)
+      .map((ruleName) => RULES[ruleName])
       .filter(Boolean);
+
+    const rules = [RULES.type, ...configuredRules.filter((rule) => rule.key !== 'type')];
 
     return {
       visType,
-      rules: configuredRules
+      rules
     };
   }
 
@@ -314,23 +389,11 @@ var Tanvis = (function (exports) {
     const config = {};
 
     for (const rule of schema.rules) {
-      if (rule.kind === 'conditional' && !rule.when?.(config, dataset)) {
-        continue;
-      }
-
       const rawValue = dataset[rule.datasetName];
-      const parsedValue = rule.parser?.(rawValue, dataset, config);
+      const result = rule.parseAndValidate?.(rawValue, dataset, config, element, rule);
+      const resolvedValue = result?.value ?? rule.defaultValue;
 
-      if (parsedValue === undefined) {
-        if (rule.defaultValue !== undefined) {
-          config[rule.key] = rule.defaultValue;
-        } else if (rule.includeUndefined) {
-          config[rule.key] = undefined;
-        }
-        continue;
-      }
-
-      config[rule.key] = parsedValue;
+      config[rule.key] = resolvedValue;
     }
 
     return config;
@@ -340,18 +403,15 @@ var Tanvis = (function (exports) {
     const schema = getVisAttributeSchema(config?.type);
 
     for (const rule of schema.rules) {
-      if (rule.kind === 'conditional' && !rule.when?.(config, element?.dataset || {})) {
-        continue;
-      }
-
       const value = config?.[rule.key];
+      const result = rule.parseAndValidate?.(datasetValueForRule(rule, config, element), config, config, element, rule);
+
+      if (result?.error) {
+        return [result.message];
+      }
 
       if (rule.kind === 'required' && (value === undefined || value === null || value === '')) {
-        return [rule.message || `Missing data attribute ${rule.datasetName}`];
-      }
-
-      if (rule.validate && !rule.validate(value, config, element)) {
-        return [rule.invalidMessage || rule.message || `Invalid data attribute ${rule.datasetName}`];
+        return [`Missing required data attribute ${rule.datasetName}`];
       }
     }
 
@@ -360,6 +420,10 @@ var Tanvis = (function (exports) {
     }
 
     return [];
+  }
+
+  function datasetValueForRule(rule, config, element) {
+    return element?.dataset?.[rule.datasetName];
   }
 
   const renderers = new Map();
@@ -1224,9 +1288,6 @@ div[data-tanvis-controls="species-selector"] {
       console.log('config', createStaticMapOptions(element, renderConfig, options));
       const map = brcAtlas.svgMap(createStaticMapOptions(element, renderConfig, options));
 
-      if (map && typeof map.setIdentfier === 'function' && renderConfig.source) {
-        map.setIdentfier(renderConfig.source);
-      }
 
       if (map && typeof map.redrawMap === 'function') {
         console.log('redrawing map for area:', renderConfig.area);
@@ -1380,9 +1441,6 @@ div[data-tanvis-controls="species-selector"] {
 
       panToAreaCentroid(renderConfig.area, map);
 
-      if (map && typeof map.setIdentfier === 'function' && renderConfig.source) {
-        map.setIdentfier(renderConfig.source);
-      }
 
       if (map && typeof map.redrawMap === 'function') {
         map.redrawMap();
@@ -1830,8 +1888,8 @@ div[data-tanvis-controls="species-selector"] {
 
   const DEFAULT_API_BASE = 'https://tanhub.biodiverseit.co.uk/api/v1';
 
-  function resolveApiBase(source) {
-    return source || DEFAULT_API_BASE;
+  function resolveApiBase() {
+    return DEFAULT_API_BASE;
   }
 
   const SPECIES_SEARCH_DEBOUNCE_MS = 300;
@@ -1867,14 +1925,14 @@ div[data-tanvis-controls="species-selector"] {
 
         createTaxonGroupControls({
           rootElement: element,
-          apiBase: resolveApiBase(config.source),
+          apiBase: resolveApiBase(),
           body,
           loadToken
         });
 
         createSpeciesSelectorControl({
           rootElement: element,
-          apiBase: resolveApiBase(config.source),
+          apiBase: resolveApiBase(),
           body,
           loadToken
         });
@@ -2173,7 +2231,7 @@ div[data-tanvis-controls="species-selector"] {
 
         const startDate = renderConfig.startDate;
         const endDate = renderConfig.endDate || getCurrentIsoDate();
-        const apiBase = resolveApiBase(renderConfig.source);
+        const apiBase = resolveApiBase();
         const geographicRegionIdentifier = areaToGeographicRegionIdentifier$3(renderConfig.area);
         const taxonGroupExternalKey = getEffectiveTaxonGroup$3(renderConfig);
         const loadId = (element.__tanvisNewSpeciesLoadId || 0) + 1;
@@ -2487,7 +2545,7 @@ div[data-tanvis-controls="species-selector"] {
             };
 
         const topN = parseTopN(renderConfig.topN) ?? DEFAULT_TOP_N;
-        const apiBase = resolveApiBase(renderConfig.source);
+        const apiBase = resolveApiBase();
         const geographicRegionIdentifier = areaToGeographicRegionIdentifier$2(renderConfig.area);
         const taxonGroupExternalKey = getEffectiveTaxonGroup$2(renderConfig);
         const loadId = (element.__tanvisIncreasingLoadId || 0) + 1;
@@ -2805,7 +2863,7 @@ div[data-tanvis-controls="species-selector"] {
             };
 
         const year = Number(renderConfig.year);
-        const apiBase = resolveApiBase(renderConfig.source);
+        const apiBase = resolveApiBase();
         const geographicRegionIdentifier = areaToGeographicRegionIdentifier$1(renderConfig.area);
         const taxonGroupExternalKey = getEffectiveTaxonGroup$1(renderConfig);
         const loadId = (element.__tanvisSpeciesAbsentLoadId || 0) + 1;
@@ -3351,8 +3409,8 @@ div[data-tanvis-controls="species-selector"] {
         );
         status.showInfo('Loading...');
 
-        const speciesCode = renderConfig.species || '';
-        const apiBase = resolveApiBase(renderConfig.source);
+        const speciesCode = renderConfig.species || renderConfig.taxonId || '';
+        const apiBase = resolveApiBase();
 
         if (!hasD3Dependency()) {
           status.showError(D3_DEPENDENCY_MESSAGE);
@@ -3363,7 +3421,7 @@ div[data-tanvis-controls="species-selector"] {
         element.__tanvisSpeciesMapLoadId = loadId;
         element.dataset.visArea = renderConfig.area;
         element.dataset.visTaxonGroup = taxonGroupExternalKey;
-        element.dataset.visSpecies = speciesCode;
+        element.dataset.visTaxonid = speciesCode;
 
         if (renderConfig.control) {
           if (!shouldPreserveControlSubscription) {
@@ -3394,11 +3452,11 @@ div[data-tanvis-controls="species-selector"] {
                 return;
               }
 
-              if (speciesId.trim() === element.dataset.visSpecies) {
+              if (speciesId.trim() === element.dataset.visTaxonid) {
                 return;
               }
 
-              element.dataset.visSpecies = speciesId.trim();
+              element.dataset.visTaxonid = speciesId.trim();
               createSpeciesMapAdapter().render(element, {
                 ...renderConfig,
                 species: speciesId.trim(),
@@ -3423,11 +3481,11 @@ div[data-tanvis-controls="species-selector"] {
         if (renderConfig.linkedTable) {
           if (!shouldPreserveLinkedTableSubscription) {
             element.__tanvisLinkedTableCleanup = subscribeToLinkedTable$1(linkedTableId, (speciesId) => {
-              if (!speciesId || speciesId === element.dataset.visSpecies) {
+              if (!speciesId || speciesId === element.dataset.visTaxonid) {
                 return;
               }
 
-              element.dataset.visSpecies = speciesId;
+              element.dataset.visTaxonid = speciesId;
               createSpeciesMapAdapter().render(element, {
                 ...renderConfig,
                 species: speciesId,
@@ -3508,7 +3566,7 @@ div[data-tanvis-controls="species-selector"] {
       || element?.dataset?.tanvisSpeciesMapControlMode === 'switch';
     const activeMapType = resolveActiveMapType(element, mapTypeMode, 'tanvisSpeciesMapActiveMapType');
     const pointOpacity = activeMapType === 'leaflet' ? 0.7 : 1;
-    const dotStyleOptions = getDotStyleOptions$1(hostElement);
+    const dotStyleOptions = getDotStyleOptions$1(config, hostElement);
     const mapTypesSel = {
       [OCCURRENCES_MAP_TYPE_KEY]: () => createOccurrenceData(pointOpacity, dotStyleOptions),
     };
@@ -3555,11 +3613,10 @@ div[data-tanvis-controls="species-selector"] {
         createSpeciesMapAdapter().render(hostElement, {
           ...config,
           area: hostElement?.dataset?.visArea || config.area,
-          species: hostElement?.dataset?.visSpecies || config.species,
+          species: hostElement?.dataset?.visTaxonid || config.species || config.taxonId,
           mapType: 'switch',
           linkedTable: config.linkedTable,
           control: config.control,
-          source: config.source,
           forceCreateMap: true
         });
       }
@@ -3640,15 +3697,19 @@ div[data-tanvis-controls="species-selector"] {
     };
   }
 
-  function getDotStyleOptions$1(hostElement) {
+  function getDotStyleOptions$1(config = {}, hostElement) {
     if (!hostElement || typeof hostElement.dataset !== 'object') {
-      return {};
+      return {
+        dotColour: config.dotColour || '',
+        transformation: config.transformation || '',
+        shape: config.dotShape || 'circle'
+      };
     }
 
     return {
-      dotColour: hostElement.dataset.visDotColour || '',
-      transformation: hostElement.dataset.visTransformation || '',
-      shape: hostElement.dataset.visDotShape || 'circle'
+      dotColour: config.dotColour ?? hostElement.dataset.visDotColour ?? '',
+      transformation: config.transformation ?? hostElement.dataset.visTransformation ?? '',
+      shape: config.dotShape ?? hostElement.dataset.visDotShape ?? 'circle'
     };
   }
 
@@ -3869,7 +3930,7 @@ div[data-tanvis-controls="species-selector"] {
               area: effectiveArea
             };
 
-        const apiBase = resolveApiBase(renderConfig.source);
+        const apiBase = resolveApiBase();
         const geographicRegionIdentifier = areaToGeographicRegionIdentifier(renderConfig.area);
         const loadId = (element.__tanvisGridStatsMapLoadId || 0) + 1;
         element.__tanvisGridStatsMapLoadId = loadId;
@@ -3947,7 +4008,7 @@ div[data-tanvis-controls="species-selector"] {
     const showGridStatsSwitch = gridStatsType === 'switch';
     const showMapTypeSwitch = mapTypeMode === 'switch';
     const selectedMapTypeKey = resolveSelectedMapTypeKey(mapElement, gridStatsType);
-    const dotStyleOptions = getDotStyleOptions(hostElement);
+    const dotStyleOptions = getDotStyleOptions(config, hostElement);
     const mapTypesSel = {
       [GRID_STATS_RECORDS_KEY]: () => createRecordNumberData(pointOpacity, dotStyleOptions),
       [GRID_STATS_SPECIES_KEY]: () => createSpeciesNumberData(pointOpacity, dotStyleOptions),
@@ -4233,15 +4294,19 @@ div[data-tanvis-controls="species-selector"] {
     delete element.__tanvisControlCleanup;
   }
 
-  function getDotStyleOptions(hostElement) {
+  function getDotStyleOptions(config = {}, hostElement) {
     if (!hostElement || typeof hostElement.dataset !== 'object') {
-      return {};
+      return {
+        dotColour: config.dotColour || '',
+        transformation: config.transformation || '',
+        shape: config.dotShape || 'circle'
+      };
     }
 
     return {
-      dotColour: hostElement.dataset.visDotColour || '',
-      transformation: hostElement.dataset.visTransformation || '',
-      shape: hostElement.dataset.visDotShape || 'circle'
+      dotColour: config.dotColour ?? hostElement.dataset.visDotColour ?? '',
+      transformation: config.transformation ?? hostElement.dataset.visTransformation ?? '',
+      shape: config.dotShape ?? hostElement.dataset.visDotShape ?? 'circle'
     };
   }
 
@@ -4419,7 +4484,7 @@ div[data-tanvis-controls="species-selector"] {
     }
 
     const chartRecords = await fetchTaxonYearStats({
-      apiBase: resolveApiBase(config.source),
+      apiBase: resolveApiBase(),
       taxonIdentifier: config.taxonId,
       startYear: config.startYear,
       endYear: config.endYear

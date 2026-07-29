@@ -22,7 +22,7 @@ describe('render', () => {
 
     expect(render(element)).toEqual({
       rendered: false,
-      errors: ['Missing data-vis-start-date for new-species-table']
+      errors: ['Missing required data attribute visStartDate']
     });
   });
 
@@ -34,7 +34,7 @@ describe('render', () => {
 
     const status = element.querySelector('.tanvis-vis-status');
     expect(status).not.toBeNull();
-    expect(status.textContent).toContain('Missing data-vis-start-date for new-species-table');
+    expect(status.textContent).toContain('Missing required data attribute visStartDate');
   });
 
   it('renders temporal-year-chart when registered', () => {

@@ -18,7 +18,6 @@ test('control-block drives map area changes', async ({ page }) => {
       class="tanvis"
       data-vis-type="species-map"
       data-vis-area="vc-60"
-      data-vis-source="/example.csv"
       data-vis-control="map-controls"
     ></div>
   `);
@@ -85,6 +84,6 @@ test('control-block drives map area changes', async ({ page }) => {
   expect(calls.svgMapCalls).toHaveLength(2);
   expect(calls.svgMapCalls[1].transOptsKey).toBe('vc-59');
   expect(calls.svgMapCalls[1].boundaryGjson).toBe('/data/vcs/simp-100/vc-59-100.geojson');
-  expect(calls.setIdentifierCalls).toEqual(['/example.csv', '/example.csv']);
+  expect(calls.setIdentifierCalls).toEqual([]);
   expect(calls.redrawCalls).toBe(2);
 });

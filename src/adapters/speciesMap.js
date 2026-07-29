@@ -53,8 +53,8 @@ export function createSpeciesMapAdapter() {
       );
       status.showInfo('Loading...');
 
-      const speciesCode = renderConfig.species || '';
-      const apiBase = resolveApiBase(renderConfig.source);
+      const speciesCode = renderConfig.species || renderConfig.taxonId || '';
+      const apiBase = resolveApiBase();
 
       if (!hasD3Dependency()) {
         status.showError(D3_DEPENDENCY_MESSAGE);
@@ -65,7 +65,7 @@ export function createSpeciesMapAdapter() {
       element.__tanvisSpeciesMapLoadId = loadId;
       element.dataset.visArea = renderConfig.area;
       element.dataset.visTaxonGroup = taxonGroupExternalKey;
-      element.dataset.visSpecies = speciesCode;
+      element.dataset.visTaxonid = speciesCode;
 
       if (renderConfig.control) {
         if (!shouldPreserveControlSubscription) {
@@ -96,11 +96,11 @@ export function createSpeciesMapAdapter() {
               return;
             }
 
-            if (speciesId.trim() === element.dataset.visSpecies) {
+            if (speciesId.trim() === element.dataset.visTaxonid) {
               return;
             }
 
-            element.dataset.visSpecies = speciesId.trim();
+            element.dataset.visTaxonid = speciesId.trim();
             createSpeciesMapAdapter().render(element, {
               ...renderConfig,
               species: speciesId.trim(),
@@ -125,11 +125,11 @@ export function createSpeciesMapAdapter() {
       if (renderConfig.linkedTable) {
         if (!shouldPreserveLinkedTableSubscription) {
           element.__tanvisLinkedTableCleanup = subscribeToLinkedTable(linkedTableId, (speciesId) => {
-            if (!speciesId || speciesId === element.dataset.visSpecies) {
+            if (!speciesId || speciesId === element.dataset.visTaxonid) {
               return;
             }
 
-            element.dataset.visSpecies = speciesId;
+            element.dataset.visTaxonid = speciesId;
             createSpeciesMapAdapter().render(element, {
               ...renderConfig,
               species: speciesId,
@@ -210,7 +210,7 @@ function renderMapBackend(element, config, hostElement) {
     || element?.dataset?.tanvisSpeciesMapControlMode === 'switch';
   const activeMapType = resolveActiveMapType(element, mapTypeMode, 'tanvisSpeciesMapActiveMapType');
   const pointOpacity = activeMapType === 'leaflet' ? 0.7 : 1;
-  const dotStyleOptions = getDotStyleOptions(hostElement);
+  const dotStyleOptions = getDotStyleOptions(config, hostElement);
   const mapTypesSel = {
     [OCCURRENCES_MAP_TYPE_KEY]: () => createOccurrenceData(pointOpacity, dotStyleOptions),
   };
@@ -257,11 +257,10 @@ function renderMapBackend(element, config, hostElement) {
       createSpeciesMapAdapter().render(hostElement, {
         ...config,
         area: hostElement?.dataset?.visArea || config.area,
-        species: hostElement?.dataset?.visSpecies || config.species,
+        species: hostElement?.dataset?.visTaxonid || config.species || config.taxonId,
         mapType: 'switch',
         linkedTable: config.linkedTable,
         control: config.control,
-        source: config.source,
         forceCreateMap: true
       });
     }
@@ -342,15 +341,19 @@ function subscribeToLinkedTable(linkedTableId, onSpeciesSelected) {
   };
 }
 
-function getDotStyleOptions(hostElement) {
+function getDotStyleOptions(config = {}, hostElement) {
   if (!hostElement || typeof hostElement.dataset !== 'object') {
-    return {};
+    return {
+      dotColour: config.dotColour || '',
+      transformation: config.transformation || '',
+      shape: config.dotShape || 'circle'
+    };
   }
 
   return {
-    dotColour: hostElement.dataset.visDotColour || '',
-    transformation: hostElement.dataset.visTransformation || '',
-    shape: hostElement.dataset.visDotShape || 'circle'
+    dotColour: config.dotColour ?? hostElement.dataset.visDotColour ?? '',
+    transformation: config.transformation ?? hostElement.dataset.visTransformation ?? '',
+    shape: config.dotShape ?? hostElement.dataset.visDotShape ?? 'circle'
   };
 }
 

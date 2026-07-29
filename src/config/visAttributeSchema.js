@@ -75,225 +75,312 @@ function createRule({
   key,
   datasetName,
   kind = 'optional',
-  parser,
-  validate,
-  message,
-  invalidMessage,
-  defaultValue,
-  includeUndefined = false
+  parseAndValidate,
+  defaultValue
 }) {
   return {
     key,
     datasetName,
     kind,
-    parser,
-    validate,
-    message,
-    invalidMessage,
-    defaultValue,
-    includeUndefined
+    parseAndValidate,
+    defaultValue
   };
 }
 
-const COMMON_RULES = {
+function createPv({
+  parser,
+  validate = undefined,
+  messageBuilder = undefined
+}) {
+  return (value, dataset, config, element, rule) => {
+    const parsedValue = parser?.(value, dataset, config, element, rule);
+    const resolvedValue = parsedValue === undefined ? undefined : parsedValue;
+
+    if (parsedValue === undefined) {
+      if (rule.kind === 'required') {
+        return {
+          value: rule.defaultValue,
+          error: true,
+          message: messageBuilder?.(rule, value, dataset, config, element) || `Missing required data attribute ${rule.datasetName}`
+        };
+      }
+
+      return {
+        value: rule.defaultValue,
+        error: false,
+        message: undefined
+      };
+    }
+
+    if (validate && !validate(resolvedValue, dataset, config, element, rule)) {
+      return {
+        value: resolvedValue,
+        error: true,
+        message: messageBuilder?.(rule, resolvedValue, dataset, config, element) || `Invalid data attribute ${rule.datasetName}`
+      };
+    }
+
+    return {
+      value: resolvedValue,
+      error: false,
+      message: undefined
+    };
+  };
+}
+
+const RULES = {
   type: createRule({
     key: 'type',
     datasetName: 'visType',
     kind: 'required',
-    parser: parseRequiredString,
-    validate: (value) => KNOWN_VIS_TYPES.includes(value),
-    message: 'Missing data-vis-type',
-    invalidMessage: 'Invalid data-vis-type',
-    defaultValue: undefined,
-    includeUndefined: true
-  }),
-  source: createRule({
-    key: 'source',
-    datasetName: 'visSource',
-    parser: parseOptionalString,
-    defaultValue: undefined,
-    includeUndefined: true
+    parseAndValidate: createPv({
+      parser: parseRequiredString,
+      validate: (value) => KNOWN_VIS_TYPES.includes(value),
+      messageBuilder: (rule) => `Missing required data attribute ${rule.datasetName}`
+    }),
+    defaultValue: undefined
   }),
   control: createRule({
     key: 'control',
     datasetName: 'visControl',
-    parser: parseOptionalString,
-    defaultValue: undefined,
-    includeUndefined: true
+    parseAndValidate: createPv({
+      parser: parseOptionalString
+    }),
+    defaultValue: undefined
   }),
   linkedTable: createRule({
     key: 'linkedTable',
     datasetName: 'visLinkedTable',
-    parser: parseOptionalString,
-    defaultValue: undefined,
-    includeUndefined: true
-  }),
-  species: createRule({
-    key: 'species',
-    datasetName: 'visSpecies',
-    parser: parseOptionalString,
-    defaultValue: undefined,
-    includeUndefined: true
+    parseAndValidate: createPv({
+      parser: parseOptionalString
+    }),
+    defaultValue: undefined
   }),
   taxonId: createRule({
     key: 'taxonId',
     datasetName: 'visTaxonid',
-    parser: parseOptionalString,
-    defaultValue: undefined,
-    includeUndefined: true
+    parseAndValidate: createPv({
+      parser: parseOptionalString
+    }),
+    defaultValue: undefined
+  }),
+  startDate: createRule({
+    key: 'startDate',
+    datasetName: 'visStartDate',
+    kind: 'required',
+    parseAndValidate: createPv({
+      parser: parseOptionalDate,
+      validate: (value) => Boolean(value),
+      messageBuilder: (rule) => `Missing required data attribute ${rule.datasetName}`
+    }),
+    defaultValue: undefined
   }),
   endDate: createRule({
     key: 'endDate',
     datasetName: 'visEndDate',
-    parser: parseOptionalDate,
-    defaultValue: undefined,
-    includeUndefined: true
+    parseAndValidate: createPv({
+      parser: parseOptionalDate
+    }),
+    defaultValue: undefined
   }),
   area: createRule({
     key: 'area',
     datasetName: 'visArea',
-    parser: (value) => parseOptionalString(value) || 'vc-all',
-    defaultValue: 'vc-all',
-    includeUndefined: true
+    parseAndValidate: createPv({
+      parser: (value) => parseOptionalString(value)
+    }),
+    defaultValue: 'vc-all'
   }),
   ctl: createRule({
     key: 'ctl',
     datasetName: 'visCtl',
-    parser: parseBoolean,
-    defaultValue: false,
-    includeUndefined: true
+    parseAndValidate: createPv({
+      parser: parseBoolean
+    }),
+    defaultValue: false
   }),
   boundaries: createRule({
     key: 'boundaries',
     datasetName: 'visBoundaries',
-    parser: parseBoolean,
-    defaultValue: false,
-    includeUndefined: true
+    parseAndValidate: createPv({
+      parser: parseBoolean
+    }),
+    defaultValue: false
   }),
   gridStatsType: createRule({
     key: 'gridStatsType',
     datasetName: 'visGridStatsType',
-    parser: parseOptionalString,
-    defaultValue: undefined,
-    includeUndefined: true
+    parseAndValidate: createPv({
+      parser: parseOptionalString,
+      validate: undefined,
+      messageBuilder: undefined
+    }),
+    defaultValue: undefined
   }),
   hectads: createRule({
     key: 'hectads',
     datasetName: 'visHectads',
-    parser: parseBoolean,
-    defaultValue: true,
-    includeUndefined: true
+    parseAndValidate: createPv({
+      parser: parseBoolean,
+      validate: undefined,
+      messageBuilder: undefined
+    }),
+    defaultValue: true
   }),
   mapType: createRule({
     key: 'mapType',
     datasetName: 'visMapType',
-    parser: parseOptionalString,
-    defaultValue: undefined,
-    includeUndefined: true
+    parseAndValidate: createPv({
+      parser: parseOptionalString,
+      messageBuilder: undefined
+    }),
+    defaultValue: 'static'
+  }),
+  dotColour: createRule({
+    key: 'dotColour',
+    datasetName: 'visDotColour',
+    parseAndValidate: createPv({parser: parseOptionalString}),
+    defaultValue: ''
+  }),
+  transformation: createRule({
+    key: 'transformation',
+    datasetName: 'visTransformation',
+    parseAndValidate: createPv({
+      parser: parseOptionalString,
+      validate: undefined,
+      messageBuilder: undefined
+    }),
+    defaultValue: ''
+  }),
+  dotShape: createRule({
+    key: 'dotShape',
+    datasetName: 'visDotShape',
+    parseAndValidate: createPv({
+      parser: parseOptionalString,
+      validate: undefined,
+      messageBuilder: undefined
+    }),
+    defaultValue: 'circle'
+  }),
+  taxonGroup: createRule({
+    key: 'taxonGroup',
+    datasetName: 'visTaxonGroup',
+    parseAndValidate: createPv({
+      parser: parseOptionalString,
+      validate: undefined,
+      messageBuilder: undefined
+    }),
+    defaultValue: ''
   }),
   expand: createRule({
     key: 'expand',
     datasetName: 'visExpand',
-    parser: parseOptionalBoolean,
-    defaultValue: undefined,
-    includeUndefined: false
+    parseAndValidate: createPv({
+      parser: parseOptionalBoolean,
+      validate: undefined,
+      messageBuilder: undefined
+    }),
+    defaultValue: undefined
   }),
   width: createRule({
     key: 'width',
     datasetName: 'visWidth',
-    parser: parseOptionalPositiveNumber,
-    defaultValue: undefined,
-    includeUndefined: false
+    parseAndValidate: createPv({
+      parser: parseOptionalPositiveNumber,
+      validate: undefined,
+      messageBuilder: undefined
+    }),
+    defaultValue: undefined
   }),
   height: createRule({
     key: 'height',
     datasetName: 'visHeight',
-    parser: parseOptionalPositiveNumber,
-    defaultValue: undefined,
-    includeUndefined: false
+    parseAndValidate: createPv({
+      parser: parseOptionalPositiveNumber,
+      validate: undefined,
+      messageBuilder: undefined
+    }),
+    defaultValue: undefined
   }),
   topN: createRule({
     key: 'topN',
     datasetName: 'visTopN',
-    parser: parseOptionalPositiveInteger,
-    defaultValue: undefined,
-    includeUndefined: false
+    parseAndValidate: createPv({
+      parser: parseOptionalPositiveInteger,
+      validate: undefined,
+      messageBuilder: undefined
+    }),
+    defaultValue: undefined
   }),
   year: createRule({
     key: 'year',
     datasetName: 'visYear',
-    parser: parseOptionalPositiveInteger,
-    defaultValue: undefined,
-    includeUndefined: false
+    kind: 'required',
+    parseAndValidate: createPv({
+      parser: parseOptionalPositiveInteger,
+      validate: (value) => Number.isFinite(value),
+      messageBuilder: (rule) => `Missing required data attribute ${rule.datasetName}`
+    }),
+    defaultValue: undefined
   }),
   startYear: createRule({
     key: 'startYear',
     datasetName: 'visStartYear',
-    parser: parseOptionalPositiveInteger,
-    defaultValue: undefined,
-    includeUndefined: false
+    parseAndValidate: createPv({
+      parser: parseOptionalPositiveInteger,
+      validate: undefined,
+      messageBuilder: undefined
+    }),
+    defaultValue: undefined
   }),
   endYear: createRule({
     key: 'endYear',
     datasetName: 'visEndYear',
-    parser: parseOptionalPositiveInteger,
-    defaultValue: undefined,
-    includeUndefined: false
+    parseAndValidate: createPv({
+      parser: parseOptionalPositiveInteger,
+      validate: undefined,
+      messageBuilder: undefined
+    }),
+    defaultValue: undefined
   })
 };
 
-const VIS_TYPE_RULES = {
-  'control-block': ['type', 'source', 'area', 'ctl', 'boundaries', 'gridStatsType', 'hectads', 'expand', 'width', 'height'],
-  'species-map': ['type', 'source', 'control', 'species', 'area', 'hectads', 'mapType', 'expand', 'width', 'height'],
-  'new-species-table': [
-    'type',
-    'source',
-    {
-      key: 'startDate',
-      datasetName: 'visStartDate',
-      kind: 'required',
-      parser: parseOptionalDate,
-      validate: (value) => Boolean(value),
-      message: 'Missing data-vis-start-date for new-species-table',
-      defaultValue: undefined,
-      includeUndefined: true
-    },
-    'endDate',
-    'expand',
-    'width',
-    'height'
-  ],
-  'increasing-species-table': ['type', 'source', 'topN', 'expand', 'width', 'height'],
-  'species-absent-since': [
-    'type',
-    'source',
-    {
-      key: 'year',
-      datasetName: 'visYear',
-      kind: 'required',
-      parser: parseOptionalPositiveInteger,
-      validate: (value) => Number.isFinite(value),
-      message: 'Missing data-vis-year for species-absent-since',
-      defaultValue: undefined,
-      includeUndefined: true
-    },
-    'expand',
-    'width',
-    'height'
-  ],
-  'grid-stats-map': ['type', 'source', 'area', 'control', 'gridStatsType', 'hectads', 'mapType', 'expand', 'width', 'height'],
-  'temporal-year-chart': ['type', 'source', 'taxonId', 'linkedTable', 'startYear', 'endYear', 'ctl', 'boundaries', 'expand', 'width', 'height']
+// Need to add comments to rule definitions to describe what they do or maybe add it to the rule
+// structure so that it can be reported.
+
+// Continue to check, from temporl year chart down, that all the necessary attributes 
+// are included below.
+
+// Continue reformatting above code to remove validate: undefined, messageBuilder: undefined
+// from the rule definitions becase createPv puts them in.
+
+// Add the new data attributes for control-block.
+
+// Enrich the start-date and end-date parsers to account for last-month, this-month, last-and-this-month
+// and same for years.
+
+
+const VIS_TYPE_RULE_SETS = {
+  'control-block': ['area'],
+  'species-map': ['taxonId', 'control', 'area', 'hectads', 'mapType', 'boundaries', 'dotShape', 'dotColour', 'transformation', 'dotShape', 'expand', 'width', 'height'],
+  'grid-stats-map': ['gridStatsType', 'control', 'area', 'hectads', 'mapType', 'boundaries', 'dotShape', 'dotColour', 'transformation', 'expand', 'width', 'height'],
+  'temporal-year-chart': ['taxonId', 'linkedTable', 'startYear', 'endYear', 'ctl', 'expand', 'width', 'height'],
+  'new-species-table': ['startDate', 'endDate'],
+  'increasing-species-table': ['topN'],
+  'species-absent-since': ['year']
 };
 
 export function getVisAttributeSchema(visType) {
-  const configuredRuleNames = VIS_TYPE_RULES[visType] || Object.keys(COMMON_RULES);
+  const configuredRuleNames = VIS_TYPE_RULE_SETS[visType] || Object.keys(RULES);
   const configuredRules = configuredRuleNames
-    .map((ruleName) => typeof ruleName === 'string' ? COMMON_RULES[ruleName] : ruleName)
+    .map((ruleName) => RULES[ruleName])
     .filter(Boolean);
+
+  const rules = [RULES.type, ...configuredRules.filter((rule) => rule.key !== 'type')];
 
   return {
     visType,
-    rules: configuredRules
+    rules
   };
 }
 
