@@ -207,4 +207,15 @@ describe('parseOptions', () => {
       gridStatsType: 'species'
     });
   });
+
+  it('reads data-vis-map-type for grid-stats-map', () => {
+    const element = document.createElement('div');
+    element.dataset.visType = 'grid-stats-map';
+    element.dataset.visMapType = 'switch';
+
+    expect(parseOptions(element)).toMatchObject({
+      type: 'grid-stats-map',
+      mapType: 'switch'
+    });
+  });
 });

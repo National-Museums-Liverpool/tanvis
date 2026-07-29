@@ -89,7 +89,7 @@ export function createGridStatsMapAdapter() {
             species_count: Number(r.species_count)
           }));
 
-          console.log('[grid-stats-map] retrieved records:', mapData);
+          //console.log('[grid-stats-map] retrieved records:', mapData);
 
           renderMapBackend(mapContainer, renderConfig, element);
         })
@@ -136,7 +136,7 @@ function renderMapBackend(mapElement, config, hostElement) {
       mapTypesKey: selectedMapTypeKey
     });
   } else {
-    console.log('Rendering static grid stats map with records:', mapData);
+    //console.log('Rendering static grid stats map with records:', mapData);
 
     map = renderStaticAtlasMap(mapElement, config, {
       idPrefix: 'tanvis-grid-stats-map',

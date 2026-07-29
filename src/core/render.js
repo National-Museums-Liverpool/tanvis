@@ -8,6 +8,9 @@ import { createVisStatusReporter } from '../utils/visStatus.js';
 export function render(element) {
   const config = parseOptions(element);
   const errors = validateAttributes(config, element);
+
+  //console.log("config", element, config);
+
   const status = createVisStatusReporter(element);
 
   if (errors.length > 0) {

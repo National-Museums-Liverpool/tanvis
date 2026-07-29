@@ -14,7 +14,9 @@ export function parseOptions(element) {
     const parsedValue = rule.parser?.(rawValue, dataset, config);
 
     if (parsedValue === undefined) {
-      if (rule.includeUndefined) {
+      if (rule.defaultValue !== undefined) {
+        config[rule.key] = rule.defaultValue;
+      } else if (rule.includeUndefined) {
         config[rule.key] = undefined;
       }
       continue;

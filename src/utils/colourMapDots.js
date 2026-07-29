@@ -58,7 +58,7 @@ export function resolveColours(recs, transform, colourScale) {
       break;
   }
 
-  console.log('colouredRecs', colouredRecs);
+  //console.log('colouredRecs', colouredRecs);
 
   return colouredRecs;
 }

@@ -9,12 +9,8 @@ const KNOWN_VIS_TYPES = [
 ];
 
 function parseBoolean(value) {
-  return String(value).toLowerCase() === 'true';
-}
-
-function parseBooleanDefaultTrue(value) {
   if (value === undefined || value === null || value === '') {
-    return true;
+    return undefined;
   }
 
   return String(value).toLowerCase() === 'true';
@@ -75,8 +71,32 @@ function parseRequiredString(value) {
   return parsed && parsed.trim() ? parsed : undefined;
 }
 
-const COMMON_RULES = [
-  {
+function createRule({
+  key,
+  datasetName,
+  kind = 'optional',
+  parser,
+  validate,
+  message,
+  invalidMessage,
+  defaultValue,
+  includeUndefined = false
+}) {
+  return {
+    key,
+    datasetName,
+    kind,
+    parser,
+    validate,
+    message,
+    invalidMessage,
+    defaultValue,
+    includeUndefined
+  };
+}
+
+const COMMON_RULES = {
+  type: createRule({
     key: 'type',
     datasetName: 'visType',
     kind: 'required',
@@ -84,264 +104,196 @@ const COMMON_RULES = [
     validate: (value) => KNOWN_VIS_TYPES.includes(value),
     message: 'Missing data-vis-type',
     invalidMessage: 'Invalid data-vis-type',
+    defaultValue: undefined,
     includeUndefined: true
-  },
-  {
+  }),
+  source: createRule({
     key: 'source',
     datasetName: 'visSource',
-    kind: 'optional',
     parser: parseOptionalString,
+    defaultValue: undefined,
     includeUndefined: true
-  },
-  {
+  }),
+  control: createRule({
     key: 'control',
     datasetName: 'visControl',
-    kind: 'optional',
     parser: parseOptionalString,
+    defaultValue: undefined,
     includeUndefined: true
-  },
-  {
+  }),
+  linkedTable: createRule({
     key: 'linkedTable',
     datasetName: 'visLinkedTable',
-    kind: 'optional',
     parser: parseOptionalString,
+    defaultValue: undefined,
     includeUndefined: true
-  },
-  {
+  }),
+  species: createRule({
     key: 'species',
     datasetName: 'visSpecies',
-    kind: 'optional',
     parser: parseOptionalString,
+    defaultValue: undefined,
     includeUndefined: true
-  },
-  {
+  }),
+  taxonId: createRule({
     key: 'taxonId',
     datasetName: 'visTaxonid',
-    kind: 'optional',
     parser: parseOptionalString,
+    defaultValue: undefined,
     includeUndefined: true
-  },
-  {
-    key: 'startDate',
-    datasetName: 'visStartDate',
-    kind: 'optional',
-    parser: parseOptionalDate,
-    includeUndefined: true
-  },
-  {
+  }),
+  endDate: createRule({
     key: 'endDate',
     datasetName: 'visEndDate',
-    kind: 'optional',
     parser: parseOptionalDate,
+    defaultValue: undefined,
     includeUndefined: true
-  },
-  {
+  }),
+  area: createRule({
     key: 'area',
     datasetName: 'visArea',
-    kind: 'optional',
     parser: (value) => parseOptionalString(value) || 'vc-all',
+    defaultValue: 'vc-all',
     includeUndefined: true
-  },
-  {
+  }),
+  ctl: createRule({
     key: 'ctl',
     datasetName: 'visCtl',
-    kind: 'optional',
-    parser: (value) => {
-      if (value === undefined || value === null || value === '') {
-        return false;
-      }
-
-      return String(value).toLowerCase() === 'true';
-    },
+    parser: parseBoolean,
+    defaultValue: false,
     includeUndefined: true
-  },
-  {
+  }),
+  boundaries: createRule({
     key: 'boundaries',
     datasetName: 'visBoundaries',
-    kind: 'optional',
-    parser: (value) => {
-      if (value === undefined || value === null || value === '') {
-        return false;
-      }
-
-      return String(value).toLowerCase() === 'true';
-    },
+    parser: parseBoolean,
+    defaultValue: false,
     includeUndefined: true
-  },
-  {
+  }),
+  gridStatsType: createRule({
     key: 'gridStatsType',
     datasetName: 'visGridStatsType',
-    kind: 'optional',
     parser: parseOptionalString,
+    defaultValue: undefined,
     includeUndefined: true
-  },
-  {
+  }),
+  hectads: createRule({
     key: 'hectads',
     datasetName: 'visHectads',
-    kind: 'optional',
-    parser: (value) => {
-      if (value === undefined || value === null || value === '') {
-        return true;
-      }
-
-      return String(value).toLowerCase() === 'true';
-    },
+    parser: parseBoolean,
+    defaultValue: true,
     includeUndefined: true
-  },
-  {
+  }),
+  mapType: createRule({
     key: 'mapType',
     datasetName: 'visMapType',
-    kind: 'optional',
     parser: parseOptionalString,
+    defaultValue: undefined,
     includeUndefined: true
-  },
-  {
+  }),
+  expand: createRule({
     key: 'expand',
     datasetName: 'visExpand',
-    kind: 'optional',
-    parser: parseOptionalBoolean
-  },
-  {
+    parser: parseOptionalBoolean,
+    defaultValue: undefined,
+    includeUndefined: false
+  }),
+  width: createRule({
     key: 'width',
     datasetName: 'visWidth',
-    kind: 'optional',
-    parser: parseOptionalPositiveNumber
-  },
-  {
+    parser: parseOptionalPositiveNumber,
+    defaultValue: undefined,
+    includeUndefined: false
+  }),
+  height: createRule({
     key: 'height',
     datasetName: 'visHeight',
-    kind: 'optional',
-    parser: parseOptionalPositiveNumber
-  },
-  {
+    parser: parseOptionalPositiveNumber,
+    defaultValue: undefined,
+    includeUndefined: false
+  }),
+  topN: createRule({
     key: 'topN',
     datasetName: 'visTopN',
-    kind: 'optional',
-    parser: parseOptionalPositiveInteger
-  },
-  {
+    parser: parseOptionalPositiveInteger,
+    defaultValue: undefined,
+    includeUndefined: false
+  }),
+  year: createRule({
     key: 'year',
     datasetName: 'visYear',
-    kind: 'optional',
-    parser: parseOptionalPositiveInteger
-  },
-  {
+    parser: parseOptionalPositiveInteger,
+    defaultValue: undefined,
+    includeUndefined: false
+  }),
+  startYear: createRule({
     key: 'startYear',
     datasetName: 'visStartYear',
-    kind: 'optional',
-    parser: parseOptionalPositiveInteger
-  },
-  {
+    parser: parseOptionalPositiveInteger,
+    defaultValue: undefined,
+    includeUndefined: false
+  }),
+  endYear: createRule({
     key: 'endYear',
     datasetName: 'visEndYear',
-    kind: 'optional',
-    parser: parseOptionalPositiveInteger
-  }
-];
+    parser: parseOptionalPositiveInteger,
+    defaultValue: undefined,
+    includeUndefined: false
+  })
+};
 
 const VIS_TYPE_RULES = {
-  'control-block': [],
-  'species-map': [
-    {
-      key: 'area',
-      datasetName: 'visArea',
-      kind: 'optional',
-      parser: (value) => parseOptionalString(value) || 'vc-all'
-    },
-    {
-      key: 'control',
-      datasetName: 'visControl',
-      kind: 'optional',
-      parser: parseOptionalString
-    },
-    {
-      key: 'species',
-      datasetName: 'visSpecies',
-      kind: 'optional',
-      parser: parseOptionalString
-    },
-    {
-      key: 'mapType',
-      datasetName: 'visMapType',
-      kind: 'optional',
-      parser: parseOptionalString
-    }
-  ],
+  'control-block': ['type', 'source', 'area', 'ctl', 'boundaries', 'gridStatsType', 'hectads', 'expand', 'width', 'height'],
+  'species-map': ['type', 'source', 'control', 'species', 'area', 'hectads', 'mapType', 'expand', 'width', 'height'],
   'new-species-table': [
+    'type',
+    'source',
     {
       key: 'startDate',
       datasetName: 'visStartDate',
       kind: 'required',
       parser: parseOptionalDate,
       validate: (value) => Boolean(value),
-      message: 'Missing data-vis-start-date for new-species-table'
-    }
+      message: 'Missing data-vis-start-date for new-species-table',
+      defaultValue: undefined,
+      includeUndefined: true
+    },
+    'endDate',
+    'expand',
+    'width',
+    'height'
   ],
-  'increasing-species-table': [],
+  'increasing-species-table': ['type', 'source', 'topN', 'expand', 'width', 'height'],
   'species-absent-since': [
+    'type',
+    'source',
     {
       key: 'year',
       datasetName: 'visYear',
       kind: 'required',
       parser: parseOptionalPositiveInteger,
       validate: (value) => Number.isFinite(value),
-      message: 'Missing data-vis-year for species-absent-since'
-    }
+      message: 'Missing data-vis-year for species-absent-since',
+      defaultValue: undefined,
+      includeUndefined: true
+    },
+    'expand',
+    'width',
+    'height'
   ],
-  'grid-stats-map': [],
-  'temporal-year-chart': [
-    {
-      key: 'startYear',
-      datasetName: 'visStartYear',
-      kind: 'optional',
-      parser: parseOptionalPositiveInteger
-    },
-    {
-      key: 'endYear',
-      datasetName: 'visEndYear',
-      kind: 'optional',
-      parser: parseOptionalPositiveInteger
-    },
-    {
-      key: 'ctl',
-      datasetName: 'visCtl',
-      kind: 'optional',
-      parser: parseBoolean
-    },
-    {
-      key: 'boundaries',
-      datasetName: 'visBoundaries',
-      kind: 'optional',
-      parser: parseBoolean
-    },
-    {
-      key: 'expand',
-      datasetName: 'visExpand',
-      kind: 'optional',
-      parser: parseOptionalBoolean
-    },
-    {
-      key: 'width',
-      datasetName: 'visWidth',
-      kind: 'optional',
-      parser: parseOptionalPositiveNumber
-    },
-    {
-      key: 'height',
-      datasetName: 'visHeight',
-      kind: 'optional',
-      parser: parseOptionalPositiveNumber
-    }
-  ]
+  'grid-stats-map': ['type', 'source', 'area', 'control', 'gridStatsType', 'hectads', 'mapType', 'expand', 'width', 'height'],
+  'temporal-year-chart': ['type', 'source', 'taxonId', 'linkedTable', 'startYear', 'endYear', 'ctl', 'boundaries', 'expand', 'width', 'height']
 };
 
 export function getVisAttributeSchema(visType) {
+  const configuredRuleNames = VIS_TYPE_RULES[visType] || Object.keys(COMMON_RULES);
+  const configuredRules = configuredRuleNames
+    .map((ruleName) => typeof ruleName === 'string' ? COMMON_RULES[ruleName] : ruleName)
+    .filter(Boolean);
+
   return {
     visType,
-    rules: [
-      ...COMMON_RULES,
-      ...(VIS_TYPE_RULES[visType] || [])
-    ]
+    rules: configuredRules
   };
 }
 
