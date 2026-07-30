@@ -6,7 +6,7 @@ import { resolveApiBase } from '../config/apiBase.js';
 import { logApiRequest } from '../utils/apiRequest.js';
 
 const TAXON_STATS_RESOURCE = 'taxon-stats';
-const DEFAULT_PAGE_LIMIT = 1000;
+const DEFAULT_PAGE_SIZE = 10;
 const columns = [
   { title: 'Species ID', field: 'speciesId', sorter: 'string' },
   { title: 'Scientific name', field: 'scientificName', sorter: 'string' },
@@ -41,6 +41,7 @@ export function createNewSpeciesTableAdapter() {
       element.__tanvisNewSpeciesLoadId = loadId;
       element.dataset.visArea = renderConfig.area;
       element.dataset.visTaxonGroup = taxonGroupExternalKey;
+      const pageSize = DEFAULT_PAGE_SIZE;
 
       if (renderConfig.control) {
         element.__tanvisControlCleanup = subscribeToControl(renderConfig.control, (event) => {
@@ -64,40 +65,62 @@ export function createNewSpeciesTableAdapter() {
         });
       }
 
-      buildNewSpeciesRecords({ apiBase, startDate, endDate, geographicRegionIdentifier, taxonGroupExternalKey })
-        .then((records) => {
-          if (element.__tanvisNewSpeciesLoadId !== loadId) {
-            return;
-          }
+      const Tabulator = getTabulatorGlobal();
 
-          const Tabulator = getTabulatorGlobal();
+      if (!Tabulator) {
+        clearElement(element);
+        status.showError('Tabulator is not available. Include the Tabulator script before Tanvis.');
+        return;
+      }
 
-          if (!Tabulator) {
-            throw new Error('Tabulator is not available. Include the Tabulator script before Tanvis.');
-          }
+      clearElement(element);
+      const summary = createSummary(startDate, endDate, 0);
+      element.appendChild(summary);
 
-          clearElement(element);
-          element.appendChild(createSummary(startDate, endDate, records.length));
-          element.appendChild(createTableContainer(records, Tabulator));
-
-          const hasStylesheet = ensureStylesheetDependency(status, {
-            libraryName: 'Tabulator',
-            stylesheetHints: ['tabulator.min.css'],
-            message: 'Tabulator stylesheet is missing. Include tabulator.min.css to ensure the table is styled correctly.'
+      const { container } = createTableContainer({
+        Tabulator,
+        pageSize,
+        requestPage: async ({ pageNumber, pageSize: requestedPageSize }) => {
+          const pageResult = await buildNewSpeciesRecordsPage({
+            apiBase,
+            startDate,
+            endDate,
+            geographicRegionIdentifier,
+            taxonGroupExternalKey,
+            pageNumber,
+            pageSize: requestedPageSize
           });
 
-          if (hasStylesheet) {
-            status.clear();
-          }
-        })
-        .catch((error) => {
           if (element.__tanvisNewSpeciesLoadId !== loadId) {
-            return;
+            return {
+              data: [],
+              last_page: 1,
+              last_row: 0
+            };
           }
 
-          clearElement(element);
-          status.showError(normalizeErrorMessage(error, 'Failed to render new species table'));
-        });
+          updateSummary(summary, startDate, endDate, pageResult.totalRows);
+          return {
+            data: pageResult.records,
+            last_page: pageResult.totalPages,
+            last_row: pageResult.totalRows
+          };
+        },
+        element,
+        loadId,
+        status
+      });
+
+      const hasStylesheet = ensureStylesheetDependency(status, {
+        libraryName: 'Tabulator',
+        stylesheetHints: ['tabulator.min.css'],
+        message: 'Tabulator stylesheet is missing. Include tabulator.min.css to ensure the table is styled correctly.'
+      });
+
+      if (hasStylesheet) {
+        status.clear();
+      }
+
     }
   };
 }
@@ -108,16 +131,40 @@ function createSummary(startDate, endDate, count) {
   return summary;
 }
 
-function createTableContainer(records, Tabulator) {
+function updateSummary(summary, startDate, endDate, count) {
+  if (summary) {
+    summary.textContent = `${count} new species between ${startDate} and ${endDate}`;
+  }
+}
+
+function createTableContainer({ Tabulator, pageSize, requestPage, element, loadId, status }) {
   const container = document.createElement('div');
+  element.appendChild(container);
 
   const table = new Tabulator(container, {
-    data: records,
     columns,
     layout: 'fitColumns',
     pagination: true,
-    paginationSize: 10,
-    placeholder: 'No records found'
+    paginationMode: 'remote',
+    paginationSize: pageSize,
+    placeholder: 'No records found',
+    ajaxURL: 'custom_handler',
+    ajaxURLGenerator: function ajaxURLGenerator(url) {
+      return url;
+    },
+    ajaxRequestFunc: async (url, config, params) => {
+      try {
+        const pageNumber = Number(params?.page || 1);
+        const requestedPageSize = Number(params?.size || pageSize);
+        return await requestPage({ pageNumber, pageSize: requestedPageSize });
+      } catch (error) {
+        if (element.__tanvisNewSpeciesLoadId === loadId) {
+          clearElement(element);
+          status.showError(normalizeErrorMessage(error, 'Failed to render new species table'));
+        }
+        throw error;
+      }
+    }
   });
 
   if (table && typeof table.on === 'function') {
@@ -133,67 +180,76 @@ function createTableContainer(records, Tabulator) {
 
       container.dispatchEvent(rowSelectedEvent);
     });
+
   }
 
-  return container;
+  container.__tanvisTable = table;
+  return { container, table };
 }
 
 function getCurrentIsoDate() {
   return new Date().toISOString().slice(0, 10);
 }
 
-async function buildNewSpeciesRecords({ apiBase, startDate, endDate, geographicRegionIdentifier, taxonGroupExternalKey }) {
-  const taxonStatsRows = await fetchTaxonStatsInRange({
+async function buildNewSpeciesRecordsPage({ apiBase, startDate, endDate, geographicRegionIdentifier, taxonGroupExternalKey, pageNumber, pageSize }) {
+  const offset = (pageNumber - 1) * pageSize;
+  const payload = await fetchTaxonStatsInRange({
     apiBase,
     startDate,
     endDate,
     geographicRegionIdentifier,
-    taxonGroupExternalKey
+    taxonGroupExternalKey,
+    limit: pageSize,
+    offset
   });
 
-  return taxonStatsRows.map((row) => {
-    return {
-      speciesId: row.taxon_identifier,
-      scientificName: row.scientific_name || '',
-      commonName: formatVernacularName(row),
-      firstRecordDate: row.first_record_date,
-      vcNumber: row.geographic_region_identifier
-    };
-  });
+  const rows = getListData(payload);
+  const totalRows = getTotalCount(payload);
+  const totalPages = Math.max(1, Math.ceil(totalRows / pageSize));
+
+  return {
+    records: rows.map((row) => {
+      return {
+        speciesId: row.taxon_identifier,
+        scientificName: getTaxonName(row, 'scientific_name'),
+        commonName: getTaxonName(row, 'vernacular_name'),
+        firstRecordDate: row.first_record_date,
+        vcNumber: row.geographic_region_identifier
+      };
+    }),
+    totalRows,
+    totalPages
+  };
 }
 
-async function fetchTaxonStatsInRange({ apiBase, startDate, endDate, geographicRegionIdentifier, taxonGroupExternalKey }) {
-  const resourceUrl = resolveResourceUrl(apiBase, TAXON_STATS_RESOURCE);
-  const rows = [];
-  let offset = 0;
-
-  while (true) {
-    const pageUrl = new URL(resourceUrl.toString());
-    pageUrl.searchParams.set('first_record_date[gte]', startDate);
-    pageUrl.searchParams.set('first_record_date[lte]', endDate);
-    pageUrl.searchParams.set('include', 'taxon');
-    if (Number.isFinite(geographicRegionIdentifier)) {
-      pageUrl.searchParams.set('geographic_region_identifier[eq]', String(geographicRegionIdentifier));
-    }
-    if (taxonGroupExternalKey) {
-      pageUrl.searchParams.set('taxon_group_external_key[eq]', taxonGroupExternalKey);
-    }
-    pageUrl.searchParams.set('limit', String(DEFAULT_PAGE_LIMIT));
-    pageUrl.searchParams.set('offset', String(offset));
-
-    const payload = await fetchJson(pageUrl.toString(), 'Failed to load taxon-stats');
-    const pageRows = getListData(payload);
-    rows.push(...pageRows);
-
-    if (pageRows.length < DEFAULT_PAGE_LIMIT) {
-      break;
-    }
-
-    offset += DEFAULT_PAGE_LIMIT;
+function getTaxonName(row, fieldName) {
+  const nestedTaxon = row?.taxon;
+  if (nestedTaxon && typeof nestedTaxon === 'object') {
+    return nestedTaxon?.[fieldName] || nestedTaxon?.[fieldName.replace(/_/g, '__')] || '';
   }
 
-  return rows;
+  return row?.[fieldName] || row?.[`taxon__${fieldName}`] || '';
 }
+
+async function fetchTaxonStatsInRange({ apiBase, startDate, endDate, geographicRegionIdentifier, taxonGroupExternalKey, limit, offset }) {
+  const resourceUrl = resolveResourceUrl(apiBase, TAXON_STATS_RESOURCE);
+  const pageUrl = new URL(resourceUrl.toString());
+  pageUrl.searchParams.set('first_record_date[gte]', startDate);
+  pageUrl.searchParams.set('first_record_date[lte]', endDate);
+  pageUrl.searchParams.set('include', 'taxon');
+  if (Number.isFinite(geographicRegionIdentifier)) {
+    pageUrl.searchParams.set('geographic_region_identifier[eq]', String(geographicRegionIdentifier));
+  }
+  if (taxonGroupExternalKey) {
+    pageUrl.searchParams.set('taxon_group_external_key[eq]', taxonGroupExternalKey);
+  }
+  pageUrl.searchParams.set('limit', String(limit));
+  pageUrl.searchParams.set('offset', String(offset));
+
+  const payload = await fetchJson(pageUrl.toString(), 'Failed to load taxon-stats');
+  return payload || {};
+}
+
 function resolveResourceUrl(apiBase, resourceName) {
   const baseUrl = new URL(apiBase, window.location.origin);
   const pathname = baseUrl.pathname.endsWith('/') ? baseUrl.pathname : `${baseUrl.pathname}/`;
@@ -238,13 +294,20 @@ function getListData(payload) {
   return [];
 }
 
-function formatVernacularName(taxon) {
-  const plural = taxon?.vernacular_names;
-  if (Array.isArray(plural)) {
-    return plural.join(', ');
+function getTotalCount(payload) {
+  if (Number.isFinite(payload?.meta?.total)) {
+    return Number(payload.meta.total);
   }
 
-  return taxon?.vernacular_name || '';
+  if (Number.isFinite(payload?.total)) {
+    return Number(payload.total);
+  }
+
+  if (Number.isFinite(payload?.last_row)) {
+    return Number(payload.last_row);
+  }
+
+  return getListData(payload).length;
 }
 
 function areaToGeographicRegionIdentifier(area) {

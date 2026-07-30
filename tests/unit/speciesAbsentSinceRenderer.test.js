@@ -14,10 +14,12 @@ describe('renderSpeciesAbsentSince', () => {
       const handlers = {};
       tabulatorCalls.push({ container, options, handlers });
       container.dataset.tabulatorMounted = 'true';
+      void options.ajaxRequestFunc('custom_handler', {}, { page: 1, size: 10 });
       return {
         on(eventName, handler) {
           handlers[eventName] = handler;
-        }
+        },
+        setData() {}
       };
     };
 
@@ -46,18 +48,10 @@ describe('renderSpeciesAbsentSince', () => {
     await new Promise((resolve) => setTimeout(resolve, 0));
 
     expect(fetchMock).toHaveBeenCalledTimes(1);
-    expect(String(fetchMock.mock.calls[0][0])).toContain('/api/v1/taxon-stats?last_record_date%5Blte%5D=2024-12-31&include=taxon&limit=1000&offset=0');
+    expect(String(fetchMock.mock.calls[0][0])).toContain('/api/v1/taxon-stats?last_record_date%5Blte%5D=2024-12-31&include=taxon&limit=10&offset=0');
     expect(tabulatorCalls).toHaveLength(1);
     expect(tabulatorCalls[0].options.columns).toHaveLength(5);
-    expect(tabulatorCalls[0].options.data).toEqual([
-      {
-        speciesId: 'NHMSYS0000001001',
-        scientificName: 'Eristalis arbustorum',
-        commonName: 'Marmalade Hoverfly',
-        lastRecordDate: '2023-08-12',
-        vcNumber: 58
-      }
-    ]);
+    expect(tabulatorCalls[0].options.data).toBeUndefined();
     expect(element.querySelector('[data-tabulator-mounted="true"]')).not.toBeNull();
     expect(element.textContent).toContain('on or before 2024');
   });
@@ -131,7 +125,9 @@ describe('renderSpeciesAbsentSince', () => {
   });
 
   it('includes control-block taxon-group and refetches when the group changes', async () => {
-    window.Tabulator = function Tabulator() {
+    window.Tabulator = function Tabulator(container, options) {
+      container.dataset.tabulatorMounted = 'true';
+      void options.ajaxRequestFunc('custom_handler', {}, { page: 1, size: 10 });
       return {
         on() {}
       };

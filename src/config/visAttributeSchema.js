@@ -191,14 +191,6 @@ const RULES = {
     }),
     defaultValue: 'vc-all'
   }),
-  ctl: createRule({
-    key: 'ctl',
-    datasetName: 'visCtl',
-    parseAndValidate: createPv({
-      parser: parseBoolean
-    }),
-    defaultValue: false
-  }),
   boundaries: createRule({
     key: 'boundaries',
     datasetName: 'visBoundaries',
@@ -310,7 +302,7 @@ const RULES = {
       validate: undefined,
       messageBuilder: undefined
     }),
-    defaultValue: undefined
+    defaultValue: 50
   }),
   year: createRule({
     key: 'year',
@@ -359,12 +351,17 @@ const RULES = {
 // Enrich the start-date and end-date parsers to account for last-month, this-month, last-and-this-month
 // and same for years.
 
+// Need to add control option to al the tables and check that they respond to VC and group.
+// I'm sure they were responding to VC selection at one point but I think it was  
+// lost in the refactoring. Need to check that they respond to group selection too.
+// May be best to wait until API for species stats is available.
+
 
 const VIS_TYPE_RULE_SETS = {
   'control-block': ['area'],
   'species-map': ['taxonId', 'control', 'area', 'hectads', 'mapType', 'boundaries', 'dotShape', 'dotColour', 'transformation', 'dotShape', 'expand', 'width', 'height'],
   'grid-stats-map': ['gridStatsType', 'control', 'area', 'hectads', 'mapType', 'boundaries', 'dotShape', 'dotColour', 'transformation', 'expand', 'width', 'height'],
-  'temporal-year-chart': ['taxonId', 'linkedTable', 'startYear', 'endYear', 'ctl', 'expand', 'width', 'height'],
+  'temporal-year-chart': ['taxonId', 'linkedTable', 'startYear', 'endYear', 'control', 'expand', 'width', 'height'],
   'new-species-table': ['startDate', 'endDate'],
   'increasing-species-table': ['topN'],
   'species-absent-since': ['year']

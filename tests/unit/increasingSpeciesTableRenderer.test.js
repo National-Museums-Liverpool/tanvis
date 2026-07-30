@@ -13,6 +13,11 @@ describe('renderIncreasingSpeciesTable', () => {
     window.Tabulator = function Tabulator(container, options) {
       tabulatorCalls.push({ container, options });
       container.dataset.tabulatorMounted = 'true';
+      void options.ajaxRequestFunc('custom_handler', {}, { page: 1, size: 10 });
+      return {
+        on() {},
+        setData() {}
+      };
     };
 
     const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue({
@@ -44,28 +49,22 @@ describe('renderIncreasingSpeciesTable', () => {
     await new Promise((resolve) => setTimeout(resolve, 0));
 
     expect(fetchMock).toHaveBeenCalledTimes(1);
-    expect(String(fetchMock.mock.calls[0][0])).toContain('/api/v1/taxon-stats?include=taxon&limit=1000&offset=0');
+    expect(String(fetchMock.mock.calls[0][0])).toContain('/api/v1/taxon-stats?include=taxon&limit=10&offset=0');
     expect(tabulatorCalls).toHaveLength(1);
     expect(tabulatorCalls[0].options.initialSort).toEqual([{ column: 'frequencyTrendScore', dir: 'desc' }]);
-    expect(tabulatorCalls[0].options.data).toEqual([
-      {
-        speciesId: '1003',
-        vcNumber: 60,
-        rarityCategory: 'Common',
-        firstRecordDate: '1952-04-01',
-        totalRecords: 12034,
-        occupiedGridSquares: 612,
-        frequencyTrendScore: 67,
-        scientificName: 'Syritta pipiens',
-        commonName: 'Thick-legged Hoverfly'
-      }
-    ]);
+    expect(tabulatorCalls[0].options.data).toBeUndefined();
     expect(element.textContent).toContain('species returned');
     expect(element.textContent).toContain('top 25');
   });
 
   it('uses default topN=50 when value is not supplied', async () => {
-    window.Tabulator = function Tabulator() {};
+    window.Tabulator = function Tabulator(container, options) {
+      container.dataset.tabulatorMounted = 'true';
+      void options.ajaxRequestFunc('custom_handler', {}, { page: 1, size: 10 });
+      return {
+        on() {}
+      };
+    };
 
     const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue({
       ok: true,
@@ -79,11 +78,17 @@ describe('renderIncreasingSpeciesTable', () => {
 
     await new Promise((resolve) => setTimeout(resolve, 0));
 
-    expect(String(fetchMock.mock.calls[0][0])).toContain('/api/v1/taxon-stats?include=taxon&limit=1000&offset=0');
+    expect(String(fetchMock.mock.calls[0][0])).toContain('/api/v1/taxon-stats?include=taxon&limit=10&offset=0');
   });
 
   it('refetches with a taxon-group filter when the subscribed control changes group', async () => {
-    window.Tabulator = function Tabulator() {};
+    window.Tabulator = function Tabulator(container, options) {
+      container.dataset.tabulatorMounted = 'true';
+      void options.ajaxRequestFunc('custom_handler', {}, { page: 1, size: 10 });
+      return {
+        on() {}
+      };
+    };
 
     const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue({
       ok: true,

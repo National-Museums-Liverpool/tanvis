@@ -38,17 +38,16 @@
 
     <script src="../dist/tanvis.iife.js"></script>
     <script type="module">
-      import { installTaxonGroupsMockApi } from './mock/taxonGroupsMockApi.js';
-      import { installSpeciesStatsMockApi } from './mock/speciesStatsMockApi.js';
-
-      installTaxonGroupsMockApi({ baseUrl: '/api', latencyMs: 150 });
-      installSpeciesStatsMockApi({ baseUrl: '/api', latencyMs: 150 });
+      // import { installTaxonGroupsMockApi } from './mock/taxonGroupsMockApi.js';
+      // import { installSpeciesStatsMockApi } from './mock/speciesStatsMockApi.js';
+      // installTaxonGroupsMockApi({ baseUrl: '/api', latencyMs: 150 });
+      // installSpeciesStatsMockApi({ baseUrl: '/api', latencyMs: 150 });
       
       window.Tanvis.init();
 
-      document.addEventListener("species-row-selected", function(e) {
-        console.log(`Row clicked:`, e.detail);
-      });
+      // document.addEventListener("species-row-selected", function(e) {
+      //   console.log(`Row clicked:`, e.detail);
+      // });
     </script>
   </body>
 </html>

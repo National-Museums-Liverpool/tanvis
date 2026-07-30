@@ -6,7 +6,7 @@ import { resolveApiBase } from '../config/apiBase.js';
 import { logApiRequest } from '../utils/apiRequest.js';
 
 const TAXON_STATS_RESOURCE = 'taxon-stats';
-const DEFAULT_PAGE_LIMIT = 1000;
+const DEFAULT_PAGE_SIZE = 10;
 const DEFAULT_TOP_N = 50;
 const columns = [
   { title: 'Species ID', field: 'speciesId', sorter: 'string' },
@@ -22,7 +22,6 @@ export function createIncreasingSpeciesTableAdapter() {
   return {
     name: 'increasing-species-table',
     render(element, config) {
-      console.log('element', element);
       clearControlSubscription(element);
       const status = createVisStatusReporter(element);
       clearElement(element);
@@ -44,6 +43,7 @@ export function createIncreasingSpeciesTableAdapter() {
       element.__tanvisIncreasingLoadId = loadId;
       element.dataset.visArea = renderConfig.area;
       element.dataset.visTaxonGroup = taxonGroupExternalKey;
+      const pageSize = DEFAULT_PAGE_SIZE;
 
       if (renderConfig.control) {
         element.__tanvisControlCleanup = subscribeToControl(renderConfig.control, (event) => {
@@ -67,40 +67,61 @@ export function createIncreasingSpeciesTableAdapter() {
         });
       }
 
-      buildIncreasingSpeciesRecords({ apiBase, topN, geographicRegionIdentifier, taxonGroupExternalKey })
-        .then((records) => {
-          if (element.__tanvisIncreasingLoadId !== loadId) {
-            return;
-          }
+      const Tabulator = getTabulatorGlobal();
 
-          const Tabulator = getTabulatorGlobal();
+      if (!Tabulator) {
+        clearElement(element);
+        status.showError('Tabulator is not available. Include the Tabulator script before Tanvis.');
+        return;
+      }
 
-          if (!Tabulator) {
-            throw new Error('Tabulator is not available. Include the Tabulator script before Tanvis.');
-          }
+      clearElement(element);
+      const summary = createSummary(topN, 0);
+      element.appendChild(summary);
 
-          clearElement(element);
-          element.appendChild(createSummary(topN, records.length));
-          element.appendChild(createTableContainer(records, Tabulator));
-
-          const hasStylesheet = ensureStylesheetDependency(status, {
-            libraryName: 'Tabulator',
-            stylesheetHints: ['tabulator.min.css'],
-            message: 'Tabulator stylesheet is missing. Include tabulator.min.css to ensure the table is styled correctly.'
+      const { container } = createTableContainer({
+        Tabulator,
+        pageSize,
+        requestPage: async ({ pageNumber, pageSize: requestedPageSize }) => {
+          const pageResult = await buildIncreasingSpeciesRecordsPage({
+            apiBase,
+            topN,
+            geographicRegionIdentifier,
+            taxonGroupExternalKey,
+            pageNumber,
+            pageSize: requestedPageSize
           });
 
-          if (hasStylesheet) {
-            status.clear();
-          }
-        })
-        .catch((error) => {
           if (element.__tanvisIncreasingLoadId !== loadId) {
-            return;
+            return {
+              data: [],
+              last_page: 1,
+              last_row: 0
+            };
           }
 
-          clearElement(element);
-          status.showError(normalizeErrorMessage(error, 'Failed to render increasing species table'));
-        });
+          updateSummary(summary, topN, pageResult.totalRows);
+          return {
+            data: pageResult.records,
+            last_page: pageResult.totalPages,
+            last_row: pageResult.totalRows
+          };
+        },
+        element,
+        loadId,
+        status
+      });
+
+      const hasStylesheet = ensureStylesheetDependency(status, {
+        libraryName: 'Tabulator',
+        stylesheetHints: ['tabulator.min.css'],
+        message: 'Tabulator stylesheet is missing. Include tabulator.min.css to ensure the table is styled correctly.'
+      });
+
+      if (hasStylesheet) {
+        status.clear();
+      }
+
     }
   };
 }
@@ -111,19 +132,43 @@ function createSummary(topN, count) {
   return summary;
 }
 
-function createTableContainer(records, Tabulator) {
+function updateSummary(summary, topN, count) {
+  if (summary) {
+    summary.textContent = `${count} species returned (top ${topN} by frequency trend)`;
+  }
+}
+
+function createTableContainer({ Tabulator, pageSize, requestPage, element, loadId, status }) {
   const container = document.createElement('div');
+  element.appendChild(container);
 
   const table = new Tabulator(container, {
-    data: records,
     columns,
     layout: 'fitColumns',
     pagination: true,
-    paginationSize: 10,
+    paginationMode: 'remote',
+    paginationSize: pageSize,
     initialSort: [
       { column: 'frequencyTrendScore', dir: 'desc' }
     ],
     placeholder: 'No records found',
+    ajaxURL: 'custom_handler',
+    ajaxURLGenerator: function ajaxURLGenerator(url) {
+      return url;
+    },
+    ajaxRequestFunc: async (url, config, params) => {
+      try {
+        const pageNumber = Number(params?.page || 1);
+        const requestedPageSize = Number(params?.size || pageSize);
+        return await requestPage({ pageNumber, pageSize: requestedPageSize });
+      } catch (error) {
+        if (element.__tanvisIncreasingLoadId === loadId) {
+          clearElement(element);
+          status.showError(normalizeErrorMessage(error, 'Failed to render increasing species table'));
+        }
+        throw error;
+      }
+    }
   });
 
   if (table && typeof table.on === 'function') {
@@ -139,9 +184,11 @@ function createTableContainer(records, Tabulator) {
 
       container.dispatchEvent(rowSelectedEvent);
     });
+
   }
 
-  return container;
+  container.__tanvisTable = table;
+  return { container, table };
 }
 
 function parseTopN(value) {
@@ -161,57 +208,51 @@ function getTabulatorGlobal() {
   return window.Tabulator || null;
 }
 
-async function buildIncreasingSpeciesRecords({ apiBase, topN, geographicRegionIdentifier, taxonGroupExternalKey }) {
-  const taxonStatsRows = await fetchTaxonStats({ apiBase, geographicRegionIdentifier, taxonGroupExternalKey });
+async function buildIncreasingSpeciesRecordsPage({ apiBase, topN, geographicRegionIdentifier, taxonGroupExternalKey, pageNumber, pageSize }) {
+  const offset = (pageNumber - 1) * pageSize;
+  const payload = await fetchTaxonStats({ apiBase, geographicRegionIdentifier, taxonGroupExternalKey, limit: pageSize, offset });
+  const taxonStatsRows = getListData(payload);
+  const totalRows = getTotalCount(payload);
+  const totalPages = Math.max(1, Math.ceil(totalRows / pageSize));
   const rankedRows = taxonStatsRows
     .slice()
     .sort((a, b) => Number(b?.frequency_trend || 0) - Number(a?.frequency_trend || 0))
     .slice(0, topN);
 
-  return rankedRows.map((row) => {
-    return {
-      speciesId: row.taxon_identifier,
-      vcNumber: row.geographic_region_identifier,
-      rarityCategory: row.rarity_group_name || '',
-      firstRecordDate: row.first_record_date,
-      totalRecords: row.occurrences_count,
-      occupiedGridSquares: row.grid_square_count,
-      frequencyTrendScore: row.frequency_trend,
-      scientificName: row.scientific_name || '',
-      commonName: formatVernacularName(row)
-    };
-  });
+  return {
+    records: rankedRows.map((row) => {
+      return {
+        speciesId: row.taxon_identifier,
+        vcNumber: row.geographic_region_identifier,
+        rarityCategory: row.rarity_group_name || '',
+        firstRecordDate: row.first_record_date,
+        totalRecords: row.occurrences_count,
+        occupiedGridSquares: row.grid_square_count,
+        frequencyTrendScore: row.frequency_trend,
+        scientificName: row.scientific_name || '',
+        commonName: formatVernacularName(row)
+      };
+    }),
+    totalRows,
+    totalPages
+  };
 }
 
-async function fetchTaxonStats({ apiBase, geographicRegionIdentifier, taxonGroupExternalKey }) {
+async function fetchTaxonStats({ apiBase, geographicRegionIdentifier, taxonGroupExternalKey, limit, offset }) {
   const resourceUrl = resolveResourceUrl(apiBase, TAXON_STATS_RESOURCE);
-  const rows = [];
-  let offset = 0;
-
-  while (true) {
-    const pageUrl = new URL(resourceUrl.toString());
-    pageUrl.searchParams.set('include', 'taxon');
-    if (Number.isFinite(geographicRegionIdentifier)) {
-      pageUrl.searchParams.set('geographic_region_identifier[eq]', String(geographicRegionIdentifier));
-    }
-    if (taxonGroupExternalKey) {
-      pageUrl.searchParams.set('taxon_group_external_key[eq]', taxonGroupExternalKey);
-    }
-    pageUrl.searchParams.set('limit', String(DEFAULT_PAGE_LIMIT));
-    pageUrl.searchParams.set('offset', String(offset));
-
-    const payload = await fetchJson(pageUrl.toString(), 'Failed to load taxon-stats');
-    const pageRows = getListData(payload);
-    rows.push(...pageRows);
-
-    if (pageRows.length < DEFAULT_PAGE_LIMIT) {
-      break;
-    }
-
-    offset += DEFAULT_PAGE_LIMIT;
+  const pageUrl = new URL(resourceUrl.toString());
+  pageUrl.searchParams.set('include', 'taxon');
+  if (Number.isFinite(geographicRegionIdentifier)) {
+    pageUrl.searchParams.set('geographic_region_identifier[eq]', String(geographicRegionIdentifier));
   }
+  if (taxonGroupExternalKey) {
+    pageUrl.searchParams.set('taxon_group_external_key[eq]', taxonGroupExternalKey);
+  }
+  pageUrl.searchParams.set('limit', String(limit));
+  pageUrl.searchParams.set('offset', String(offset));
 
-  return rows;
+  const payload = await fetchJson(pageUrl.toString(), 'Failed to load taxon-stats');
+  return payload || {};
 }
 function resolveResourceUrl(apiBase, resourceName) {
   const baseUrl = new URL(apiBase, window.location.origin);
@@ -255,6 +296,22 @@ function getListData(payload) {
   }
 
   return [];
+}
+
+function getTotalCount(payload) {
+  if (Number.isFinite(payload?.meta?.total)) {
+    return Number(payload.meta.total);
+  }
+
+  if (Number.isFinite(payload?.total)) {
+    return Number(payload.total);
+  }
+
+  if (Number.isFinite(payload?.last_row)) {
+    return Number(payload.last_row);
+  }
+
+  return getListData(payload).length;
 }
 
 function formatVernacularName(taxon) {

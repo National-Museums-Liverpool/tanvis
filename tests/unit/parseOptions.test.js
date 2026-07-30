@@ -21,12 +21,6 @@ describe('parseOptions', () => {
     expect(parseOptions(element).type).toBeUndefined();
   });
 
-  it('defaults ctl to false when not supplied', () => {
-    const element = document.createElement('div');
-
-    expect(parseOptions(element).ctl).toBe(false);
-  });
-
   it('defaults boundaries to false when not supplied', () => {
     const element = document.createElement('div');
 

@@ -138,6 +138,8 @@ async function loadTemporalYearChart(element, config, status) {
     chartRecords
   });
 
+  console.log("chart options", chartOptions);
+
   const statusElement = element.__tanvisVisStatusElement;
   clearElement(element);
 
@@ -219,6 +221,7 @@ function createTemporalYearChartOptions({ config, chartContainer, chartRecords }
     showLegend: true,
     interactivity: 'mousemove',
     minY: 0,
+    perRow: 1,
     ...(Number.isFinite(config.startYear) ? { minPeriod: config.startYear } : {}),
     ...(Number.isFinite(config.endYear) ? { maxPeriod: config.endYear } : {}),
     ...(config.expand !== undefined ? { expand: config.expand } : {}),
