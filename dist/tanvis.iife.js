@@ -69,12 +69,30 @@ var Tanvis = (function (exports) {
     return String(value);
   }
 
-  function parseOptionalDate(value) {
-    if (value === undefined || value === null || value === '') {
-      return undefined;
+  function validateDate(dateString) {
+    // Regex strictly enforces dd-mm-yyyy syntax with digits
+    const regex = /^\d{4}-\d{2}-\d{2}$/;
+    if (!regex.test(dateString)) return false;
+
+    // Split components into integers
+    const parts = dateString.split("-");
+    const year = parseInt(parts[0], 10);
+    const month = parseInt(parts[1], 10);
+    const day = parseInt(parts[2], 10);
+
+    if (month < 1 || month > 12) return false;
+
+    // Days allowed per month (Index 0 is a placeholder)
+    const monthLengths = [0, 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+
+    // Adjust for leap years
+    // Divisible by 4 AND (not divisible by 100 OR divisible by 400)
+    if (year % 4 === 0 && (year % 100 !== 0 || year % 400 === 0)) {
+      monthLengths[2] = 29;
     }
 
-    return String(value);
+    // Validate day bounds for the specific month
+    return day > 0 && day <= monthLengths[month];
   }
 
   function parseRequiredString(value) {
@@ -87,14 +105,16 @@ var Tanvis = (function (exports) {
     datasetName,
     kind = 'optional',
     parseAndValidate,
-    defaultValue
+    defaultValue,
+    info=''
   }) {
     return {
       key,
       datasetName,
       kind,
       parseAndValidate,
-      defaultValue
+      defaultValue,
+      info
     };
   }
 
@@ -149,50 +169,80 @@ var Tanvis = (function (exports) {
         validate: (value) => KNOWN_VIS_TYPES.includes(value),
         messageBuilder: (rule) => `Missing required data attribute ${rule.datasetName}`
       }),
-      defaultValue: undefined
+      info: `The type of visualization to render. Must be one of: 
+      ${KNOWN_VIS_TYPES.join(', ')}.`
     }),
     control: createRule({
       key: 'control',
       datasetName: 'visControl',
-      parseAndValidate: createPv({
-        parser: parseOptionalString
-      }),
-      defaultValue: undefined
+      parseAndValidate: createPv({parser: parseOptionalString}),
+      info: `The id of a control block to link to this visualisation. 
+      The visualisation will respond to selections made in that control.`
     }),
     linkedTable: createRule({
       key: 'linkedTable',
       datasetName: 'visLinkedTable',
-      parseAndValidate: createPv({
-        parser: parseOptionalString
-      }),
-      defaultValue: undefined
+      parseAndValidate: createPv({parser: parseOptionalString}),
+      info: `The id of a linked table to subscribe to for species 
+      selection events. When a species is selected in the linked table, 
+      the visualization will be re-rendered with the selected species.`
     }),
     taxonId: createRule({
       key: 'taxonId',
       datasetName: 'visTaxonid',
-      parseAndValidate: createPv({
-        parser: parseOptionalString
-      }),
-      defaultValue: undefined
+      parseAndValidate: createPv({parser: parseOptionalString}),
+      info: `The taxon ID of the species to visualize. This is used to 
+      fetch data for the visualization.`
     }),
     startDate: createRule({
       key: 'startDate',
       datasetName: 'visStartDate',
       kind: 'required',
-      parseAndValidate: createPv({
-        parser: parseOptionalDate,
-        validate: (value) => Boolean(value),
-        messageBuilder: (rule) => `Missing required data attribute ${rule.datasetName}`
-      }),
-      defaultValue: undefined
+      parseAndValidate: (value, dataset, config, element, rule) => {
+
+        console.log('Parsing startDate:', value, dataset, config, element, rule);
+
+        const ret = {value: undefined, error: undefined, message: undefined};
+        // Validate and resolve the date
+        if (validateDate(value)) {
+          ret.value = value;
+        } else if (value === 'this-month') {
+          const now = new Date();
+          ret.value = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`;
+        } else if (value === 'last-month') {
+          const last = new Date();
+          last.setDate(1); // Avoids bugs when transitioning from 31-day months
+          last.setMonth(last.getMonth() - 1);
+          ret.value = `${last.getFullYear()}-${String(last.getMonth() + 1).padStart(2, '0')}-01`;
+        } else if (value === 'this-year') {
+          const now = new Date();
+          ret.value = `${now.getFullYear()}-01-01`;
+        } else if (value === 'last-year') {
+          const now = new Date();
+          ret.value = `${now.getFullYear() - 1}-01-01`;
+        } else {
+          ret.error = true;
+          ret.message = `Invalid data attribute ${rule.datasetName}: ${value}. ${rule.info}`;
+        }
+    
+        return ret;
+      },
+      defaultValue: 'last-month',
+      info: `The start date for period from which to draw data. This can be a 
+    specific date string of the format 'yyyy-mm-dd' or one of these relative date
+    strings: 'this-month' which resolves to the first day of the current month;
+    'last-month' which resolves to the first day of the previous month;
+    'this-year' which resolves to the first day of the current year; or
+    'last-year' which resolves to the first day of the previous year.`
     }),
     endDate: createRule({
       key: 'endDate',
       datasetName: 'visEndDate',
-      parseAndValidate: createPv({
-        parser: parseOptionalDate
-      }),
-      defaultValue: undefined
+      parseAndValidate: (value, dataset, config, element, rule) => {
+        const ret = {value: value, error: undefined, message: undefined};
+      
+        return ret;
+      },
     }),
     area: createRule({
       key: 'area',
