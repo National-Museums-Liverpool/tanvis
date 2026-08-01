@@ -19,56 +19,6 @@ var Tanvis = (function (exports) {
     'temporal-year-chart'
   ];
 
-  function parseBoolean(value) {
-    if (value === undefined || value === null || value === '') {
-      return undefined;
-    }
-
-    return String(value).toLowerCase() === 'true';
-  }
-
-  function parseOptionalBoolean(value) {
-    if (value === undefined || value === null || value === '') {
-      return undefined;
-    }
-
-    return String(value).toLowerCase() === 'true';
-  }
-
-  function parseOptionalPositiveNumber$1(value) {
-    if (value === undefined || value === null || value === '') {
-      return undefined;
-    }
-
-    const parsed = Number(value);
-    if (!Number.isFinite(parsed) || parsed <= 0) {
-      return undefined;
-    }
-
-    return parsed;
-  }
-
-  function parseOptionalPositiveInteger(value) {
-    if (value === undefined || value === null || value === '') {
-      return undefined;
-    }
-
-    const parsed = Number(value);
-    if (!Number.isFinite(parsed) || parsed <= 0) {
-      return undefined;
-    }
-
-    return Math.floor(parsed);
-  }
-
-  function parseOptionalString(value) {
-    if (value === undefined || value === null || value === '') {
-      return undefined;
-    }
-
-    return String(value);
-  }
-
   function validateDate(dateString) {
     // Regex strictly enforces dd-mm-yyyy syntax with digits
     const regex = /^\d{4}-\d{2}-\d{2}$/;
@@ -95,9 +45,110 @@ var Tanvis = (function (exports) {
     return day > 0 && day <= monthLengths[month];
   }
 
-  function parseRequiredString(value) {
-    const parsed = parseOptionalString(value);
-    return parsed && parsed.trim() ? parsed : undefined;
+  function infoString(value, rule) {
+    let ret =  `Invalid value for data attribute ${rule.datasetName}: ${value}. ${rule.info}`;
+    if (rule.defaultValue) {
+      ret = `${ret} Default value is ${rule.defaultValue}.`;
+    }
+    return ret;
+  }
+
+  function requiredButMissing(value, dataset, config, element, rule) {
+    if (typeof(value) === 'undefined' || value === null || value === '') {
+      return {  
+        value: undefined,
+        error: true,
+        message: `Missing required data attribute ${rule.datasetName}. ${rule.info}`
+      };
+    } else {
+      return null;
+    }
+  }
+
+  function parseAndValidateBoolean (value, dataset, config, element, rule) {
+    const ret = {value: undefined, error: undefined, message: undefined};
+
+    // Check if the value is required
+    const rm = requiredButMissing(value, dataset, config, element, rule);
+    if (rm) return rm;
+
+    // Set default if missing
+    if (typeof(value) === 'undefined' || value === null || value === '') {
+      value = rule.defaultValue;
+    }  
+
+    // Values must be either 'true' or 'false'
+    if (value !== 'true' && value !== 'false') {
+      ret.error = true;
+      ret.message = infoString(value, rule);
+      return ret;
+    } else {
+      ret.value = value === 'true';
+      return ret;
+    }
+  }
+
+  function parseAndValidateString (value, dataset, config, element, rule) {
+    const ret = {value: undefined, error: undefined, message: undefined};
+    
+    // Check if the value is required
+    const rm = requiredButMissing(value, dataset, config, element, rule);
+    if (rm) return rm;
+
+    // Set default if missing
+    if (typeof(value) === 'undefined' || value === null || value === '') {
+      value = rule.defaultValue;
+    }
+
+    ret.value = value;
+    return ret;
+  }
+
+  function parseAndValidateSet(value, dataset, config, element, rule) {
+    const ret = {value: undefined, error: undefined, message: undefined};
+
+    // Check if the value is required
+    const rm = requiredButMissing(value, dataset, config, element, rule);
+    if (rm) return rm;
+
+    // Set default if missing
+    if (typeof(value) === 'undefined' || value === null || value === '') {
+      value = rule.defaultValue;
+    }
+
+    // Validate that the value is in the allowed set
+    console.log('rule', rule);
+    if (!rule.allowedValues?.includes(value)) {
+      ret.error = true;
+      ret.message = infoString(value, rule);
+      return ret;
+    }
+
+    ret.value = value;
+    return ret;
+  }
+
+  function parseAndValidatePositiveInteger(value, dataset, config, element, rule) {
+    const ret = {value: undefined, error: undefined, message: undefined};
+
+    // Check if the value is required
+    const rm = requiredButMissing(value, dataset, config, element, rule);
+    if (rm) return rm;
+
+    // Set default if missing
+    if (typeof(value) === 'undefined' || value === null || value === '') {
+      value = rule.defaultValue;
+    }
+
+    const parsed = Number(value);
+    if (!Number.isFinite(parsed) || parsed <= 0) {
+      ret.error = true;
+      ret.message = infoString(value, rule);
+      return ret;
+    }
+
+    ret.value = parsed;
+    return ret;
   }
 
   function createRule({
@@ -105,6 +156,7 @@ var Tanvis = (function (exports) {
     datasetName,
     kind = 'optional',
     parseAndValidate,
+    allowedValues,
     defaultValue,
     info=''
   }) {
@@ -113,49 +165,9 @@ var Tanvis = (function (exports) {
       datasetName,
       kind,
       parseAndValidate,
+      allowedValues,
       defaultValue,
       info
-    };
-  }
-
-  function createPv({
-    parser,
-    validate = undefined,
-    messageBuilder = undefined
-  }) {
-    return (value, dataset, config, element, rule) => {
-      const parsedValue = parser?.(value, dataset, config, element, rule);
-      const resolvedValue = parsedValue === undefined ? undefined : parsedValue;
-
-      if (parsedValue === undefined) {
-        if (rule.kind === 'required') {
-          return {
-            value: rule.defaultValue,
-            error: true,
-            message: messageBuilder?.(rule, value, dataset, config, element) || `Missing required data attribute ${rule.datasetName}`
-          };
-        }
-
-        return {
-          value: rule.defaultValue,
-          error: false,
-          message: undefined
-        };
-      }
-
-      if (validate && !validate(resolvedValue, dataset, config, element, rule)) {
-        return {
-          value: resolvedValue,
-          error: true,
-          message: messageBuilder?.(rule, resolvedValue, dataset, config, element) || `Invalid data attribute ${rule.datasetName}`
-        };
-      }
-
-      return {
-        value: resolvedValue,
-        error: false,
-        message: undefined
-      };
     };
   }
 
@@ -164,25 +176,22 @@ var Tanvis = (function (exports) {
       key: 'type',
       datasetName: 'visType',
       kind: 'required',
-      parseAndValidate: createPv({
-        parser: parseRequiredString,
-        validate: (value) => KNOWN_VIS_TYPES.includes(value),
-        messageBuilder: (rule) => `Missing required data attribute ${rule.datasetName}`
-      }),
+      parseAndValidate: parseAndValidateSet,
+      allowedValues: KNOWN_VIS_TYPES,
       info: `The type of visualization to render. Must be one of: 
       ${KNOWN_VIS_TYPES.join(', ')}.`
     }),
     control: createRule({
       key: 'control',
       datasetName: 'visControl',
-      parseAndValidate: createPv({parser: parseOptionalString}),
+      parseAndValidate: parseAndValidateString,
       info: `The id of a control block to link to this visualisation. 
       The visualisation will respond to selections made in that control.`
     }),
     linkedTable: createRule({
       key: 'linkedTable',
       datasetName: 'visLinkedTable',
-      parseAndValidate: createPv({parser: parseOptionalString}),
+      parseAndValidate: parseAndValidateString,
       info: `The id of a linked table to subscribe to for species 
       selection events. When a species is selected in the linked table, 
       the visualization will be re-rendered with the selected species.`
@@ -190,7 +199,7 @@ var Tanvis = (function (exports) {
     taxonId: createRule({
       key: 'taxonId',
       datasetName: 'visTaxonid',
-      parseAndValidate: createPv({parser: parseOptionalString}),
+      parseAndValidate: parseAndValidateString,
       info: `The taxon ID of the species to visualize. This is used to 
       fetch data for the visualization.`
     }),
@@ -199,220 +208,220 @@ var Tanvis = (function (exports) {
       datasetName: 'visStartDate',
       kind: 'required',
       parseAndValidate: (value, dataset, config, element, rule) => {
-
-        console.log('Parsing startDate:', value, dataset, config, element, rule);
-
         const ret = {value: undefined, error: undefined, message: undefined};
+
+        // Set default if missing
+        if (typeof(value) === 'undefined' || value === null || value === '') {
+          value = rule.defaultValue;
+        }  
+
         // Validate and resolve the date
         if (validateDate(value)) {
           ret.value = value;
-        } else if (value === 'this-month') {
+        } else if (/^month-\d+$/.test(value)) {
+          const n = parseInt(value.split('-')[1], 10);
           const now = new Date();
+          now.setDate(1);
+          now.setMonth(now.getMonth() - n);
           ret.value = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`;
-        } else if (value === 'last-month') {
-          const last = new Date();
-          last.setDate(1); // Avoids bugs when transitioning from 31-day months
-          last.setMonth(last.getMonth() - 1);
-          ret.value = `${last.getFullYear()}-${String(last.getMonth() + 1).padStart(2, '0')}-01`;
-        } else if (value === 'this-year') {
+        } else if (/^year-\d+$/.test(value)) {
+          const n = parseInt(value.split('-')[1], 10);
           const now = new Date();
-          ret.value = `${now.getFullYear()}-01-01`;
-        } else if (value === 'last-year') {
-          const now = new Date();
-          ret.value = `${now.getFullYear() - 1}-01-01`;
+          now.setDate(1);
+          ret.value = `${now.getFullYear() - n}-01-01`;
         } else {
           ret.error = true;
-          ret.message = `Invalid data attribute ${rule.datasetName}: ${value}. ${rule.info}`;
-        }
-    
+          ret.message = infoString(value, rule);      }
         return ret;
       },
-      defaultValue: 'last-month',
+      defaultValue: 'year-1',
       info: `The start date for period from which to draw data. This can be a 
-    specific date string of the format 'yyyy-mm-dd' or one of these relative date
-    strings: 'this-month' which resolves to the first day of the current month;
-    'last-month' which resolves to the first day of the previous month;
-    'this-year' which resolves to the first day of the current year; or
-    'last-year' which resolves to the first day of the previous year.`
+      specific date string of the format 'yyyy-mm-dd' or one of these relative date
+      values: 'month-n', where n is any integer, which resolves to the first day of the current month minus n months
+      (e.g. month-0 is the first day of the current month, month-1 is the first day of the previous month, etc.);
+      or 'year-n', where n is any integer, which resolves to the first day of the current year minus n years
+      (e.g. year-0 is the first day of the current year, year-1 is the first day of the previous year, etc.).`
     }),
     endDate: createRule({
       key: 'endDate',
       datasetName: 'visEndDate',
       parseAndValidate: (value, dataset, config, element, rule) => {
-        const ret = {value: value, error: undefined, message: undefined};
-      
+        const ret = {value: undefined, error: undefined, message: undefined};
+
+        // Set default if missing
+        if (typeof(value) === 'undefined' || value === null || value === '') {
+          value = rule.defaultValue;
+        }      
+
+        // Validate and resolve the date
+        if (validateDate(value)) {
+          ret.value = value;
+        } else if (/^month-\d+$/.test(value)) {
+          const n = parseInt(value.split('-')[1], 10);
+          const now = new Date();
+          now.setDate(1);
+          now.setMonth(now.getMonth() - n);
+          ret.value = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-31`;
+        } else if (/^year-\d+$/.test(value)) {
+          const n = parseInt(value.split('-')[1], 10);
+          const now = new Date();
+          now.setDate(1);
+          ret.value = `${now.getFullYear() - n}-12-31`;
+        } else {
+          ret.error = true;
+          ret.message = infoString(value, rule);
+        }
         return ret;
       },
+      defaultValue: 'year-1',
+      info: `The end date for period from which to draw data. This can be a 
+      specific date string of the format 'yyyy-mm-dd' or one of these relative date
+      values: 'month-n', where n is any integer, which resolves to the last day of the current month minus n months
+      (e.g. month-0 is the last day of the current month, month-1 is the last day of the previous month, etc.);
+      or 'year-n', where n is any integer, which resolves to the last day of the current year minus n years
+      (e.g. year-0 is the last day of the current year, year-1 is the last day of the previous year, etc.).`
     }),
     area: createRule({
       key: 'area',
       datasetName: 'visArea',
-      parseAndValidate: createPv({
-        parser: (value) => parseOptionalString(value)
-      }),
-      defaultValue: 'vc-all'
+      parseAndValidate: parseAndValidateSet,
+      allowedValues: ['vc-58', 'vc-59', 'vc-60', 'vc-all'],
+      defaultValue: 'vc-all',
+      info: `The vice county area to visualize. This can be one of the following values: 
+      'vc-58', 'vc-59', 'vc-60' or 'vc-all'. 
+      Note that if a control block is linked to this visualisation, the area will be determined by 
+      the control block selection and this attribute will be ignored.`
     }),
     boundaries: createRule({
       key: 'boundaries',
       datasetName: 'visBoundaries',
-      parseAndValidate: createPv({
-        parser: parseBoolean
-      }),
-      defaultValue: false
+      parseAndValidate: parseAndValidateBoolean,
+      defaultValue: 'true',
+      info: `Whether to show boundaries on the map visualizations - Leaflet maps only,
+      the boundary is always displayed on the static map. This is a boolean value.`
     }),
     gridStatsType: createRule({
       key: 'gridStatsType',
       datasetName: 'visGridStatsType',
-      parseAndValidate: createPv({
-        parser: parseOptionalString,
-        validate: undefined,
-        messageBuilder: undefined
-      }),
-      defaultValue: undefined
+      parseAndValidate: parseAndValidateSet,
+      allowedValues: ['species', 'records', 'rarity', 'switch'],
+      defaultValue: 'species',
+      info: `The type of grid statistics to visualize. This can be one of the following values:
+      'species' - to visualize species counts,
+      'records' - to visualize record counts,
+      'rarity' - to visualize rarity scores,
+      'switch' - provide a control to switch between different grid statistics.`
     }),
     hectads: createRule({
       key: 'hectads',
       datasetName: 'visHectads',
-      parseAndValidate: createPv({
-        parser: parseBoolean,
-        validate: undefined,
-        messageBuilder: undefined
-      }),
-      defaultValue: true
+      parseAndValidate: parseAndValidateBoolean,
+      defaultValue: 'true',
+      info: `Whether to show hectad grid lines on the map visualizations. This is a boolean value.`
     }),
     mapType: createRule({
       key: 'mapType',
       datasetName: 'visMapType',
-      parseAndValidate: createPv({
-        parser: parseOptionalString,
-        messageBuilder: undefined
-      }),
-      defaultValue: 'static'
+      parseAndValidate: parseAndValidateSet,
+      allowedValues: ['static', 'leaflet', 'switch'],
+      defaultValue: 'static',
+      info: `The type of map to render. This can be one of the following values:
+      'static' - to render a classic atlas map,
+      'leaflet' - to render an interactive Leaflet map,
+      'switch' - provide a control to switch between different map types.`
     }),
     dotColour: createRule({
       key: 'dotColour',
       datasetName: 'visDotColour',
-      parseAndValidate: createPv({parser: parseOptionalString}),
-      defaultValue: ''
+      parseAndValidate: parseAndValidateString,
+      defaultValue: 'black',
+      info: `The colour of the dots on the map visualizations. 
+      This can be any valid CSS colour value.`
     }),
     transformation: createRule({
       key: 'transformation',
       datasetName: 'visTransformation',
-      parseAndValidate: createPv({
-        parser: parseOptionalString,
-        validate: undefined,
-        messageBuilder: undefined
-      }),
-      defaultValue: ''
+      parseAndValidate: parseAndValidateSet,
+      allowedValues: ['none', 'deciles', 'sqrt', 'cbrt', 'log10', 'log'],
+      defaultValue: 'none',
+      info: `The type of transformation to apply to the data. This can be one of the following values:
+      'none' - no transformation,
+      'deciles' - transform to deciles,
+      'sqrt' - square root transformation,
+      'cbrt' - cube root transformation,
+      'log10' - base-10 logarithm transformation,
+      'log' - logarithmic transformation.`
     }),
     dotShape: createRule({
       key: 'dotShape',
       datasetName: 'visDotShape',
-      parseAndValidate: createPv({
-        parser: parseOptionalString,
-        validate: undefined,
-        messageBuilder: undefined
-      }),
-      defaultValue: 'circle'
+      parseAndValidate: parseAndValidateSet,
+      allowedValues: ['circle', 'square'],
+      defaultValue: 'circle',
+      info: `The shape of the dots on the map visualizations. This can be one of the following values:
+      'circle'or 'square'.`
     }),
     taxonGroup: createRule({
       key: 'taxonGroup',
       datasetName: 'visTaxonGroup',
-      parseAndValidate: createPv({
-        parser: parseOptionalString,
-        validate: undefined,
-        messageBuilder: undefined
-      }),
-      defaultValue: ''
+      parseAndValidate: parseAndValidateString,
+      info: `The taxon group to filter the data by. This can be any valid taxon group identifier.
+      If not specified, data will not be filtered by taxon group. Note that if a control block is 
+      linked to this visualisation, the taxon group will be determined by the control block selection.`
     }),
     expand: createRule({
       key: 'expand',
       datasetName: 'visExpand',
-      parseAndValidate: createPv({
-        parser: parseOptionalBoolean,
-        validate: undefined,
-        messageBuilder: undefined
-      }),
-      defaultValue: undefined
+      parseAndValidate: parseAndValidateBoolean,
+      defaultValue: 'false',
+      info: `Whether to expand the visualization to fill its container. Can be 'true' or 'false'`
     }),
     width: createRule({
       key: 'width',
       datasetName: 'visWidth',
-      parseAndValidate: createPv({
-        parser: parseOptionalPositiveNumber$1,
-        validate: undefined,
-        messageBuilder: undefined
-      }),
-      defaultValue: undefined
+      parseAndValidate: parseAndValidatePositiveInteger,
+      info: `The width of the visualization in pixels. Must be a positive integer.`
     }),
     height: createRule({
       key: 'height',
       datasetName: 'visHeight',
-      parseAndValidate: createPv({
-        parser: parseOptionalPositiveNumber$1,
-        validate: undefined,
-        messageBuilder: undefined
-      }),
-      defaultValue: undefined
+      parseAndValidate: parseAndValidatePositiveInteger,
+      info: `The height of the visualization in pixels. Must be a positive integer.`
     }),
     topN: createRule({
       key: 'topN',
       datasetName: 'visTopN',
-      parseAndValidate: createPv({
-        parser: parseOptionalPositiveInteger,
-        validate: undefined,
-        messageBuilder: undefined
-      }),
-      defaultValue: 50
+      parseAndValidate: parseAndValidatePositiveInteger,
+      defaultValue: '50',
+      info: `The number of top species to display. Must be a positive integer.`
     }),
     year: createRule({
       key: 'year',
       datasetName: 'visYear',
       kind: 'required',
-      parseAndValidate: createPv({
-        parser: parseOptionalPositiveInteger,
-        validate: (value) => Number.isFinite(value),
-        messageBuilder: (rule) => `Missing required data attribute ${rule.datasetName}`
-      }),
-      defaultValue: undefined
+      parseAndValidate: parseAndValidatePositiveInteger,
+      defaultValue: '2000'
     }),
     startYear: createRule({
       key: 'startYear',
       datasetName: 'visStartYear',
-      parseAndValidate: createPv({
-        parser: parseOptionalPositiveInteger,
-        validate: undefined,
-        messageBuilder: undefined
-      }),
-      defaultValue: undefined
+      parseAndValidate: parseAndValidatePositiveInteger,
+      defaultValue: '2000'
     }),
     endYear: createRule({
       key: 'endYear',
       datasetName: 'visEndYear',
-      parseAndValidate: createPv({
-        parser: parseOptionalPositiveInteger,
-        validate: undefined,
-        messageBuilder: undefined
-      }),
-      defaultValue: undefined
+      parseAndValidate: parseAndValidatePositiveInteger,
+      defaultValue: '2000'
     })
   };
 
-  // Need to add comments to rule definitions to describe what they do or maybe add it to the rule
-  // structure so that it can be reported.
-
-  // Continue to check, from temporl year chart down, that all the necessary attributes 
-  // are included below.
-
-  // Continue reformatting above code to remove validate: undefined, messageBuilder: undefined
-  // from the rule definitions becase createPv puts them in.
 
   // Add the new data attributes for control-block.
 
-  // Enrich the start-date and end-date parsers to account for last-month, this-month, last-and-this-month
-  // and same for years.
+  // Enrich the year, start-year and end-year validation to include year-10 etc.
 
-  // Need to add control option to al the tables and check that they respond to VC and group.
+  // Need to add control option to all the tables and check that they respond to VC and group.
   // I'm sure they were responding to VC selection at one point but I think it was  
   // lost in the refactoring. Need to check that they respond to group selection too.
   // May be best to wait until API for species stats is available.
@@ -422,10 +431,10 @@ var Tanvis = (function (exports) {
     'control-block': ['area'],
     'species-map': ['taxonId', 'control', 'area', 'hectads', 'mapType', 'boundaries', 'dotShape', 'dotColour', 'transformation', 'dotShape', 'expand', 'width', 'height'],
     'grid-stats-map': ['gridStatsType', 'control', 'area', 'hectads', 'mapType', 'boundaries', 'dotShape', 'dotColour', 'transformation', 'expand', 'width', 'height'],
-    'temporal-year-chart': ['taxonId', 'linkedTable', 'startYear', 'endYear', 'control', 'expand', 'width', 'height'],
-    'new-species-table': ['startDate', 'endDate'],
-    'increasing-species-table': ['topN'],
-    'species-absent-since': ['year']
+    'temporal-year-chart': ['taxonId', 'linkedTable', 'startYear', 'endYear', 'area', 'control', 'expand', 'width', 'height'],
+    'new-species-table': ['startDate', 'endDate', 'area', 'control'],
+    'increasing-species-table': ['topN', 'area', 'control'],
+    'species-absent-since': ['year', 'area', 'control']
   };
 
   function getVisAttributeSchema(visType) {
