@@ -43,7 +43,7 @@ function infoString(value, rule) {
 }
 
 function requiredButMissing(value, dataset, config, element, rule) {
-  if (typeof(value) === 'undefined' || value === null || value === '') {
+  if ((typeof(value) === 'undefined' || value === null || value === '') && rule.kind === 'required') {
     return {  
       value: undefined,
       error: true,

@@ -54,7 +54,7 @@ var Tanvis = (function (exports) {
   }
 
   function requiredButMissing(value, dataset, config, element, rule) {
-    if (typeof(value) === 'undefined' || value === null || value === '') {
+    if ((typeof(value) === 'undefined' || value === null || value === '') && rule.kind === 'required') {
       return {  
         value: undefined,
         error: true,
@@ -420,6 +420,9 @@ var Tanvis = (function (exports) {
   // Add the new data attributes for control-block.
 
   // Enrich the year, start-year and end-year validation to include year-10 etc.
+
+  // Once I've done the above and tested all the rules, get AI to refactor the 
+  // unit tests.
 
   // Need to add control option to all the tables and check that they respond to VC and group.
   // I'm sure they were responding to VC selection at one point but I think it was  
