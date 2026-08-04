@@ -25,18 +25,17 @@
     <div
       class="tanvis"
       data-vis-type="temporal-year-chart"
-      data-vis-taxonid="NHMSYS0001234567"
-      data-vis-start-year="2016"
-      data-vis-end-year="2025"
+      data-vis-taxonid="NBNORG0000052153"
+      xdata-vis-start-year="2000"
+      xdata-vis-end-year="2025"
       data-vis-width="600"
       data-vis-expand="false"
     ></div>
 
     <script src="../dist/tanvis.iife.js"></script>
     <script type="module">
-      import { installTemporalYearChartMockApi } from './mock/temporalYearChartMockApi.js';
-
-      installTemporalYearChartMockApi({ baseUrl: '/api', latencyMs: 150 });
+      // import { installTemporalYearChartMockApi } from './mock/temporalYearChartMockApi.js';
+      // installTemporalYearChartMockApi({ baseUrl: '/api', latencyMs: 150 });
       window.Tanvis.init();
     </script>
   </body>

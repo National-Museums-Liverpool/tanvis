@@ -9,10 +9,10 @@ describe('getVisAttributeSchema', () => {
     const mapTypeRule = schema.rules.find((rule) => rule.key === 'mapType');
 
     expect(areaRule).toMatchObject({ defaultValue: 'vc-all' });
-    expect(hectadsRule).toMatchObject({ defaultValue: true });
+    expect(hectadsRule).toMatchObject({ defaultValue: 'true' });
     expect(mapTypeRule).toMatchObject({ defaultValue: 'static' });
-    expect(schema.rules.find((rule) => rule.key === 'dotColour')).toMatchObject({ defaultValue: '' });
-    expect(schema.rules.find((rule) => rule.key === 'transformation')).toMatchObject({ defaultValue: '' });
+    expect(schema.rules.find((rule) => rule.key === 'dotColour')).toMatchObject({ defaultValue: 'black' });
+    expect(schema.rules.find((rule) => rule.key === 'transformation')).toMatchObject({ defaultValue: 'none' });
     expect(schema.rules.find((rule) => rule.key === 'dotShape')).toMatchObject({ defaultValue: 'circle' });
     expect(schema.rules.map((rule) => rule.key)).toEqual(expect.arrayContaining(['control', 'taxonId', 'area', 'mapType']));
     expect(schema.rules.find((rule) => rule.key === 'species')).toBeUndefined();

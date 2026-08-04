@@ -61,20 +61,19 @@ function parseAndValidateBoolean (value, dataset, config, element, rule) {
   const rm = requiredButMissing(value, dataset, config, element, rule);
   if (rm) return rm;
 
-  // Set default if missing
   if (typeof(value) === 'undefined' || value === null || value === '') {
-    value = rule.defaultValue;
-  }  
-
-  // Values must be either 'true' or 'false'
-  if (value !== 'true' && value !== 'false') {
-    ret.error = true;
-    ret.message = infoString(value, rule);
-    return ret;
-  } else {
-    ret.value = value === 'true';
-    return ret;
+    // Set default if missing
+    ret.value = rule.defaultValue;
+  }  else {
+    // Values must be either 'true' or 'false'
+    if (value !== 'true' && value !== 'false') {
+      ret.error = true;
+      ret.message = infoString(value, rule);
+    } else {
+      ret.value = value === 'true';
+    }
   }
+  return ret;
 }
 
 function parseAndValidateString (value, dataset, config, element, rule) {
@@ -84,12 +83,12 @@ function parseAndValidateString (value, dataset, config, element, rule) {
   const rm = requiredButMissing(value, dataset, config, element, rule);
   if (rm) return rm;
 
-  // Set default if missing
   if (typeof(value) === 'undefined' || value === null || value === '') {
-    value = rule.defaultValue;
+    // Set default if missing
+    ret.value = rule.defaultValue;
+  } else {
+    ret.value = value;
   }
-
-  ret.value = value;
   return ret;
 }
 
@@ -100,20 +99,20 @@ function parseAndValidateSet(value, dataset, config, element, rule) {
   const rm = requiredButMissing(value, dataset, config, element, rule);
   if (rm) return rm;
 
-  // Set default if missing
+  
   if (typeof(value) === 'undefined' || value === null || value === '') {
-    value = rule.defaultValue;
+    // Set default if missing
+    ret.value = rule.defaultValue;
+  } else {
+    // Validate that the value is in the allowed set
+    console.log('rule', rule);
+    if (!rule.allowedValues?.includes(value)) {
+      ret.error = true;
+      ret.message = infoString(value, rule);
+      return ret;
+    }
+    ret.value = value;
   }
-
-  // Validate that the value is in the allowed set
-  console.log('rule', rule);
-  if (!rule.allowedValues?.includes(value)) {
-    ret.error = true;
-    ret.message = infoString(value, rule);
-    return ret;
-  }
-
-  ret.value = value;
   return ret;
 }
 
@@ -124,19 +123,50 @@ function parseAndValidatePositiveInteger(value, dataset, config, element, rule) 
   const rm = requiredButMissing(value, dataset, config, element, rule);
   if (rm) return rm;
 
+  if (typeof(value) === 'undefined' || value === null || value === '') {
+    // Set default if missing
+    ret.value = rule.defaultValue;
+  } else {
+    // Validate that the value is a positive integer
+    const parsed = Number(value);
+    if (!Number.isFinite(parsed) || parsed <= 0) {
+      ret.error = true;
+      ret.message = infoString(value, rule);
+      return ret;
+    }
+    ret.value = parsed;
+  }
+
+  return ret;
+}
+
+function parseAndValidateYear(value, dataset, config, element, rule) {
+  const ret = {value: undefined, error: undefined, message: undefined};
+
   // Set default if missing
   if (typeof(value) === 'undefined' || value === null || value === '') {
     value = rule.defaultValue;
-  }
-
-  const parsed = Number(value);
-  if (!Number.isFinite(parsed) || parsed <= 0) {
+  }  
+  // Validate and resolve the year
+  // - must run on default value in order to parse shorthand year 
+  // values like 'year-1' into a specific year
+  if (/^\d{4}$/.test(value)) {
+    const year = parseInt(value, 10);
+    if (year >= 1000 && year <= 3000) {
+      ret.value = value;
+    } else {
+      ret.error = true;
+      ret.message = infoString(value, rule);
+    }
+  } else if (/^year-\d+$/.test(value)) {
+    const n = parseInt(value.split('-')[1], 10);
+    const now = new Date();
+    now.setDate(1);
+    ret.value = `${now.getFullYear() - n}`;
+  } else {
     ret.error = true;
     ret.message = infoString(value, rule);
-    return ret;
   }
-
-  ret.value = parsed;
   return ret;
 }
 
@@ -177,6 +207,36 @@ const RULES = {
     info: `The id of a control block to link to this visualisation. 
       The visualisation will respond to selections made in that control.`
   }),
+  controlHide: createRule({
+    key: 'controlHide',
+    datasetName: 'visControlHide',
+    parseAndValidate: (value, dataset, config, element, rule) => {
+      const ret = {value: undefined, error: undefined, message: undefined};
+      
+      // Check if the value is required
+      const rm = requiredButMissing(value, dataset, config, element, rule);
+      if (rm) return rm;
+
+      if (typeof(value) === 'undefined' || value === null || value === '') {
+        // Set default if missing
+        ret.value = rule.defaultValue;
+      } else {
+        const allowedVals = new Set(['area', 'groups', 'name-type', 'species']);
+        const vals = value.split(/\s+/);
+        const hasInvalid = vals.some(v => !allowedVals.has(v));
+        if (hasInvalid) {
+          ret.error = true;
+          ret.message = infoString(value, rule);
+        } else {
+          ret.value = value;
+        }
+      }
+      return ret;
+    },
+    defaultValue: '',
+    info: `A space-separated list of control-block sections to hide. 
+      Allowed values are: area, groups, name-type, species.`
+  }),
   linkedTable: createRule({
     key: 'linkedTable',
     datasetName: 'visLinkedTable',
@@ -195,7 +255,6 @@ const RULES = {
   startDate: createRule({
     key: 'startDate',
     datasetName: 'visStartDate',
-    kind: 'required',
     parseAndValidate: (value, dataset, config, element, rule) => {
       const ret = {value: undefined, error: undefined, message: undefined};
 
@@ -204,7 +263,9 @@ const RULES = {
         value = rule.defaultValue;
       }  
 
-      // Validate and resolve the date
+      // Validate and resolve the date -
+      // must run on default value in order to parse shorthand date 
+      // values like 'month-1' or 'year-1' into a specific date.
       if (validateDate(value)) {
         ret.value = value;
       } else if (/^month-\d+$/.test(value)) {
@@ -243,7 +304,9 @@ const RULES = {
         value = rule.defaultValue;
       }      
 
-      // Validate and resolve the date
+      // Validate and resolve the date -
+      // must run on default value in order to parse shorthand date 
+      // values like 'month-1' or 'year-1' into a specific date.
       if (validateDate(value)) {
         ret.value = value;
       } else if (/^month-\d+$/.test(value)) {
@@ -349,7 +412,7 @@ const RULES = {
     allowedValues: ['circle', 'square'],
     defaultValue: 'circle',
     info: `The shape of the dots on the map visualizations. This can be one of the following values:
-      'circle'or 'square'.`
+      'circle' or 'square'.`
   }),
   taxonGroup: createRule({
     key: 'taxonGroup',
@@ -388,40 +451,39 @@ const RULES = {
   year: createRule({
     key: 'year',
     datasetName: 'visYear',
-    kind: 'required',
-    parseAndValidate: parseAndValidatePositiveInteger,
-    defaultValue: '2000'
+    parseAndValidate: parseAndValidateYear,
+    defaultValue: '2000',
+    info: `The year for which to draw data. This can be a specific year string of 
+      the format 'yyyy' or one of these relative year values: 'year-n', where n is
+      any integer, which resolves to the current year minus n years (e.g. year-0 is 
+      the current year, year-1 is the previous year, etc.).`
   }),
   startYear: createRule({
     key: 'startYear',
     datasetName: 'visStartYear',
-    parseAndValidate: parseAndValidatePositiveInteger,
-    defaultValue: '2000'
+    parseAndValidate: parseAndValidateYear,
+    defaultValue: '2000',
+    info: `The start year for the data. This can be a specific year string of 
+      the format 'yyyy' or one of these relative year values: 'year-n', where n is
+      any integer, which resolves to the current year minus n years (e.g. year-0 is 
+      the current year, year-1 is the previous year, etc.).`
   }),
   endYear: createRule({
     key: 'endYear',
     datasetName: 'visEndYear',
-    parseAndValidate: parseAndValidatePositiveInteger,
-    defaultValue: '2000'
+    parseAndValidate: parseAndValidateYear,
+    defaultValue: '2000',
+    info: `The end year for the data. This can be a specific year string of 
+      the format 'yyyy' or one of these relative year values: 'year-n', where n is
+      any integer, which resolves to the current year minus n years (e.g. year-0 is 
+      the current year, year-1 is the previous year, etc.).`
   })
 };
 
-
 // Add the new data attributes for control-block.
 
-// Enrich the year, start-year and end-year validation to include year-10 etc.
-
-// Once I've done the above and tested all the rules, get AI to refactor the 
-// unit tests.
-
-// Need to add control option to all the tables and check that they respond to VC and group.
-// I'm sure they were responding to VC selection at one point but I think it was  
-// lost in the refactoring. Need to check that they respond to group selection too.
-// May be best to wait until API for species stats is available.
-
-
 const VIS_TYPE_RULE_SETS = {
-  'control-block': ['area'],
+  'control-block': ['area', 'controlHide'],
   'species-map': ['taxonId', 'control', 'area', 'hectads', 'mapType', 'boundaries', 'dotShape', 'dotColour', 'transformation', 'dotShape', 'expand', 'width', 'height'],
   'grid-stats-map': ['gridStatsType', 'control', 'area', 'hectads', 'mapType', 'boundaries', 'dotShape', 'dotColour', 'transformation', 'expand', 'width', 'height'],
   'temporal-year-chart': ['taxonId', 'linkedTable', 'startYear', 'endYear', 'area', 'control', 'expand', 'width', 'height'],

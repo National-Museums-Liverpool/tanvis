@@ -21,10 +21,10 @@ describe('parseOptions', () => {
     expect(parseOptions(element).type).toBeUndefined();
   });
 
-  it('defaults boundaries to false when not supplied', () => {
+  it('defaults boundaries to true when not supplied', () => {
     const element = document.createElement('div');
 
-    expect(parseOptions(element).boundaries).toBe(false);
+    expect(parseOptions(element).boundaries).toBe('true');
   });
 
   it('parses boundaries true when supplied as true', () => {
@@ -37,7 +37,7 @@ describe('parseOptions', () => {
   it('defaults hectads to true when not supplied', () => {
     const element = document.createElement('div');
 
-    expect(parseOptions(element).hectads).toBe(true);
+    expect(parseOptions(element).hectads).toBe('true');
   });
 
   it('parses hectads false when supplied as false', () => {
@@ -47,12 +47,12 @@ describe('parseOptions', () => {
     expect(parseOptions(element).hectads).toBe(false);
   });
 
-  it('includes expand as undefined when not supplied', () => {
+  it('defaults expand to false when not supplied', () => {
     const element = document.createElement('div');
     const parsed = parseOptions(element);
 
     expect(parsed).toHaveProperty('expand');
-    expect(parsed.expand).toBeUndefined();
+    expect(parsed.expand).toBe('false');
   });
 
   it('parses expand true when supplied as true', () => {
@@ -148,8 +148,8 @@ describe('parseOptions', () => {
     expect(parseOptions(element)).toMatchObject({
       type: 'temporal-year-chart',
       taxonId: 'NHMSYS0001234567',
-      startYear: 1970,
-      endYear: 2024
+      startYear: '1970',
+      endYear: '2024'
     });
   });
 
@@ -171,7 +171,7 @@ describe('parseOptions', () => {
 
     expect(parseOptions(element)).toMatchObject({
       type: 'species-absent-since',
-      year: 2024
+      year: '2024'
     });
   });
 
@@ -181,8 +181,8 @@ describe('parseOptions', () => {
 
     expect(parseOptions(element)).toMatchObject({
       type: 'species-map',
-      dotColour: '',
-      transformation: '',
+      dotColour: 'black',
+      transformation: 'none',
       dotShape: 'circle'
     });
   });

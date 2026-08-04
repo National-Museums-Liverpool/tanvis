@@ -258,6 +258,61 @@ describe('control block species selector', () => {
     expect(String(fetchMock.mock.calls.at(-1)?.[0])).toContain('scientific_name%5Bcontains%5D=bee');
   });
 
+  it('hides requested control sections when data-vis-control-hide is set', async () => {
+    const element = document.createElement('div');
+    element.id = 'vc-control';
+    element.dataset.visControlHide = 'area groups name-type species';
+    document.body.appendChild(element);
+
+    const adapter = createControlBlockAdapter();
+    adapter.render(element, {
+      area: 'vc-58'
+    });
+
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    expect(element.querySelector('input[type="radio"][value="vc-58"]')).toBeNull();
+    expect(element.querySelector('select.tanvis-controls-select')).toBeNull();
+    expect(element.querySelector('input[type="radio"][value="scientific"]')).toBeNull();
+    expect(element.querySelector('input.tanvis-species-search-input')).toBeNull();
+  });
+
+  it('hides only the name-type toggle buttons when data-vis-control-hide includes name-type', async () => {
+    const element = document.createElement('div');
+    element.id = 'vc-control';
+    element.dataset.visControlHide = 'name-type';
+    document.body.appendChild(element);
+
+    const adapter = createControlBlockAdapter();
+    adapter.render(element, {
+      area: 'vc-58'
+    });
+
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    expect(element.querySelector('select.tanvis-controls-select')).not.toBeNull();
+    expect(element.querySelector('input[type="radio"][value="scientific"]')).toBeNull();
+    expect(element.querySelector('input[type="radio"][value="vernacular"]')).toBeNull();
+  });
+
+  it('hides only the groups selector when data-vis-control-hide includes groups', async () => {
+    const element = document.createElement('div');
+    element.id = 'vc-control';
+    element.dataset.visControlHide = 'groups';
+    document.body.appendChild(element);
+
+    const adapter = createControlBlockAdapter();
+    adapter.render(element, {
+      area: 'vc-58'
+    });
+
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    expect(element.querySelector('select.tanvis-controls-select')).toBeNull();
+    expect(element.querySelector('input[type="radio"][value="scientific"]')).not.toBeNull();
+    expect(element.querySelector('input[type="radio"][value="vernacular"]')).not.toBeNull();
+  });
+
   it('switches to the vernacular filter when the label mode is vernacular', async () => {
     const fetchMock = vi.spyOn(globalThis, 'fetch').mockImplementation(async (url) => {
       const requestUrl = typeof url === 'string' ? url : String(url);

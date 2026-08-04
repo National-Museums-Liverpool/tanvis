@@ -462,12 +462,19 @@ function createSpeciesNumberData(opacity = 1, options = {}) {
 
 function createRarityNumberData(opacity = 1, options = {}) {
   return new Promise(function (resolve) {
+
+    let recs = mapData.filter(r => r.rarity_score != 0).map(function (r) {
+      return {
+        gr: r.square,
+        id: r.square,
+        val: r.rarity_score,
+        caption: `${r.square}: ${r.rarity_score || 0} rarity score`
+      };
+    });
     const { dotColour = '', transformation = '', shape = 'circle' } = options || {};
     const resolvedTransform = transformation || '';
     const resolvedColourScale = dotColour || 'black';
-
-    // Temporary placeholder until the API exposes rarity values for each row.
-    const recs = [];
+    recs = resolveColours(recs, resolvedTransform, resolvedColourScale);
     resolve({ records: recs, size: 1, precision: 2000, shape, opacity });
   });
 }

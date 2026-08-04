@@ -10,7 +10,7 @@ const LABEL_MODE_OPTIONS = [
   { label: 'Vernacular', value: 'vernacular' }
 ];
 
-export function createTaxonGroupControls({ rootElement, apiBase, selectedValue = '', labelMode = 'scientific', loadToken, body }) {
+export function createTaxonGroupControls({ rootElement, apiBase, selectedValue = '', labelMode = 'scientific', loadToken, body, showSelector = true, showLabelMode = true }) {
   const targetBody = body || createControlsPanel({
     label: 'Taxon groups',
     ariaLabel: 'Toggle taxon group controls'
@@ -28,41 +28,50 @@ export function createTaxonGroupControls({ rootElement, apiBase, selectedValue =
 
   syncRootDataset();
 
-  const selectField = document.createElement('label');
-  selectField.className = 'tanvis-controls-field tanvis-controls-gap-top';
+  let selectField = null;
+  let select = null;
 
-  const select = document.createElement('select');
-  select.className = 'tanvis-controls-select';
-  select.disabled = true;
-  select.value = state.selectedValue;
+  if (showSelector) {
+    selectField = document.createElement('label');
+    selectField.className = 'tanvis-controls-field tanvis-controls-gap-top';
 
-  select.addEventListener('change', () => {
-    state.selectedValue = select.value;
-    syncRootDataset();
-    publishTaxonGroupChange();
-  });
+    select = document.createElement('select');
+    select.className = 'tanvis-controls-select';
+    select.disabled = true;
+    select.value = state.selectedValue;
 
-  selectField.appendChild(select);
-  targetBody.appendChild(selectField);
+    select.addEventListener('change', () => {
+      state.selectedValue = select.value;
+      syncRootDataset();
+      publishTaxonGroupChange();
+    });
 
-  const labelModeField = document.createElement('div');
-  labelModeField.className = 'tanvis-controls-field tanvis-controls-gap-top';
-  targetBody.appendChild(labelModeField);
+    selectField.appendChild(select);
+    targetBody.appendChild(selectField);
+  }
+
   const status = createVisStatusReporter(targetBody);
   status.showInfo('Loading taxon groups...');
 
-  const radioGroup = createRadioGroup({
-    name: `${rootElement?.id || 'tanvis'}-taxon-group-label-mode`,
-    selectedValue: state.labelMode,
-    items: LABEL_MODE_OPTIONS,
-    onChange: (value) => {
-      state.labelMode = value;
-      syncRootDataset();
-      renderOptions();
-    }
-  });
+  if (showLabelMode) {
+    const labelModeField = document.createElement('div');
+    labelModeField.className = 'tanvis-controls-field tanvis-controls-gap-top';
+    targetBody.appendChild(labelModeField);
 
-  labelModeField.appendChild(radioGroup);
+    const radioGroup = createRadioGroup({
+      name: `${rootElement?.id || 'tanvis'}-taxon-group-label-mode`,
+      selectedValue: state.labelMode,
+      items: LABEL_MODE_OPTIONS,
+      onChange: (value) => {
+        state.labelMode = value;
+        syncRootDataset();
+        renderOptions();
+      }
+    });
+
+    labelModeField.appendChild(radioGroup);
+  }
+
   renderOptions();
 
   fetchTaxonGroups(apiBase)
@@ -73,7 +82,9 @@ export function createTaxonGroupControls({ rootElement, apiBase, selectedValue =
 
       state.groups = groups;
       status.clear();
-      select.disabled = false;
+      if (select) {
+        select.disabled = false;
+      }
       renderOptions();
     })
     .catch((error) => {
@@ -84,13 +95,20 @@ export function createTaxonGroupControls({ rootElement, apiBase, selectedValue =
       state.groups = [];
       state.selectedValue = '';
       status.showError(`${normalizeErrorMessage(error, 'Unable to load taxon groups')}. Showing All groups only.`);
-      select.disabled = false;
+      if (select) {
+        select.disabled = false;
+      }
       renderOptions();
     });
 
   return targetBody;
 
   function renderOptions() {
+    if (!select) {
+      syncRootDataset();
+      return;
+    }
+
     const currentSelectedValue = state.selectedValue;
     select.innerHTML = '';
 

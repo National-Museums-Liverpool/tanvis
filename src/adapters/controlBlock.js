@@ -11,6 +11,8 @@ import { logApiRequest } from '../utils/apiRequest.js';
 const SPECIES_SEARCH_DEBOUNCE_MS = 300;
 const SPECIES_SEARCH_LIMIT = 10;
 
+const CONTROL_HIDE_TOKENS = new Set(['area', 'groups', 'name-type', 'species']);
+
 export function createControlBlockAdapter() {
   return {
     name: 'control-block',
@@ -20,6 +22,8 @@ export function createControlBlockAdapter() {
 
       clearElement(element);
 
+      const hiddenControls = parseHiddenControls(element?.dataset?.visControlHide);
+
       const { panel, body } = createControlsPanel({
         label: 'Data options',
         ariaLabel: 'Toggle data controls'
@@ -27,38 +31,60 @@ export function createControlBlockAdapter() {
       panel.dataset.tanvisControls = 'data-options';
       element.appendChild(panel);
 
-      createAreaControls({
-        element,
-        selectedValue: config.area,
-        body,
-        onAreaChange: (value) => {
-          publishControlEvent(element.id, {
-            type: 'area-change',
-            area: value
-          });
-        }
-      });
+      if (!hiddenControls.has('area')) {
+        createAreaControls({
+          element,
+          selectedValue: config.area,
+          body,
+          onAreaChange: (value) => {
+            publishControlEvent(element.id, {
+              type: 'area-change',
+              area: value
+            });
+          }
+        });
+      }
 
-      createTaxonGroupControls({
-        rootElement: element,
-        apiBase: resolveApiBase(),
-        body,
-        loadToken
-      });
+      if (!hiddenControls.has('groups') || !hiddenControls.has('name-type')) {
+        createTaxonGroupControls({
+          rootElement: element,
+          apiBase: resolveApiBase(),
+          body,
+          loadToken,
+          showSelector: !hiddenControls.has('groups'),
+          showLabelMode: !hiddenControls.has('name-type')
+        });
+      }
 
-      createSpeciesSelectorControl({
-        rootElement: element,
-        apiBase: resolveApiBase(),
-        body,
-        loadToken
-      });
+      if (!hiddenControls.has('species')) {
+        createSpeciesSelectorControl({
+          rootElement: element,
+          apiBase: resolveApiBase(),
+          body,
+          loadToken
+        });
+      }
 
-      publishControlEvent(element.id, {
-        type: 'area-change',
-        area: config.area
-      });
+      if (!hiddenControls.has('area')) {
+        publishControlEvent(element.id, {
+          type: 'area-change',
+          area: config.area
+        });
+      }
     }
   };
+}
+
+function parseHiddenControls(value) {
+  if (typeof value !== 'string') {
+    return new Set();
+  }
+
+  return new Set(
+    value.split(/\s+/)
+      .map((token) => token.trim())
+      .filter((token) => CONTROL_HIDE_TOKENS.has(token))
+  );
 }
 
 function createSpeciesSelectorControl({ rootElement, apiBase, body, loadToken }) {

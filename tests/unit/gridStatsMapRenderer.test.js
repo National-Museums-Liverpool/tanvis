@@ -198,7 +198,7 @@ describe('renderGridStatsMap', () => {
     expect(leafletMapCalls[0].mapTypesKey).toBe('grid-stats-records');
   });
 
-  it('includes a rarity option and resolves an empty payload for it', async () => {
+  it('includes a rarity option and resolves a rarity payload for it', async () => {
     const mapTypeHandlers = {};
 
     window.brcatlas = {
@@ -240,7 +240,13 @@ describe('renderGridStatsMap', () => {
 
     const payload = await mapTypeHandlers['grid-stats-rarity']();
 
-    expect(payload.records).toEqual([]);
+    expect(payload.records).toEqual([
+      expect.objectContaining({
+        gr: 'SJ58',
+        val: undefined,
+        colour: 'black'
+      })
+    ]);
   });
 
   it('uses host element dataset values for grid stats dot styling', async () => {

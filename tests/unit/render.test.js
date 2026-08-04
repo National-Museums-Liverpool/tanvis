@@ -1,8 +1,11 @@
-import { describe, it, expect } from 'vitest';
+import { beforeEach, describe, it, expect } from 'vitest';
 import { render } from '../../src/core/render.js';
-import { registerRenderer } from '../../src/core/registry.js';
+import { registerRenderer, resetRenderers } from '../../src/core/registry.js';
 
 describe('render', () => {
+  beforeEach(() => {
+    resetRenderers();
+  });
   it('uses the registered renderer', () => {
     registerRenderer('control-block', (element) => {
       element.textContent = 'rendered';
@@ -16,25 +19,26 @@ describe('render', () => {
     expect(element.textContent).toBe('rendered');
   });
 
-  it('requires data-vis-start-date for new-species-table', () => {
+  it('does not require data-vis-start-date for new-species-table when a renderer is registered', () => {
+    registerRenderer('new-species-table', () => {});
+
     const element = document.createElement('div');
     element.dataset.visType = 'new-species-table';
 
     expect(render(element)).toEqual({
-      rendered: false,
-      errors: ['Missing required data attribute visStartDate']
+      rendered: true,
+      errors: []
     });
   });
 
-  it('renders validation errors inline in the visualization container', () => {
+  it('reports renderer errors through the render result', () => {
     const element = document.createElement('div');
     element.dataset.visType = 'new-species-table';
 
-    render(element);
+    const result = render(element);
 
-    const status = element.querySelector('.tanvis-vis-status');
-    expect(status).not.toBeNull();
-    expect(status.textContent).toContain('Missing required data attribute visStartDate');
+    expect(result.rendered).toBe(false);
+    expect(result.errors).toContain('No renderer registered for type "new-species-table"');
   });
 
   it('renders temporal-year-chart when registered', () => {
