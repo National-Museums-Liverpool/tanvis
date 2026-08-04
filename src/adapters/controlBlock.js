@@ -11,7 +11,7 @@ import { logApiRequest } from '../utils/apiRequest.js';
 const SPECIES_SEARCH_DEBOUNCE_MS = 300;
 const SPECIES_SEARCH_LIMIT = 10;
 
-const CONTROL_HIDE_TOKENS = new Set(['area', 'groups', 'name-type', 'species']);
+const CONTROL_ELEMENT_TOKENS = new Set(['area', 'groups', 'name-type', 'species']);
 
 export function createControlBlockAdapter() {
   return {
@@ -22,7 +22,7 @@ export function createControlBlockAdapter() {
 
       clearElement(element);
 
-      const hiddenControls = parseHiddenControls(element?.dataset?.visControlHide);
+      const visibleControls = parseVisibleControls(config.controlElements ?? element?.dataset?.visControlElements);
 
       const { panel, body } = createControlsPanel({
         label: 'Data options',
@@ -31,7 +31,7 @@ export function createControlBlockAdapter() {
       panel.dataset.tanvisControls = 'data-options';
       element.appendChild(panel);
 
-      if (!hiddenControls.has('area')) {
+      if (visibleControls.has('area')) {
         createAreaControls({
           element,
           selectedValue: config.area,
@@ -45,18 +45,18 @@ export function createControlBlockAdapter() {
         });
       }
 
-      if (!hiddenControls.has('groups') || !hiddenControls.has('name-type')) {
+      if (visibleControls.has('groups') || visibleControls.has('name-type')) {
         createTaxonGroupControls({
           rootElement: element,
           apiBase: resolveApiBase(),
           body,
           loadToken,
-          showSelector: !hiddenControls.has('groups'),
-          showLabelMode: !hiddenControls.has('name-type')
+          showSelector: visibleControls.has('groups'),
+          showLabelMode: visibleControls.has('name-type')
         });
       }
 
-      if (!hiddenControls.has('species')) {
+      if (visibleControls.has('species')) {
         createSpeciesSelectorControl({
           rootElement: element,
           apiBase: resolveApiBase(),
@@ -65,7 +65,7 @@ export function createControlBlockAdapter() {
         });
       }
 
-      if (!hiddenControls.has('area')) {
+      if (visibleControls.has('area')) {
         publishControlEvent(element.id, {
           type: 'area-change',
           area: config.area
@@ -75,16 +75,16 @@ export function createControlBlockAdapter() {
   };
 }
 
-function parseHiddenControls(value) {
+function parseVisibleControls(value) {
   if (typeof value !== 'string') {
-    return new Set();
+    return new Set(['area', 'groups', 'name-type', 'species']);
   }
 
-  return new Set(
-    value.split(/\s+/)
-      .map((token) => token.trim())
-      .filter((token) => CONTROL_HIDE_TOKENS.has(token))
-  );
+  const controls = value.split(/\s+/)
+    .map((token) => token.trim())
+    .filter((token) => CONTROL_ELEMENT_TOKENS.has(token));
+
+  return new Set(controls.length > 0 ? controls : ['area', 'groups', 'name-type', 'species']);
 }
 
 function createSpeciesSelectorControl({ rootElement, apiBase, body, loadToken }) {

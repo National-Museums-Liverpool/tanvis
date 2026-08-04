@@ -207,35 +207,32 @@ const RULES = {
     info: `The id of a control block to link to this visualisation. 
       The visualisation will respond to selections made in that control.`
   }),
-  controlHide: createRule({
-    key: 'controlHide',
-    datasetName: 'visControlHide',
+  controlElements: createRule({
+    key: 'controlElements',
+    datasetName: 'visControlElements',
     parseAndValidate: (value, dataset, config, element, rule) => {
       const ret = {value: undefined, error: undefined, message: undefined};
-      
-      // Check if the value is required
+
       const rm = requiredButMissing(value, dataset, config, element, rule);
       if (rm) return rm;
 
       if (typeof(value) === 'undefined' || value === null || value === '') {
-        // Set default if missing
         ret.value = rule.defaultValue;
       } else {
         const allowedVals = new Set(['area', 'groups', 'name-type', 'species']);
-        const vals = value.split(/\s+/);
-        const hasInvalid = vals.some(v => !allowedVals.has(v));
+        const vals = value.split(/\s+/).map((token) => token.trim()).filter(Boolean);
+        const hasInvalid = vals.some((token) => !allowedVals.has(token));
         if (hasInvalid) {
           ret.error = true;
           ret.message = infoString(value, rule);
         } else {
-          ret.value = value;
+          ret.value = vals.join(' ');
         }
       }
       return ret;
     },
-    defaultValue: '',
-    info: `A space-separated list of control-block sections to hide. 
-      Allowed values are: area, groups, name-type, species.`
+    defaultValue: 'area groups name-type species',
+    info: `A space-separated list of control-block sections to show. Allowed values are: area, groups, name-type, species.`
   }),
   linkedTable: createRule({
     key: 'linkedTable',
@@ -483,7 +480,7 @@ const RULES = {
 // Add the new data attributes for control-block.
 
 const VIS_TYPE_RULE_SETS = {
-  'control-block': ['area', 'controlHide'],
+  'control-block': ['area', 'controlElements'],
   'species-map': ['taxonId', 'control', 'area', 'hectads', 'mapType', 'boundaries', 'dotShape', 'dotColour', 'transformation', 'dotShape', 'expand', 'width', 'height'],
   'grid-stats-map': ['gridStatsType', 'control', 'area', 'hectads', 'mapType', 'boundaries', 'dotShape', 'dotColour', 'transformation', 'expand', 'width', 'height'],
   'temporal-year-chart': ['taxonId', 'linkedTable', 'startYear', 'endYear', 'area', 'control', 'expand', 'width', 'height'],

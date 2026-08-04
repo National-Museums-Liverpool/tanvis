@@ -218,35 +218,32 @@ var Tanvis = (function (exports) {
       info: `The id of a control block to link to this visualisation. 
       The visualisation will respond to selections made in that control.`
     }),
-    controlHide: createRule({
-      key: 'controlHide',
-      datasetName: 'visControlHide',
+    controlElements: createRule({
+      key: 'controlElements',
+      datasetName: 'visControlElements',
       parseAndValidate: (value, dataset, config, element, rule) => {
         const ret = {value: undefined, error: undefined, message: undefined};
-        
-        // Check if the value is required
+
         const rm = requiredButMissing(value, dataset, config, element, rule);
         if (rm) return rm;
 
         if (typeof(value) === 'undefined' || value === null || value === '') {
-          // Set default if missing
           ret.value = rule.defaultValue;
         } else {
           const allowedVals = new Set(['area', 'groups', 'name-type', 'species']);
-          const vals = value.split(/\s+/);
-          const hasInvalid = vals.some(v => !allowedVals.has(v));
+          const vals = value.split(/\s+/).map((token) => token.trim()).filter(Boolean);
+          const hasInvalid = vals.some((token) => !allowedVals.has(token));
           if (hasInvalid) {
             ret.error = true;
             ret.message = infoString(value, rule);
           } else {
-            ret.value = value;
+            ret.value = vals.join(' ');
           }
         }
         return ret;
       },
-      defaultValue: '',
-      info: `A space-separated list of control-block sections to hide. 
-      Allowed values are: area, groups, name-type, species.`
+      defaultValue: 'area groups name-type species',
+      info: `A space-separated list of control-block sections to show. Allowed values are: area, groups, name-type, species.`
     }),
     linkedTable: createRule({
       key: 'linkedTable',
@@ -493,7 +490,7 @@ var Tanvis = (function (exports) {
   // Add the new data attributes for control-block.
 
   const VIS_TYPE_RULE_SETS = {
-    'control-block': ['area', 'controlHide'],
+    'control-block': ['area', 'controlElements'],
     'species-map': ['taxonId', 'control', 'area', 'hectads', 'mapType', 'boundaries', 'dotShape', 'dotColour', 'transformation', 'dotShape', 'expand', 'width', 'height'],
     'grid-stats-map': ['gridStatsType', 'control', 'area', 'hectads', 'mapType', 'boundaries', 'dotShape', 'dotColour', 'transformation', 'expand', 'width', 'height'],
     'temporal-year-chart': ['taxonId', 'linkedTable', 'startYear', 'endYear', 'area', 'control', 'expand', 'width', 'height'],
@@ -2046,7 +2043,7 @@ div[data-tanvis-controls="species-selector"] {
   const SPECIES_SEARCH_DEBOUNCE_MS = 300;
   const SPECIES_SEARCH_LIMIT = 10;
 
-  const CONTROL_HIDE_TOKENS = new Set(['area', 'groups', 'name-type', 'species']);
+  const CONTROL_ELEMENT_TOKENS = new Set(['area', 'groups', 'name-type', 'species']);
 
   function createControlBlockAdapter() {
     return {
@@ -2057,7 +2054,7 @@ div[data-tanvis-controls="species-selector"] {
 
         clearElement(element);
 
-        const hiddenControls = parseHiddenControls(element?.dataset?.visControlHide);
+        const visibleControls = parseVisibleControls(config.controlElements ?? element?.dataset?.visControlElements);
 
         const { panel, body } = createControlsPanel({
           label: 'Data options',
@@ -2066,7 +2063,7 @@ div[data-tanvis-controls="species-selector"] {
         panel.dataset.tanvisControls = 'data-options';
         element.appendChild(panel);
 
-        if (!hiddenControls.has('area')) {
+        if (visibleControls.has('area')) {
           createAreaControls({
             element,
             selectedValue: config.area,
@@ -2080,18 +2077,18 @@ div[data-tanvis-controls="species-selector"] {
           });
         }
 
-        if (!hiddenControls.has('groups') || !hiddenControls.has('name-type')) {
+        if (visibleControls.has('groups') || visibleControls.has('name-type')) {
           createTaxonGroupControls({
             rootElement: element,
             apiBase: resolveApiBase(),
             body,
             loadToken,
-            showSelector: !hiddenControls.has('groups'),
-            showLabelMode: !hiddenControls.has('name-type')
+            showSelector: visibleControls.has('groups'),
+            showLabelMode: visibleControls.has('name-type')
           });
         }
 
-        if (!hiddenControls.has('species')) {
+        if (visibleControls.has('species')) {
           createSpeciesSelectorControl({
             rootElement: element,
             apiBase: resolveApiBase(),
@@ -2100,7 +2097,7 @@ div[data-tanvis-controls="species-selector"] {
           });
         }
 
-        if (!hiddenControls.has('area')) {
+        if (visibleControls.has('area')) {
           publishControlEvent(element.id, {
             type: 'area-change',
             area: config.area
@@ -2110,16 +2107,16 @@ div[data-tanvis-controls="species-selector"] {
     };
   }
 
-  function parseHiddenControls(value) {
+  function parseVisibleControls(value) {
     if (typeof value !== 'string') {
-      return new Set();
+      return new Set(['area', 'groups', 'name-type', 'species']);
     }
 
-    return new Set(
-      value.split(/\s+/)
-        .map((token) => token.trim())
-        .filter((token) => CONTROL_HIDE_TOKENS.has(token))
-    );
+    const controls = value.split(/\s+/)
+      .map((token) => token.trim())
+      .filter((token) => CONTROL_ELEMENT_TOKENS.has(token));
+
+    return new Set(controls.length > 0 ? controls : ['area', 'groups', 'name-type', 'species']);
   }
 
   function createSpeciesSelectorControl({ rootElement, apiBase, body, loadToken }) {

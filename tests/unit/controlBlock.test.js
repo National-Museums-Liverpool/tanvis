@@ -258,10 +258,10 @@ describe('control block species selector', () => {
     expect(String(fetchMock.mock.calls.at(-1)?.[0])).toContain('scientific_name%5Bcontains%5D=bee');
   });
 
-  it('hides requested control sections when data-vis-control-hide is set', async () => {
+  it('shows only the requested control sections when data-vis-control-elements is set', async () => {
     const element = document.createElement('div');
     element.id = 'vc-control';
-    element.dataset.visControlHide = 'area groups name-type species';
+    element.dataset.visControlElements = 'area';
     document.body.appendChild(element);
 
     const adapter = createControlBlockAdapter();
@@ -271,16 +271,16 @@ describe('control block species selector', () => {
 
     await new Promise((resolve) => setTimeout(resolve, 0));
 
-    expect(element.querySelector('input[type="radio"][value="vc-58"]')).toBeNull();
+    expect(element.querySelector('input[type="radio"][value="vc-58"]')).not.toBeNull();
     expect(element.querySelector('select.tanvis-controls-select')).toBeNull();
     expect(element.querySelector('input[type="radio"][value="scientific"]')).toBeNull();
     expect(element.querySelector('input.tanvis-species-search-input')).toBeNull();
   });
 
-  it('hides only the name-type toggle buttons when data-vis-control-hide includes name-type', async () => {
+  it('hides only the name-type toggle buttons when data-vis-control-elements omits name-type', async () => {
     const element = document.createElement('div');
     element.id = 'vc-control';
-    element.dataset.visControlHide = 'name-type';
+    element.dataset.visControlElements = 'area groups species';
     document.body.appendChild(element);
 
     const adapter = createControlBlockAdapter();
@@ -295,10 +295,10 @@ describe('control block species selector', () => {
     expect(element.querySelector('input[type="radio"][value="vernacular"]')).toBeNull();
   });
 
-  it('hides only the groups selector when data-vis-control-hide includes groups', async () => {
+  it('hides only the groups selector when data-vis-control-elements omits groups', async () => {
     const element = document.createElement('div');
     element.id = 'vc-control';
-    element.dataset.visControlHide = 'groups';
+    element.dataset.visControlElements = 'area name-type species';
     document.body.appendChild(element);
 
     const adapter = createControlBlockAdapter();
