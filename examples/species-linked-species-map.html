@@ -28,26 +28,34 @@
     <p>This renders a species map linked to a species table.</p>
 
     <div
-      id="vc-control"
-      class="tanvis"
-      data-vis-type="control-block"
-      data-vis-area="vc-all"
+        id="my-new-species-table"
+        class="tanvis"
+        data-vis-type="new-species-table"
+        data-vis-start-date="2025-01-01"
+        data-vis-language="vernacular"
+    ></div>
+
+    <div  
+        id="my-increasing-species-table"
+        class="tanvis"
+        data-vis-type="increasing-species-table"
+        data-vis-top-n="30"
+        data-vis-language="vernacular"
     ></div>
 
     <div
-      id="my-new-species-table"
+      id="absent-since-table"
       class="tanvis"
-      data-vis-start-date="2025-01-01"
-      data-vis-type="new-species-table"
-      data-vis-top-n="25"
+      data-vis-type="species-absent-since"
+      data-vis-year="2021"
+      data-vis-area="vc-59"
       data-vis-control="vc-control"
     ></div>
 
     <div
       class="tanvis"
       data-vis-type="species-map"
-      data-vis-taxonid="NBNORG0000052153"
-      data-vis-linked-table="my-new-species-table"
+      data-vis-linked-table="absent-since-table"
       data-vis-map-type="switch"
       data-vis-control="vc-control"
       data-vis-width="500"
@@ -62,9 +70,8 @@
     <script src="../dist/tanvis.iife.js"></script>
     <script type="module">
 
-      import { installSpeciesStatsMockApi } from './mock/speciesStatsMockApi.js';
-
-      installSpeciesStatsMockApi({ baseUrl: '/api', latencyMs: 150 });
+      // import { installSpeciesStatsMockApi } from './mock/speciesStatsMockApi.js';
+      // installSpeciesStatsMockApi({ baseUrl: '/api', latencyMs: 150 });
 
       window.Tanvis.init();
     </script>

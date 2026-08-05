@@ -178,6 +178,17 @@ describe('parseOptions', () => {
     });
   });
 
+  it('reads data-vis-linked-table for species-map', () => {
+    const element = document.createElement('div');
+    element.dataset.visType = 'species-map';
+    element.dataset.visLinkedTable = 'my-new-species-table';
+
+    expect(parseOptions(element)).toMatchObject({
+      type: 'species-map',
+      linkedTable: 'my-new-species-table'
+    });
+  });
+
   it('reads data-vis-year for species-absent-since', () => {
     const element = document.createElement('div');
     element.dataset.visType = 'species-absent-since';
