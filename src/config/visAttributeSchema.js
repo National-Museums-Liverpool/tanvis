@@ -262,6 +262,12 @@ const RULES = {
     info: `The taxon ID of the species to visualize. This is used to 
       fetch data for the visualization.`
   }),
+  groupId: createRule({
+    key: 'groupId',
+    datasetName: 'visGroupid',
+    parseAndValidate: parseAndValidateString,
+    info: `The taxon group ID to filter the data by or initialise the control block.`
+  }),
   startDate: createRule({
     key: 'startDate',
     datasetName: 'visStartDate',
@@ -514,13 +520,13 @@ const RULES = {
 // Add the new data attributes for control-block.
 
 const VIS_TYPE_RULE_SETS = {
-  'control-block': ['area', 'controlElements', 'showDataOptsToggle', 'showDataOptsExpanded'],
+  'control-block': ['area', 'groupId', 'controlElements', 'showDataOptsToggle', 'showDataOptsExpanded'],
   'species-map': ['taxonId', 'control', 'area', 'hectads', 'mapType', 'boundaries', 'dotShape', 'dotColour', 'transformation', 'dotShape', 'expand', 'width', 'height'],
   'grid-stats-map': ['gridStatsType', 'control', 'area', 'hectads', 'mapType', 'boundaries', 'dotShape', 'dotColour', 'transformation', 'expand', 'width', 'height'],
   'temporal-year-chart': ['taxonId', 'linkedTable', 'startYear', 'endYear', 'area', 'control', 'expand', 'width', 'height'],
-  'new-species-table': ['startDate', 'endDate', 'area', 'control', 'pageSize'],
-  'increasing-species-table': ['topN', 'area', 'control', 'pageSize'],
-  'species-absent-since': ['year', 'area', 'control', 'pageSize']
+  'new-species-table': ['startDate', 'endDate', 'area', 'groupId', 'control', 'pageSize'],
+  'increasing-species-table': ['topN', 'area', 'groupId', 'control', 'pageSize'],
+  'species-absent-since': ['year', 'area', 'groupId', 'control', 'pageSize']
 };
 
 export function getVisAttributeSchema(visType) {

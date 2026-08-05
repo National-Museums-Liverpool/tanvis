@@ -89,6 +89,41 @@ describe('control block species selector', () => {
     expect(selectedSpeciesId).toBe('ABC123');
   });
 
+  it('initialises the groups selector from the control-block groupId when provided', async () => {
+    const fetchMock = vi.spyOn(globalThis, 'fetch').mockImplementation(async (url) => {
+      const requestUrl = typeof url === 'string' ? url : String(url);
+
+      if (requestUrl.includes('taxon-groups')) {
+        return {
+          ok: true,
+          json: async () => ({ data: [{ title: 'Bees', external_key: 'bees' }, { title: 'Flies', external_key: 'diptera' }] })
+        };
+      }
+
+      return {
+        ok: true,
+        json: async () => ({ data: [] })
+      };
+    });
+
+    const element = document.createElement('div');
+    element.id = 'vc-control-group-id';
+    document.body.appendChild(element);
+
+    const adapter = createControlBlockAdapter();
+    adapter.render(element, {
+      area: 'vc-58',
+      groupId: 'diptera'
+    });
+
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    const select = element.querySelector('select.tanvis-controls-select');
+    expect(select?.value).toBe('diptera');
+    expect(element.dataset.visTaxonGroup).toBe('diptera');
+    expect(fetchMock).toHaveBeenCalled();
+  });
+
   it('restricts taxa search results to the selected taxon group', async () => {
     const fetchMock = vi.spyOn(globalThis, 'fetch').mockImplementation(async (url) => {
       const requestUrl = typeof url === 'string' ? url : String(url);

@@ -12,7 +12,8 @@ const LABEL_MODE_OPTIONS = [
 ];
 
 export function createTaxonGroupControls({ rootElement, apiBase, selectedValue = '', labelMode = 'scientific', loadToken, body, showSelector = true, showLabelMode = true }) {
-  const initialSelectedValue = rootElement?.dataset?.visTaxonGroup || selectedValue || '';
+  const initialGroupIdFromDataset = rootElement?.dataset?.visGroupid || '';
+  const initialSelectedValue = selectedValue || initialGroupIdFromDataset || rootElement?.dataset?.visTaxonGroup || '';
   const initialLabelMode = rootElement?.dataset?.visTaxonGroupLabelMode || labelMode || 'scientific';
 
   const targetBody = body || createControlsPanel({

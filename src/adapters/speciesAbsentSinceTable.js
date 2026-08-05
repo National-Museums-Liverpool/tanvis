@@ -420,12 +420,19 @@ function getConfiguredPageSize(config) {
 }
 
 function getEffectiveTaxonGroup(config) {
-  if (!config.control || typeof document === 'undefined') {
-    return '';
+  if (typeof document === 'undefined') {
+    return config?.groupId || '';
   }
 
-  const controlElement = document.getElementById(config.control);
-  return controlElement?.dataset?.visTaxonGroup || '';
+  const controlElement = config.control ? document.getElementById(config.control) : null;
+  if (controlElement && Object.prototype.hasOwnProperty.call(controlElement.dataset, 'visTaxonGroup')) {
+    const controlGroupValue = controlElement.dataset.visTaxonGroup || '';
+    if (controlGroupValue) {
+      return controlGroupValue;
+    }
+  }
+
+  return config?.groupId || '';
 }
 
 function getEffectiveLabelMode(config, fallbackMode) {

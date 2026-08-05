@@ -86,6 +86,32 @@ describe('renderIncreasingSpeciesTable', () => {
     expect(String(fetchMock.mock.calls[0][0])).toContain('offset=0');
   });
 
+  it('uses the table adapter groupId to filter requests when no control-block value is present', async () => {
+    window.Tabulator = function Tabulator(container, options) {
+      container.dataset.tabulatorMounted = 'true';
+      void options.ajaxRequestFunc('custom_handler', {}, { page: 1, size: 10 });
+      return {
+        on() {}
+      };
+    };
+
+    const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue({
+      ok: true,
+      json: async () => ({ data: [] })
+    });
+
+    const element = document.createElement('div');
+    renderIncreasingSpeciesTable(element, {
+      type: 'increasing-species-table',
+      topN: 10,
+      groupId: 'diptera'
+    });
+
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    expect(String(fetchMock.mock.calls[0][0])).toContain('taxon_group__external_key%5Beq%5D=diptera');
+  });
+
   it('refetches with a taxon-group filter when the subscribed control changes group', async () => {
     window.Tabulator = function Tabulator(container, options) {
       container.dataset.tabulatorMounted = 'true';
@@ -126,6 +152,39 @@ describe('renderIncreasingSpeciesTable', () => {
     expect(String(fetchMock.mock.calls[1][0])).toContain('taxon_group__external_key%5Beq%5D=diptera');
     expect(String(fetchMock.mock.calls[1][0])).toContain('include=taxon');
     expect(String(fetchMock.mock.calls[1][0])).toContain('sort=-occurrences_count');
+  });
+
+  it('keeps the table adapter groupId when the control block is at the default all-groups value', async () => {
+    window.Tabulator = function Tabulator(container, options) {
+      container.dataset.tabulatorMounted = 'true';
+      void options.ajaxRequestFunc('custom_handler', {}, { page: 1, size: 10 });
+      return {
+        on() {}
+      };
+    };
+
+    const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue({
+      ok: true,
+      json: async () => ({ data: [] })
+    });
+
+    const controlElement = document.createElement('div');
+    controlElement.id = 'vc-control-increasing-all-groups';
+    controlElement.dataset.visArea = 'vc-all';
+    controlElement.dataset.visTaxonGroup = '';
+    document.body.appendChild(controlElement);
+
+    const element = document.createElement('div');
+    renderIncreasingSpeciesTable(element, {
+      type: 'increasing-species-table',
+      topN: 10,
+      control: 'vc-control-increasing-all-groups',
+      groupId: 'diptera'
+    });
+
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    expect(String(fetchMock.mock.calls[0][0])).toContain('taxon_group__external_key%5Beq%5D=diptera');
   });
 
   it('filters taxon-stats requests by the selected VC through higher_geography_identifier', async () => {

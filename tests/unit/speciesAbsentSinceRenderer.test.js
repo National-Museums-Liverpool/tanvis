@@ -195,6 +195,32 @@ describe('renderSpeciesAbsentSince', () => {
     controlElement.remove();
   });
 
+  it('uses the table adapter groupId to filter requests when no control-block value is present', async () => {
+    window.Tabulator = function Tabulator(container, options) {
+      container.dataset.tabulatorMounted = 'true';
+      void options.ajaxRequestFunc('custom_handler', {}, { page: 1, size: 10 });
+      return {
+        on() {}
+      };
+    };
+
+    const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue({
+      ok: true,
+      json: async () => ({ data: [] })
+    });
+
+    const element = document.createElement('div');
+    renderSpeciesAbsentSince(element, {
+      type: 'species-absent-since',
+      year: 2024,
+      groupId: 'diptera'
+    });
+
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    expect(String(fetchMock.mock.calls[0][0])).toContain('taxon_group__external_key%5Beq%5D=diptera');
+  });
+
   it('includes control-block taxon-group and refetches when the group changes', async () => {
     window.Tabulator = function Tabulator(container, options) {
       container.dataset.tabulatorMounted = 'true';
@@ -235,6 +261,39 @@ describe('renderSpeciesAbsentSince', () => {
     expect(fetchMock).toHaveBeenCalledTimes(2);
     expect(String(fetchMock.mock.calls[1][0])).toContain('taxon_group__external_key%5Beq%5D=diptera');
     expect(String(fetchMock.mock.calls[1][0])).toContain('include=taxon');
+  });
+
+  it('keeps the table adapter groupId when the control block is at the default all-groups value', async () => {
+    window.Tabulator = function Tabulator(container, options) {
+      container.dataset.tabulatorMounted = 'true';
+      void options.ajaxRequestFunc('custom_handler', {}, { page: 1, size: 10 });
+      return {
+        on() {}
+      };
+    };
+
+    const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue({
+      ok: true,
+      json: async () => ({ data: [] })
+    });
+
+    const controlElement = document.createElement('div');
+    controlElement.id = 'vc-control-species-absent-all-groups';
+    controlElement.dataset.visArea = 'vc-all';
+    controlElement.dataset.visTaxonGroup = '';
+    document.body.appendChild(controlElement);
+
+    const element = document.createElement('div');
+    renderSpeciesAbsentSince(element, {
+      type: 'species-absent-since',
+      year: 2024,
+      control: 'vc-control-species-absent-all-groups',
+      groupId: 'diptera'
+    });
+
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    expect(String(fetchMock.mock.calls[0][0])).toContain('taxon_group__external_key%5Beq%5D=diptera');
   });
 
   it('filters taxon-stats requests by the selected VC through higher_geography_identifier', async () => {

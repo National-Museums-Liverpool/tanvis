@@ -144,6 +144,27 @@ describe('renderNewSpeciesTable', () => {
     expect(element.firstElementChild?.classList.contains('tanvis-vis-status')).toBe(true);
   });
 
+  it('uses the table adapter groupId to filter requests when no control-block value is present', async () => {
+    window.Tabulator = createMockTabulator();
+
+    const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue({
+      ok: true,
+      json: async () => ({ data: [] })
+    });
+
+    const element = document.createElement('div');
+    renderNewSpeciesTable(element, {
+      type: 'new-species-table',
+      startDate: '2025-01-01',
+      endDate: '2025-12-31',
+      groupId: 'diptera'
+    });
+
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    expect(String(fetchMock.mock.calls[0][0])).toContain('taxon_group__external_key%5Beq%5D=diptera');
+  });
+
   it('includes the control-block taxon-group filter when a group is selected', async () => {
     window.Tabulator = createMockTabulator();
 
@@ -171,6 +192,34 @@ describe('renderNewSpeciesTable', () => {
     expect(fetchMock).toHaveBeenCalledTimes(1);
     expect(String(fetchMock.mock.calls[0][0])).toContain('taxon_group__external_key%5Beq%5D=diptera');
     expect(String(fetchMock.mock.calls[0][0])).toContain('include=taxon');
+  });
+
+  it('keeps the table adapter groupId when the control block is at the default all-groups value', async () => {
+    window.Tabulator = createMockTabulator();
+
+    const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue({
+      ok: true,
+      json: async () => ({ data: [] })
+    });
+
+    const controlElement = document.createElement('div');
+    controlElement.id = 'vc-control-new-species-all-groups';
+    controlElement.dataset.visArea = 'vc-all';
+    controlElement.dataset.visTaxonGroup = '';
+    document.body.appendChild(controlElement);
+
+    const element = document.createElement('div');
+    renderNewSpeciesTable(element, {
+      type: 'new-species-table',
+      startDate: '2025-01-01',
+      endDate: '2025-12-31',
+      control: 'vc-control-new-species-all-groups',
+      groupId: 'diptera'
+    });
+
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    expect(String(fetchMock.mock.calls[0][0])).toContain('taxon_group__external_key%5Beq%5D=diptera');
   });
 
   it('filters taxon-stats requests by the selected VC through higher_geography_identifier', async () => {

@@ -273,6 +273,12 @@ var Tanvis = (function (exports) {
       info: `The taxon ID of the species to visualize. This is used to 
       fetch data for the visualization.`
     }),
+    groupId: createRule({
+      key: 'groupId',
+      datasetName: 'visGroupid',
+      parseAndValidate: parseAndValidateString,
+      info: `The taxon group ID to filter the data by or initialise the control block.`
+    }),
     startDate: createRule({
       key: 'startDate',
       datasetName: 'visStartDate',
@@ -524,13 +530,13 @@ var Tanvis = (function (exports) {
   // Add the new data attributes for control-block.
 
   const VIS_TYPE_RULE_SETS = {
-    'control-block': ['area', 'controlElements', 'showDataOptsToggle', 'showDataOptsExpanded'],
+    'control-block': ['area', 'groupId', 'controlElements', 'showDataOptsToggle', 'showDataOptsExpanded'],
     'species-map': ['taxonId', 'control', 'area', 'hectads', 'mapType', 'boundaries', 'dotShape', 'dotColour', 'transformation', 'dotShape', 'expand', 'width', 'height'],
     'grid-stats-map': ['gridStatsType', 'control', 'area', 'hectads', 'mapType', 'boundaries', 'dotShape', 'dotColour', 'transformation', 'expand', 'width', 'height'],
     'temporal-year-chart': ['taxonId', 'linkedTable', 'startYear', 'endYear', 'area', 'control', 'expand', 'width', 'height'],
-    'new-species-table': ['startDate', 'endDate', 'area', 'control', 'pageSize'],
-    'increasing-species-table': ['topN', 'area', 'control', 'pageSize'],
-    'species-absent-since': ['year', 'area', 'control', 'pageSize']
+    'new-species-table': ['startDate', 'endDate', 'area', 'groupId', 'control', 'pageSize'],
+    'increasing-species-table': ['topN', 'area', 'groupId', 'control', 'pageSize'],
+    'species-absent-since': ['year', 'area', 'groupId', 'control', 'pageSize']
   };
 
   function getVisAttributeSchema(visType) {
@@ -2001,7 +2007,8 @@ div[data-tanvis-controls="species-selector"] {
   ];
 
   function createTaxonGroupControls({ rootElement, apiBase, selectedValue = '', labelMode = 'scientific', loadToken, body, showSelector = true, showLabelMode = true }) {
-    const initialSelectedValue = rootElement?.dataset?.visTaxonGroup || selectedValue || '';
+    const initialGroupIdFromDataset = rootElement?.dataset?.visGroupid || '';
+    const initialSelectedValue = selectedValue || initialGroupIdFromDataset || rootElement?.dataset?.visTaxonGroup || '';
     const initialLabelMode = rootElement?.dataset?.visTaxonGroupLabelMode || labelMode || 'scientific';
 
     const targetBody = body || createControlsPanel({
@@ -2238,6 +2245,7 @@ div[data-tanvis-controls="species-selector"] {
     return {
       name: 'control-block',
       render(element, config) {
+
         const loadToken = (element.__tanvisControlBlockLoadToken || 0) + 1;
         element.__tanvisControlBlockLoadToken = loadToken;
 
@@ -2269,9 +2277,11 @@ div[data-tanvis-controls="species-selector"] {
         }
 
         if (visibleControls.has('groups') || visibleControls.has('name-type')) {
+         
           createTaxonGroupControls({
             rootElement: element,
             apiBase: resolveApiBase(),
+            selectedValue: config.groupId || '',
             body,
             loadToken,
             showSelector: visibleControls.has('groups'),
@@ -2986,12 +2996,19 @@ div[data-tanvis-controls="species-selector"] {
   }
 
   function getEffectiveTaxonGroup$3(config) {
-    if (!config.control || typeof document === 'undefined') {
-      return '';
+    if (typeof document === 'undefined') {
+      return config?.groupId || '';
     }
 
-    const controlElement = document.getElementById(config.control);
-    return controlElement?.dataset?.visTaxonGroup || '';
+    const controlElement = config.control ? document.getElementById(config.control) : null;
+    if (controlElement && Object.prototype.hasOwnProperty.call(controlElement.dataset, 'visTaxonGroup')) {
+      const controlGroupValue = controlElement.dataset.visTaxonGroup || '';
+      if (controlGroupValue) {
+        return controlGroupValue;
+      }
+    }
+
+    return config?.groupId || '';
   }
 
   function getConfiguredPageSize$2(config) {
@@ -3460,12 +3477,19 @@ div[data-tanvis-controls="species-selector"] {
   }
 
   function getEffectiveTaxonGroup$2(config) {
-    if (!config.control || typeof document === 'undefined') {
-      return '';
+    if (typeof document === 'undefined') {
+      return config?.groupId || '';
     }
 
-    const controlElement = document.getElementById(config.control);
-    return controlElement?.dataset?.visTaxonGroup || '';
+    const controlElement = config.control ? document.getElementById(config.control) : null;
+    if (controlElement && Object.prototype.hasOwnProperty.call(controlElement.dataset, 'visTaxonGroup')) {
+      const controlGroupValue = controlElement.dataset.visTaxonGroup || '';
+      if (controlGroupValue) {
+        return controlGroupValue;
+      }
+    }
+
+    return config?.groupId || '';
   }
 
   function getConfiguredPageSize$1(config) {
@@ -3915,12 +3939,19 @@ div[data-tanvis-controls="species-selector"] {
   }
 
   function getEffectiveTaxonGroup$1(config) {
-    if (!config.control || typeof document === 'undefined') {
-      return '';
+    if (typeof document === 'undefined') {
+      return config?.groupId || '';
     }
 
-    const controlElement = document.getElementById(config.control);
-    return controlElement?.dataset?.visTaxonGroup || '';
+    const controlElement = config.control ? document.getElementById(config.control) : null;
+    if (controlElement && Object.prototype.hasOwnProperty.call(controlElement.dataset, 'visTaxonGroup')) {
+      const controlGroupValue = controlElement.dataset.visTaxonGroup || '';
+      if (controlGroupValue) {
+        return controlGroupValue;
+      }
+    }
+
+    return config?.groupId || '';
   }
 
   function getEffectiveLabelMode(config, fallbackMode) {

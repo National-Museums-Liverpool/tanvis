@@ -17,6 +17,7 @@ export function createControlBlockAdapter() {
   return {
     name: 'control-block',
     render(element, config) {
+
       const loadToken = (element.__tanvisControlBlockLoadToken || 0) + 1;
       element.__tanvisControlBlockLoadToken = loadToken;
 
@@ -48,9 +49,11 @@ export function createControlBlockAdapter() {
       }
 
       if (visibleControls.has('groups') || visibleControls.has('name-type')) {
+       
         createTaxonGroupControls({
           rootElement: element,
           apiBase: resolveApiBase(),
+          selectedValue: config.groupId || '',
           body,
           loadToken,
           showSelector: visibleControls.has('groups'),
