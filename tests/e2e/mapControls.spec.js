@@ -73,7 +73,7 @@ test('control-block drives map area changes', async ({ page }) => {
   await page.getByLabel('vc59').check();
 
   await expect(page.getByLabel('vc59')).toBeChecked();
-  await expect(page.locator('.tanvis[data-vis-type="species-map"]')).toHaveAttribute('data-vis-area', 'vc-59');
+  await expect(page.locator('.tanvis[data-vis-type="species-map"]')).toHaveAttribute('data-vis-area', '59');
 
   const calls = await page.evaluate(() => ({
     svgMapCalls: window.__svgMapCalls,
