@@ -70,6 +70,7 @@ export function createTaxonGroupControls({ rootElement, apiBase, selectedValue =
         state.labelMode = value;
         syncRootDataset();
         renderOptions();
+        publishNameLanguageChange();
       }
     });
 
@@ -160,6 +161,17 @@ export function createTaxonGroupControls({ rootElement, apiBase, selectedValue =
     publishControlEvent(rootElement.id, {
       type: 'taxon-group-change',
       taxonGroup: state.selectedValue
+    });
+  }
+
+  function publishNameLanguageChange() {
+    if (!rootElement?.id) {
+      return;
+    }
+
+    publishControlEvent(rootElement.id, {
+      type: 'name-language-change',
+      labelMode: state.labelMode
     });
   }
 

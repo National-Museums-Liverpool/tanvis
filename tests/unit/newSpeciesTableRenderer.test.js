@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import { renderNewSpeciesTable } from '../../src/renderers/newSpeciesTable.js';
+import { publishControlEvent } from '../../src/controls/controlBus.js';
 
 function createMockTabulator({ onInitialRequest } = {}) {
   return function Tabulator(container, options) {
@@ -76,7 +77,7 @@ describe('renderNewSpeciesTable', () => {
     expect(String(fetchMock.mock.calls[0][0])).toContain('offset=0');
     expect(tabulatorCalls).toHaveLength(1);
     expect(tabulatorCalls[0].options.pagination).toBe(true);
-    expect(tabulatorCalls[0].options.columns).toHaveLength(4);
+    expect(tabulatorCalls[0].options.columns).toHaveLength(5);
     expect(tabulatorCalls[0].options.data).toBeUndefined();
     expect(element.textContent).toContain('1 new species between 2025-01-01 and 2025-12-31');
   });
@@ -198,6 +199,116 @@ describe('renderNewSpeciesTable', () => {
 
     expect(String(fetchMock.mock.calls[0][0])).toContain('higher_geography_identifier%5Beq%5D=58');
     expect(String(fetchMock.mock.calls[0][0])).not.toContain('geographic_region_identifier%5Beq%5D');
+  });
+
+  it('re-renders the visible rows on name-language-change without refetching', async () => {
+    const setDataCalls = [];
+    window.Tabulator = function Tabulator(container, options) {
+      container.dataset.tabulatorMounted = 'true';
+      void options.ajaxRequestFunc('custom_handler', {}, { page: 1, size: 10 });
+      return {
+        on() {},
+        setData(data) {
+          setDataCalls.push(data);
+        }
+      };
+    };
+
+    const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        data: [{
+          taxon_identifier: '2001',
+          taxon__scientific_name: 'Eristalis tenax',
+          taxon__vernacular_name: 'Drone Fly',
+          taxon_group__title: 'Diptera (Flies)',
+          taxon_group__friendly: 'Flies',
+          first_record_date: '2025-04-12'
+        }],
+        meta: { total: 1 }
+      })
+    });
+
+    const controlElement = document.createElement('div');
+    controlElement.id = 'vc-control-new-species-name-mode';
+    controlElement.dataset.visArea = 'vc-all';
+    controlElement.dataset.visTaxonGroup = '';
+    controlElement.dataset.visTaxonGroupLabelMode = 'scientific';
+    document.body.appendChild(controlElement);
+
+    const element = document.createElement('div');
+    renderNewSpeciesTable(element, {
+      type: 'new-species-table',
+      startDate: '2025-01-01',
+      endDate: '2025-12-31',
+      control: 'vc-control-new-species-name-mode'
+    });
+
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+
+    publishControlEvent('vc-control-new-species-name-mode', {
+      type: 'name-language-change',
+      labelMode: 'vernacular'
+    });
+
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(setDataCalls).toHaveLength(1);
+    expect(setDataCalls[0][0].taxonGroup).toBe('Flies');
+  });
+
+  it('keeps the active label mode for paged requests', async () => {
+    let pageResult = null;
+    let capturedOptions = null;
+    window.Tabulator = function Tabulator(container, options) {
+      capturedOptions = options;
+      container.dataset.tabulatorMounted = 'true';
+      return {
+        on() {},
+        setData() {}
+      };
+    };
+
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        data: [{
+          taxon_identifier: '2001',
+          taxon__scientific_name: 'Eristalis tenax',
+          taxon__vernacular_name: 'Drone Fly',
+          taxon_group__title: 'Diptera (Flies)',
+          taxon_group__friendly: 'Flies',
+          first_record_date: '2025-04-12'
+        }],
+        meta: { total: 2 }
+      })
+    });
+
+    const controlElement = document.createElement('div');
+    controlElement.id = 'vc-control-new-species-paged';
+    controlElement.dataset.visArea = 'vc-all';
+    controlElement.dataset.visTaxonGroup = '';
+    controlElement.dataset.visTaxonGroupLabelMode = 'vernacular';
+    document.body.appendChild(controlElement);
+
+    const element = document.createElement('div');
+    renderNewSpeciesTable(element, {
+      type: 'new-species-table',
+      startDate: '2025-01-01',
+      endDate: '2025-12-31',
+      control: 'vc-control-new-species-paged'
+    });
+
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    const tableContainer = element.querySelector('[data-tanvis-table-container="true"]');
+    const tabulatorInstance = tableContainer.__tanvisTable;
+    pageResult = await capturedOptions.ajaxRequestFunc('custom_handler', {}, { page: 2, size: 10 });
+
+    expect(pageResult.data[0].taxonGroup).toBe('Flies');
   });
 
   it('does not seed Tabulator with a local data array when using remote pagination', async () => {

@@ -2047,6 +2047,7 @@ div[data-tanvis-controls="species-selector"] {
           state.labelMode = value;
           syncRootDataset();
           renderOptions();
+          publishNameLanguageChange();
         }
       });
 
@@ -2137,6 +2138,17 @@ div[data-tanvis-controls="species-selector"] {
       publishControlEvent(rootElement.id, {
         type: 'taxon-group-change',
         taxonGroup: state.selectedValue
+      });
+    }
+
+    function publishNameLanguageChange() {
+      if (!rootElement?.id) {
+        return;
+      }
+
+      publishControlEvent(rootElement.id, {
+        type: 'name-language-change',
+        labelMode: state.labelMode
       });
     }
 
@@ -2553,10 +2565,11 @@ div[data-tanvis-controls="species-selector"] {
   const TAXON_STATS_RESOURCE$2 = 'taxon-stats';
   const DEFAULT_PAGE_SIZE$2 = 10;
   const columns$2 = [
-    { title: 'Species ID', field: 'speciesId', sorter: 'string' },
-    { title: 'Scientific name', field: 'scientificName', sorter: 'string' },
-    { title: 'Common name', field: 'commonName', sorter: 'string' },
-    { title: 'First record date', field: 'firstRecordDate', sorter: 'string' },
+    { title: 'Scientific name', field: 'scientificName', formatter: 'html' },
+    { title: 'Common name', field: 'commonName', responsive: 9 },
+    { title: 'First record date', field: 'firstRecordDate' },
+    { title: 'Group', field: 'taxonGroup', responsive: 10 },
+    { title: 'Species ID', field: 'speciesId', responsive: 10 },
   ];
 
   function createNewSpeciesTableAdapter() {
@@ -2585,27 +2598,41 @@ div[data-tanvis-controls="species-selector"] {
         element.__tanvisNewSpeciesLoadId = loadId;
         element.dataset.visArea = renderConfig.area;
         element.dataset.visTaxonGroup = taxonGroupExternalKey;
+        element.dataset.visTaxonGroupLabelMode = getEffectiveLabelMode(renderConfig);
         const pageSize = DEFAULT_PAGE_SIZE$2;
 
         if (renderConfig.control) {
           element.__tanvisControlCleanup = subscribeToControl(renderConfig.control, (event) => {
-            if (!event || (event.type !== 'area-change' && event.type !== 'taxon-group-change')) {
+            if (!event) {
               return;
             }
 
-            const nextArea = getEffectiveArea$4(renderConfig);
-            const nextTaxonGroupExternalKey = getEffectiveTaxonGroup$3(renderConfig);
+            if (event.type === 'area-change' || event.type === 'taxon-group-change') {
+              const nextArea = getEffectiveArea$4(renderConfig);
+              const nextTaxonGroupExternalKey = getEffectiveTaxonGroup$3(renderConfig);
 
-            if (nextArea === element.dataset.visArea && nextTaxonGroupExternalKey === (element.dataset.visTaxonGroup || '')) {
+              if (nextArea === element.dataset.visArea && nextTaxonGroupExternalKey === (element.dataset.visTaxonGroup || '')) {
+                return;
+              }
+
+              element.dataset.visArea = resolveAreaSelectionKey(nextArea);
+              element.dataset.visTaxonGroup = nextTaxonGroupExternalKey;
+              createNewSpeciesTableAdapter().render(element, {
+                ...renderConfig,
+                area: nextArea
+              });
               return;
             }
 
-            element.dataset.visArea = resolveAreaSelectionKey(nextArea);
-            element.dataset.visTaxonGroup = nextTaxonGroupExternalKey;
-            createNewSpeciesTableAdapter().render(element, {
-              ...renderConfig,
-              area: nextArea
-            });
+            if (event.type === 'name-language-change') {
+              const nextLabelMode = getEffectiveLabelMode(renderConfig, event.labelMode);
+              if (nextLabelMode === element.dataset.visTaxonGroupLabelMode) {
+                return;
+              }
+
+              element.dataset.visTaxonGroupLabelMode = nextLabelMode;
+              rerenderTableRows(element, { labelMode: nextLabelMode });
+            }
           });
         }
 
@@ -2632,7 +2659,8 @@ div[data-tanvis-controls="species-selector"] {
               higherGeographyIdentifier,
               taxonGroupExternalKey,
               pageNumber,
-              pageSize: requestedPageSize
+              pageSize: requestedPageSize,
+              labelMode: getEffectiveLabelMode(renderConfig)
             });
 
             if (element.__tanvisNewSpeciesLoadId !== loadId) {
@@ -2644,6 +2672,7 @@ div[data-tanvis-controls="species-selector"] {
             }
 
             updateSummary$2(summary, startDate, endDate, pageResult.totalRows);
+            element.__tanvisLatestRows = pageResult.records;
             return {
               data: pageResult.records,
               last_page: pageResult.totalPages,
@@ -2669,6 +2698,34 @@ div[data-tanvis-controls="species-selector"] {
     };
   }
 
+  function rerenderTableRows(element, { labelMode }) {
+    const tableContainer = element?.querySelector('[data-tanvis-table-container="true"]');
+    if (!tableContainer?.__tanvisTable) {
+      return;
+    }
+
+    const table = tableContainer.__tanvisTable;
+    const rows = Array.isArray(table?.getData?.())
+      ? table.getData()
+      : Array.isArray(element.__tanvisLatestRows)
+        ? element.__tanvisLatestRows
+        : [];
+
+    const remappedRows = rows.map((row) => ({
+      ...row,
+      taxonGroup: formatGroupName({
+        title: row?.taxonGroupTitle,
+        friendly: row?.taxonGroupFriendly
+      }, labelMode)
+    }));
+
+    if (typeof table.setData === 'function') {
+      table.setData(remappedRows);
+    }
+
+    element.__tanvisLatestRows = remappedRows;
+  }
+
   function createSummary$3(startDate, endDate, count) {
     const summary = document.createElement('p');
     summary.textContent = `${count} new species between ${startDate} and ${endDate}`;
@@ -2687,7 +2744,8 @@ div[data-tanvis-controls="species-selector"] {
 
     const table = new Tabulator(container, {
       columns: columns$2,
-      layout: 'fitColumns',
+      layout: 'fitDataFill',
+      responsiveLayout: 'collapse',
       pagination: true,
       paginationMode: 'remote',
       paginationSize: pageSize,
@@ -2727,6 +2785,7 @@ div[data-tanvis-controls="species-selector"] {
 
     }
 
+    container.dataset.tanvisTableContainer = 'true';
     container.__tanvisTable = table;
     return { container, table };
   }
@@ -2735,7 +2794,7 @@ div[data-tanvis-controls="species-selector"] {
     return new Date().toISOString().slice(0, 10);
   }
 
-  async function buildNewSpeciesRecordsPage({ apiBase, startDate, endDate, higherGeographyIdentifier, taxonGroupExternalKey, pageNumber, pageSize }) {
+  async function buildNewSpeciesRecordsPage({ apiBase, startDate, endDate, higherGeographyIdentifier, taxonGroupExternalKey, pageNumber, pageSize, labelMode = 'scientific' }) {
     const offset = (pageNumber - 1) * pageSize;
     const payload = await fetchTaxonStatsInRange({
       apiBase,
@@ -2755,9 +2814,12 @@ div[data-tanvis-controls="species-selector"] {
       records: rows.map((row) => {
         return {
           speciesId: row.taxon_identifier,
-          scientificName: getTaxonName(row, 'scientific_name'),
-          commonName: getTaxonName(row, 'vernacular_name'),
+          scientificName: `<i>${row.taxon__scientific_name}</i>`,
+          commonName: row.taxon__vernacular_name || '',
           firstRecordDate: row.first_record_date,
+          taxonGroup: formatGroupName({title: row.taxon_group__title, friendly: row.taxon_group__friendly}, labelMode),
+          taxonGroupTitle: row.taxon_group__title,
+          taxonGroupFriendly: row.taxon_group__friendly
         };
       }),
       totalRows,
@@ -2765,13 +2827,12 @@ div[data-tanvis-controls="species-selector"] {
     };
   }
 
-  function getTaxonName(row, fieldName) {
-    const nestedTaxon = row?.taxon;
-    if (nestedTaxon && typeof nestedTaxon === 'object') {
-      return nestedTaxon?.[fieldName] || nestedTaxon?.[fieldName.replace(/_/g, '__')] || '';
-    }
-
-    return row?.[fieldName] || row?.[`taxon__${fieldName}`] || '';
+  function formatGroupName(group, labelMode = 'scientific') {
+    const parsedNames = parseTaxonGroupDisplayNames(group);
+    const displayName = labelMode === 'vernacular'
+      ? (parsedNames.vernacularName || parsedNames.scientificName)
+      : (parsedNames.scientificName || parsedNames.vernacularName);
+    return displayName;
   }
 
   async function fetchTaxonStatsInRange({ apiBase, startDate, endDate, higherGeographyIdentifier, taxonGroupExternalKey, limit, offset }) {
@@ -2905,6 +2966,19 @@ div[data-tanvis-controls="species-selector"] {
 
     const controlElement = document.getElementById(config.control);
     return controlElement?.dataset?.visTaxonGroup || '';
+  }
+
+  function getEffectiveLabelMode(config, fallbackMode) {
+    if (fallbackMode) {
+      return fallbackMode;
+    }
+
+    if (!config.control || typeof document === 'undefined') {
+      return 'scientific';
+    }
+
+    const controlElement = document.getElementById(config.control);
+    return controlElement?.dataset?.visTaxonGroupLabelMode || 'scientific';
   }
 
   function getTabulatorGlobal$2() {
