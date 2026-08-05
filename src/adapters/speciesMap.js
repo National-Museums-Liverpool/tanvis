@@ -75,7 +75,8 @@ export function createSpeciesMapAdapter() {
       );
       status.showInfo('Loading...');
 
-      const speciesCode = renderConfig.species || renderConfig.taxonId || '';
+      const currentSpeciesFromElement = element.dataset.visTaxonid || '';
+      const speciesCode = currentSpeciesFromElement || renderConfig.species || renderConfig.taxonId || '';
       const apiBase = resolveApiBase();
       const areaValue = normalizeAreaValue(renderConfig.area ?? '');
 

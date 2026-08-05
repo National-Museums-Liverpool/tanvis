@@ -560,6 +560,56 @@ describe('species map redraw flow', () => {
     controlElement.remove();
   });
 
+  it('keeps the latest species selection when a control-block area change re-renders the map', async () => {
+    const requestedSpecies = [];
+
+    window.brcatlas = {
+      svgMap: () => ({
+        setMapType() {},
+        redrawMap() {}
+      })
+    };
+
+    vi.spyOn(globalThis, 'fetch').mockImplementation(async (url) => {
+      const parsedUrl = new URL(url);
+      const speciesCode = parsedUrl.searchParams.get('taxon_identifier[eq]');
+      requestedSpecies.push(speciesCode);
+
+      return {
+        ok: true,
+        json: async () => ({ data: [{ grid_ref_2km: 'SJ58' }] })
+      };
+    });
+
+    const controlElement = document.createElement('div');
+    controlElement.id = 'control';
+    document.body.appendChild(controlElement);
+
+    const element = document.createElement('div');
+    renderSpeciesMap(element, {
+      type: 'species-map',
+      area: 'vc-58',
+      taxonId: 'ABC123',
+      control: 'control'
+    });
+
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    controlElement.dispatchEvent(new CustomEvent('species-row-selected', {
+      detail: { speciesId: 'XYZ999' }
+    }));
+
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    publishControlEvent('control', { type: 'area-change', area: 'vc-59' });
+
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    expect(requestedSpecies.at(-1)).toBe('XYZ999');
+
+    controlElement.remove();
+  });
+
   it('prefers the current control dataset over stale area-change events from the control bus', async () => {
     const requestedUrls = [];
 
