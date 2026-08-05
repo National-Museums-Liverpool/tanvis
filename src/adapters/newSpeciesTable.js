@@ -10,11 +10,18 @@ import { parseTaxonGroupDisplayNames } from '../utils/taxonGroupLabels.js';
 const TAXON_STATS_RESOURCE = 'taxon-stats';
 const DEFAULT_PAGE_SIZE = 10;
 const columns = [
-  { title: 'Scientific name', field: 'scientificName', formatter: 'html' },
-  { title: 'Common name', field: 'commonName', responsive: 9 },
-  { title: 'First record date', field: 'firstRecordDate' },
-  { title: 'Group', field: 'taxonGroup', responsive: 10 },
-  { title: 'Species ID', field: 'speciesId', responsive: 10 },
+  { title: 'Scientific', field: 'scientificName', formatter: 'html', headerSort: false },
+  { title: 'Vernacular', field: 'commonName', headerSort: false , responsive: 8 },
+  { title: 'Verified', field: 'verifiedStatus', headerSort: false, 
+    formatter: "tickCross", hozAlign: "center", formatterParams: {
+      allowTruthy: true,     // Allows any non-empty/truthy value to show a tick
+      crossElement: false,   // Disables the red cross symbol entirely
+      allowEmpty: true       // Keeps empty strings, null, and undefined blank
+    }
+  },
+  { title: 'First record', field: 'firstRecordDate', headerSort: false  },
+  { title: 'Group', field: 'taxonGroup', headerSort: false , responsive: 9 },
+  { title: 'TVK', field: 'speciesId', headerSort: false , responsive: 10 },
 ];
 
 export function createNewSpeciesTableAdapter() {
@@ -44,7 +51,7 @@ export function createNewSpeciesTableAdapter() {
       element.dataset.visArea = renderConfig.area;
       element.dataset.visTaxonGroup = taxonGroupExternalKey;
       element.dataset.visTaxonGroupLabelMode = getEffectiveLabelMode(renderConfig);
-      const pageSize = DEFAULT_PAGE_SIZE;
+      const pageSize = getConfiguredPageSize(renderConfig);
 
       if (renderConfig.control) {
         element.__tanvisControlCleanup = subscribeToControl(renderConfig.control, (event) => {
@@ -105,7 +112,7 @@ export function createNewSpeciesTableAdapter() {
             taxonGroupExternalKey,
             pageNumber,
             pageSize: requestedPageSize,
-            labelMode: getEffectiveLabelMode(renderConfig)
+            labelMode: getEffectiveLabelModeForElement(element, renderConfig)
           });
 
           if (element.__tanvisNewSpeciesLoadId !== loadId) {
@@ -150,11 +157,12 @@ function rerenderTableRows(element, { labelMode }) {
   }
 
   const table = tableContainer.__tanvisTable;
-  const rows = Array.isArray(table?.getData?.())
-    ? table.getData()
-    : Array.isArray(element.__tanvisLatestRows)
+  const tableRows = typeof table?.getData === 'function' ? table.getData() : null;
+  const rows = Array.isArray(tableRows) && tableRows.length > 0
+    ? tableRows
+    : (Array.isArray(element.__tanvisLatestRows)
       ? element.__tanvisLatestRows
-      : [];
+      : []);
 
   const remappedRows = rows.map((row) => ({
     ...row,
@@ -264,7 +272,8 @@ async function buildNewSpeciesRecordsPage({ apiBase, startDate, endDate, higherG
         firstRecordDate: row.first_record_date,
         taxonGroup: formatGroupName({title: row.taxon_group__title, friendly: row.taxon_group__friendly}, labelMode),
         taxonGroupTitle: row.taxon_group__title,
-        taxonGroupFriendly: row.taxon_group__friendly
+        taxonGroupFriendly: row.taxon_group__friendly,
+        verifiedStatus: row.first_verified_record_date
       };
     }),
     totalRows,
@@ -390,18 +399,23 @@ function getEffectiveArea(config) {
     return normalizeAreaValue(config.area);
   }
 
-  const latestEvent = getLatestControlEvent(config.control);
-  if (latestEvent?.type === 'area-change' && latestEvent.area) {
-    return normalizeAreaValue(latestEvent.area);
-  }
-
   if (typeof document === 'undefined') {
     return normalizeAreaValue(config.area);
   }
 
   const controlElement = document.getElementById(config.control);
-  const controlArea = controlElement?.dataset?.visArea;
-  return normalizeAreaValue(controlArea ?? config.area);
+  const controlAreaValue = controlElement?.dataset?.visArea;
+  const normalizedControlAreaValue = normalizeAreaValue(controlAreaValue);
+  if (controlElement && Object.prototype.hasOwnProperty.call(controlElement.dataset, 'visArea') && normalizedControlAreaValue !== undefined && normalizedControlAreaValue !== null && normalizedControlAreaValue !== '') {
+    return normalizedControlAreaValue;
+  }
+
+  const latestEvent = getLatestControlEvent(config.control);
+  if (latestEvent?.type === 'area-change' && latestEvent.area !== undefined && latestEvent.area !== null) {
+    return normalizeAreaValue(latestEvent.area);
+  }
+
+  return normalizeAreaValue(config.area);
 }
 
 function getEffectiveTaxonGroup(config) {
@@ -411,6 +425,15 @@ function getEffectiveTaxonGroup(config) {
 
   const controlElement = document.getElementById(config.control);
   return controlElement?.dataset?.visTaxonGroup || '';
+}
+
+function getConfiguredPageSize(config) {
+  const configuredPageSize = Number(config?.pageSize ?? config?.['data-vis-page-size'] ?? config?.['data-visPageSize'] ?? DEFAULT_PAGE_SIZE);
+  if (!Number.isFinite(configuredPageSize) || configuredPageSize <= 0) {
+    return DEFAULT_PAGE_SIZE;
+  }
+
+  return configuredPageSize;
 }
 
 function getEffectiveLabelMode(config, fallbackMode) {
@@ -424,6 +447,10 @@ function getEffectiveLabelMode(config, fallbackMode) {
 
   const controlElement = document.getElementById(config.control);
   return controlElement?.dataset?.visTaxonGroupLabelMode || 'scientific';
+}
+
+function getEffectiveLabelModeForElement(element, config) {
+  return element?.dataset?.visTaxonGroupLabelMode || getEffectiveLabelMode(config);
 }
 
 function getTabulatorGlobal() {

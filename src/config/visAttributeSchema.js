@@ -472,6 +472,13 @@ const RULES = {
     defaultValue: 50,
     info: `The number of top species to display. Must be a positive integer.`
   }),
+  pageSize: createRule({
+    key: 'pageSize',
+    datasetName: 'visPageSize',
+    parseAndValidate: parseAndValidatePositiveInteger,
+    defaultValue: 15,
+    info: `The number of records to display per page in table visualizations. Must be a positive integer.`
+  }),
   year: createRule({
     key: 'year',
     datasetName: 'visYear',
@@ -511,9 +518,9 @@ const VIS_TYPE_RULE_SETS = {
   'species-map': ['taxonId', 'control', 'area', 'hectads', 'mapType', 'boundaries', 'dotShape', 'dotColour', 'transformation', 'dotShape', 'expand', 'width', 'height'],
   'grid-stats-map': ['gridStatsType', 'control', 'area', 'hectads', 'mapType', 'boundaries', 'dotShape', 'dotColour', 'transformation', 'expand', 'width', 'height'],
   'temporal-year-chart': ['taxonId', 'linkedTable', 'startYear', 'endYear', 'area', 'control', 'expand', 'width', 'height'],
-  'new-species-table': ['startDate', 'endDate', 'area', 'control'],
-  'increasing-species-table': ['topN', 'area', 'control'],
-  'species-absent-since': ['year', 'area', 'control']
+  'new-species-table': ['startDate', 'endDate', 'area', 'control', 'pageSize'],
+  'increasing-species-table': ['topN', 'area', 'control', 'pageSize'],
+  'species-absent-since': ['year', 'area', 'control', 'pageSize']
 };
 
 export function getVisAttributeSchema(visType) {

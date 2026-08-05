@@ -127,6 +127,74 @@ describe('renderSpeciesAbsentSince', () => {
     expect(element.textContent).toContain('Tabulator is not available');
   });
 
+  it('renders a Group column and updates it when the label mode toggle changes without refetching', async () => {
+    const tabulatorInstances = [];
+
+    window.Tabulator = function Tabulator(container, options) {
+      const instance = {
+        on() {},
+        getData() {
+          return Array.isArray(instance.__rows) ? instance.__rows : [];
+        },
+        setData(rows) {
+          instance.__rows = rows;
+        }
+      };
+      tabulatorInstances.push({ container, options, instance });
+      container.dataset.tabulatorMounted = 'true';
+      void options.ajaxRequestFunc('custom_handler', {}, { page: 1, size: 10 });
+      return instance;
+    };
+
+    const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        data: [
+          {
+            taxon_identifier: 'NHMSYS0000001001',
+            taxon__scientific_name: 'Eristalis arbustorum',
+            taxon__vernacular_name: 'Marmalade Hoverfly',
+            taxon_group__title: 'Diptera',
+            taxon_group__friendly: 'Flies',
+            last_record_date: '2023-08-12'
+          }
+        ]
+      })
+    });
+
+    const controlElement = document.createElement('div');
+    controlElement.id = 'vc-control-species-absent-label';
+    controlElement.dataset.visArea = 'vc-all';
+    controlElement.dataset.visTaxonGroup = '';
+    controlElement.dataset.visTaxonGroupLabelMode = 'scientific';
+    document.body.appendChild(controlElement);
+
+    const element = document.createElement('div');
+    renderSpeciesAbsentSince(element, {
+      type: 'species-absent-since',
+      year: 2024,
+      control: 'vc-control-species-absent-label'
+    });
+
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    const groupColumn = tabulatorInstances[0].options.columns.find((column) => column.title === 'Group');
+    expect(groupColumn).toBeDefined();
+    expect(element.__tanvisLatestRows[0].taxonGroup).toBe('Diptera');
+
+    publishControlEvent('vc-control-species-absent-label', {
+      type: 'name-language-change',
+      labelMode: 'vernacular'
+    });
+
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    expect(element.__tanvisLatestRows[0].taxonGroup).toBe('Flies');
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+
+    controlElement.remove();
+  });
+
   it('includes control-block taxon-group and refetches when the group changes', async () => {
     window.Tabulator = function Tabulator(container, options) {
       container.dataset.tabulatorMounted = 'true';

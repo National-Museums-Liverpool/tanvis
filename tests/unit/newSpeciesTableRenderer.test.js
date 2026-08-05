@@ -77,7 +77,7 @@ describe('renderNewSpeciesTable', () => {
     expect(String(fetchMock.mock.calls[0][0])).toContain('offset=0');
     expect(tabulatorCalls).toHaveLength(1);
     expect(tabulatorCalls[0].options.pagination).toBe(true);
-    expect(tabulatorCalls[0].options.columns).toHaveLength(5);
+    expect(tabulatorCalls[0].options.columns).toHaveLength(6);
     expect(tabulatorCalls[0].options.data).toBeUndefined();
     expect(element.textContent).toContain('1 new species between 2025-01-01 and 2025-12-31');
   });

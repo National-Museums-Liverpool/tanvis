@@ -560,6 +560,46 @@ describe('species map redraw flow', () => {
     controlElement.remove();
   });
 
+  it('prefers the current control dataset over stale area-change events from the control bus', async () => {
+    const requestedUrls = [];
+
+    window.brcatlas = {
+      svgMap: () => ({
+        setMapType() {},
+        redrawMap() {}
+      })
+    };
+
+    vi.spyOn(globalThis, 'fetch').mockImplementation(async (url) => {
+      requestedUrls.push(String(url));
+      return {
+        ok: true,
+        json: async () => ({ data: [] })
+      };
+    });
+
+    const controlElement = document.createElement('div');
+    controlElement.id = 'control';
+    controlElement.dataset.visArea = 'vc-58';
+    document.body.appendChild(controlElement);
+
+    publishControlEvent('control', { type: 'area-change', area: 'vc-59' });
+
+    const element = document.createElement('div');
+    renderSpeciesMap(element, {
+      type: 'species-map',
+      area: 'vc-59',
+      taxonId: 'ABC123',
+      control: 'control'
+    });
+
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    expect(requestedUrls.at(-1)).toContain('higher_geography_identifier%5Beq%5D=58');
+
+    controlElement.remove();
+  });
+
   it('uses control-driven vc values to filter occurrences by the corresponding higher geography identifier', async () => {
     const requestedUrls = [];
 

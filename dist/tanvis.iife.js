@@ -482,6 +482,13 @@ var Tanvis = (function (exports) {
       defaultValue: 50,
       info: `The number of top species to display. Must be a positive integer.`
     }),
+    pageSize: createRule({
+      key: 'pageSize',
+      datasetName: 'visPageSize',
+      parseAndValidate: parseAndValidatePositiveInteger,
+      defaultValue: 15,
+      info: `The number of records to display per page in table visualizations. Must be a positive integer.`
+    }),
     year: createRule({
       key: 'year',
       datasetName: 'visYear',
@@ -521,9 +528,9 @@ var Tanvis = (function (exports) {
     'species-map': ['taxonId', 'control', 'area', 'hectads', 'mapType', 'boundaries', 'dotShape', 'dotColour', 'transformation', 'dotShape', 'expand', 'width', 'height'],
     'grid-stats-map': ['gridStatsType', 'control', 'area', 'hectads', 'mapType', 'boundaries', 'dotShape', 'dotColour', 'transformation', 'expand', 'width', 'height'],
     'temporal-year-chart': ['taxonId', 'linkedTable', 'startYear', 'endYear', 'area', 'control', 'expand', 'width', 'height'],
-    'new-species-table': ['startDate', 'endDate', 'area', 'control'],
-    'increasing-species-table': ['topN', 'area', 'control'],
-    'species-absent-since': ['year', 'area', 'control']
+    'new-species-table': ['startDate', 'endDate', 'area', 'control', 'pageSize'],
+    'increasing-species-table': ['topN', 'area', 'control', 'pageSize'],
+    'species-absent-since': ['year', 'area', 'control', 'pageSize']
   };
 
   function getVisAttributeSchema(visType) {
@@ -1275,18 +1282,23 @@ div[data-tanvis-controls="species-selector"] {
       return normalizeAreaValue(config.area);
     }
 
-    const latestEvent = getLatestControlEvent(config.control);
-    if (latestEvent?.type === 'area-change' && latestEvent.area !== undefined && latestEvent.area !== null) {
-      return normalizeAreaValue(latestEvent.area);
-    }
-
     if (typeof document === 'undefined') {
       return normalizeAreaValue(config.area);
     }
 
     const controlElement = document.getElementById(config.control);
-    const controlArea = controlElement?.dataset?.visArea;
-    return normalizeAreaValue(controlArea !== undefined && controlArea !== null ? controlArea : config.area);
+    const controlAreaValue = controlElement?.dataset?.visArea;
+    const normalizedControlAreaValue = normalizeAreaValue(controlAreaValue);
+    if (controlElement && Object.prototype.hasOwnProperty.call(controlElement.dataset, 'visArea') && normalizedControlAreaValue !== undefined && normalizedControlAreaValue !== null && normalizedControlAreaValue !== '') {
+      return normalizedControlAreaValue;
+    }
+
+    const latestEvent = getLatestControlEvent(config.control);
+    if (latestEvent?.type === 'area-change' && latestEvent.area !== undefined && latestEvent.area !== null) {
+      return normalizeAreaValue(latestEvent.area);
+    }
+
+    return normalizeAreaValue(config.area);
   }
 
   function subscribeToAreaControl(controlId, handler) {
@@ -2565,11 +2577,18 @@ div[data-tanvis-controls="species-selector"] {
   const TAXON_STATS_RESOURCE$2 = 'taxon-stats';
   const DEFAULT_PAGE_SIZE$2 = 10;
   const columns$2 = [
-    { title: 'Scientific name', field: 'scientificName', formatter: 'html' },
-    { title: 'Common name', field: 'commonName', responsive: 9 },
-    { title: 'First record date', field: 'firstRecordDate' },
-    { title: 'Group', field: 'taxonGroup', responsive: 10 },
-    { title: 'Species ID', field: 'speciesId', responsive: 10 },
+    { title: 'Scientific', field: 'scientificName', formatter: 'html', headerSort: false },
+    { title: 'Vernacular', field: 'commonName', headerSort: false , responsive: 8 },
+    { title: 'Verified', field: 'verifiedStatus', headerSort: false, 
+      formatter: "tickCross", hozAlign: "center", formatterParams: {
+        allowTruthy: true,     // Allows any non-empty/truthy value to show a tick
+        crossElement: false,   // Disables the red cross symbol entirely
+        allowEmpty: true       // Keeps empty strings, null, and undefined blank
+      }
+    },
+    { title: 'First record', field: 'firstRecordDate', headerSort: false  },
+    { title: 'Group', field: 'taxonGroup', headerSort: false , responsive: 9 },
+    { title: 'TVK', field: 'speciesId', headerSort: false , responsive: 10 },
   ];
 
   function createNewSpeciesTableAdapter() {
@@ -2598,8 +2617,8 @@ div[data-tanvis-controls="species-selector"] {
         element.__tanvisNewSpeciesLoadId = loadId;
         element.dataset.visArea = renderConfig.area;
         element.dataset.visTaxonGroup = taxonGroupExternalKey;
-        element.dataset.visTaxonGroupLabelMode = getEffectiveLabelMode(renderConfig);
-        const pageSize = DEFAULT_PAGE_SIZE$2;
+        element.dataset.visTaxonGroupLabelMode = getEffectiveLabelMode$2(renderConfig);
+        const pageSize = getConfiguredPageSize$2(renderConfig);
 
         if (renderConfig.control) {
           element.__tanvisControlCleanup = subscribeToControl(renderConfig.control, (event) => {
@@ -2625,13 +2644,13 @@ div[data-tanvis-controls="species-selector"] {
             }
 
             if (event.type === 'name-language-change') {
-              const nextLabelMode = getEffectiveLabelMode(renderConfig, event.labelMode);
+              const nextLabelMode = getEffectiveLabelMode$2(renderConfig, event.labelMode);
               if (nextLabelMode === element.dataset.visTaxonGroupLabelMode) {
                 return;
               }
 
               element.dataset.visTaxonGroupLabelMode = nextLabelMode;
-              rerenderTableRows(element, { labelMode: nextLabelMode });
+              rerenderTableRows$2(element, { labelMode: nextLabelMode });
             }
           });
         }
@@ -2660,7 +2679,7 @@ div[data-tanvis-controls="species-selector"] {
               taxonGroupExternalKey,
               pageNumber,
               pageSize: requestedPageSize,
-              labelMode: getEffectiveLabelMode(renderConfig)
+              labelMode: getEffectiveLabelModeForElement$2(element, renderConfig)
             });
 
             if (element.__tanvisNewSpeciesLoadId !== loadId) {
@@ -2698,22 +2717,23 @@ div[data-tanvis-controls="species-selector"] {
     };
   }
 
-  function rerenderTableRows(element, { labelMode }) {
+  function rerenderTableRows$2(element, { labelMode }) {
     const tableContainer = element?.querySelector('[data-tanvis-table-container="true"]');
     if (!tableContainer?.__tanvisTable) {
       return;
     }
 
     const table = tableContainer.__tanvisTable;
-    const rows = Array.isArray(table?.getData?.())
-      ? table.getData()
-      : Array.isArray(element.__tanvisLatestRows)
+    const tableRows = typeof table?.getData === 'function' ? table.getData() : null;
+    const rows = Array.isArray(tableRows) && tableRows.length > 0
+      ? tableRows
+      : (Array.isArray(element.__tanvisLatestRows)
         ? element.__tanvisLatestRows
-        : [];
+        : []);
 
     const remappedRows = rows.map((row) => ({
       ...row,
-      taxonGroup: formatGroupName({
+      taxonGroup: formatGroupName$2({
         title: row?.taxonGroupTitle,
         friendly: row?.taxonGroupFriendly
       }, labelMode)
@@ -2807,7 +2827,7 @@ div[data-tanvis-controls="species-selector"] {
     });
 
     const rows = getListData$5(payload);
-    const totalRows = getTotalCount$2(payload);
+    const totalRows = getTotalCount$1(payload);
     const totalPages = Math.max(1, Math.ceil(totalRows / pageSize));
 
     return {
@@ -2817,9 +2837,10 @@ div[data-tanvis-controls="species-selector"] {
           scientificName: `<i>${row.taxon__scientific_name}</i>`,
           commonName: row.taxon__vernacular_name || '',
           firstRecordDate: row.first_record_date,
-          taxonGroup: formatGroupName({title: row.taxon_group__title, friendly: row.taxon_group__friendly}, labelMode),
+          taxonGroup: formatGroupName$2({title: row.taxon_group__title, friendly: row.taxon_group__friendly}, labelMode),
           taxonGroupTitle: row.taxon_group__title,
-          taxonGroupFriendly: row.taxon_group__friendly
+          taxonGroupFriendly: row.taxon_group__friendly,
+          verifiedStatus: row.first_verified_record_date
         };
       }),
       totalRows,
@@ -2827,7 +2848,7 @@ div[data-tanvis-controls="species-selector"] {
     };
   }
 
-  function formatGroupName(group, labelMode = 'scientific') {
+  function formatGroupName$2(group, labelMode = 'scientific') {
     const parsedNames = parseTaxonGroupDisplayNames(group);
     const displayName = labelMode === 'vernacular'
       ? (parsedNames.vernacularName || parsedNames.scientificName)
@@ -2897,7 +2918,7 @@ div[data-tanvis-controls="species-selector"] {
     return [];
   }
 
-  function getTotalCount$2(payload) {
+  function getTotalCount$1(payload) {
     if (Number.isFinite(payload?.meta?.total)) {
       return Number(payload.meta.total);
     }
@@ -2945,18 +2966,23 @@ div[data-tanvis-controls="species-selector"] {
       return normalizeAreaValue(config.area);
     }
 
-    const latestEvent = getLatestControlEvent(config.control);
-    if (latestEvent?.type === 'area-change' && latestEvent.area) {
-      return normalizeAreaValue(latestEvent.area);
-    }
-
     if (typeof document === 'undefined') {
       return normalizeAreaValue(config.area);
     }
 
     const controlElement = document.getElementById(config.control);
-    const controlArea = controlElement?.dataset?.visArea;
-    return normalizeAreaValue(controlArea ?? config.area);
+    const controlAreaValue = controlElement?.dataset?.visArea;
+    const normalizedControlAreaValue = normalizeAreaValue(controlAreaValue);
+    if (controlElement && Object.prototype.hasOwnProperty.call(controlElement.dataset, 'visArea') && normalizedControlAreaValue !== undefined && normalizedControlAreaValue !== null && normalizedControlAreaValue !== '') {
+      return normalizedControlAreaValue;
+    }
+
+    const latestEvent = getLatestControlEvent(config.control);
+    if (latestEvent?.type === 'area-change' && latestEvent.area !== undefined && latestEvent.area !== null) {
+      return normalizeAreaValue(latestEvent.area);
+    }
+
+    return normalizeAreaValue(config.area);
   }
 
   function getEffectiveTaxonGroup$3(config) {
@@ -2968,7 +2994,16 @@ div[data-tanvis-controls="species-selector"] {
     return controlElement?.dataset?.visTaxonGroup || '';
   }
 
-  function getEffectiveLabelMode(config, fallbackMode) {
+  function getConfiguredPageSize$2(config) {
+    const configuredPageSize = Number(config?.pageSize ?? config?.['data-vis-page-size'] ?? config?.['data-visPageSize'] ?? DEFAULT_PAGE_SIZE$2);
+    if (!Number.isFinite(configuredPageSize) || configuredPageSize <= 0) {
+      return DEFAULT_PAGE_SIZE$2;
+    }
+
+    return configuredPageSize;
+  }
+
+  function getEffectiveLabelMode$2(config, fallbackMode) {
     if (fallbackMode) {
       return fallbackMode;
     }
@@ -2979,6 +3014,10 @@ div[data-tanvis-controls="species-selector"] {
 
     const controlElement = document.getElementById(config.control);
     return controlElement?.dataset?.visTaxonGroupLabelMode || 'scientific';
+  }
+
+  function getEffectiveLabelModeForElement$2(element, config) {
+    return element?.dataset?.visTaxonGroupLabelMode || getEffectiveLabelMode$2(config);
   }
 
   function getTabulatorGlobal$2() {
@@ -3001,13 +3040,15 @@ div[data-tanvis-controls="species-selector"] {
   const DEFAULT_PAGE_SIZE$1 = 10;
   const DEFAULT_TOP_N = 50;
   const columns$1 = [
-    { title: 'Species ID', field: 'speciesId', sorter: 'string' },
-    { title: 'Scientific name', field: 'scientificName', sorter: 'string' },
-    { title: 'Common name', field: 'commonName', sorter: 'string' },
-    { title: 'Rarity category', field: 'rarityCategory', sorter: 'string' },
-    { title: 'Total records', field: 'totalRecords', sorter: 'number' },
-    { title: 'Occupied grid squares', field: 'occupiedGridSquares', sorter: 'number' },
-    { title: 'Frequency trend', field: 'frequencyTrendScore', sorter: 'number' }
+    
+    { title: 'Scientific', field: 'scientificName', formatter: 'html', headerSort: false },
+    { title: 'Vernacular', field: 'commonName', headerSort: false , responsive: 8 },
+    { title: 'Rarity', field: 'rarityCategory', headerSort: false },
+    { title: 'Records', field: 'totalRecords', headerSort: false },
+    { title: 'Tetrads', field: 'occupiedGridSquares', headerSort: false },
+    { title: 'Trend', field: 'frequencyTrendScore', headerSort: false },
+    { title: 'Group', field: 'taxonGroup', headerSort: false, responsive: 10 },
+    { title: 'TVK', field: 'speciesId', headerSort: false , responsive: 10 }
   ];
 
   function createIncreasingSpeciesTableAdapter() {
@@ -3035,27 +3076,41 @@ div[data-tanvis-controls="species-selector"] {
         element.__tanvisIncreasingLoadId = loadId;
         element.dataset.visArea = renderConfig.area;
         element.dataset.visTaxonGroup = taxonGroupExternalKey;
-        const pageSize = DEFAULT_PAGE_SIZE$1;
+        element.dataset.visTaxonGroupLabelMode = getEffectiveLabelMode$1(renderConfig);
+        const pageSize = getConfiguredPageSize$1(renderConfig);
 
         if (renderConfig.control) {
           element.__tanvisControlCleanup = subscribeToControl(renderConfig.control, (event) => {
-            if (!event || (event.type !== 'area-change' && event.type !== 'taxon-group-change')) {
+            if (!event) {
               return;
             }
 
-            const nextArea = getEffectiveArea$3(renderConfig);
-            const nextTaxonGroupExternalKey = getEffectiveTaxonGroup$2(renderConfig);
+            if (event.type === 'area-change' || event.type === 'taxon-group-change') {
+              const nextArea = getEffectiveArea$3(renderConfig);
+              const nextTaxonGroupExternalKey = getEffectiveTaxonGroup$2(renderConfig);
 
-            if (nextArea === element.dataset.visArea && nextTaxonGroupExternalKey === (element.dataset.visTaxonGroup || '')) {
+              if (nextArea === element.dataset.visArea && nextTaxonGroupExternalKey === (element.dataset.visTaxonGroup || '')) {
+                return;
+              }
+
+              element.dataset.visArea = resolveAreaSelectionKey(nextArea);
+              element.dataset.visTaxonGroup = nextTaxonGroupExternalKey;
+              createIncreasingSpeciesTableAdapter().render(element, {
+                ...renderConfig,
+                area: nextArea
+              });
               return;
             }
 
-            element.dataset.visArea = resolveAreaSelectionKey(nextArea);
-            element.dataset.visTaxonGroup = nextTaxonGroupExternalKey;
-            createIncreasingSpeciesTableAdapter().render(element, {
-              ...renderConfig,
-              area: nextArea
-            });
+            if (event.type === 'name-language-change') {
+              const nextLabelMode = getEffectiveLabelMode$1(renderConfig, event.labelMode);
+              if (nextLabelMode === element.dataset.visTaxonGroupLabelMode) {
+                return;
+              }
+
+              element.dataset.visTaxonGroupLabelMode = nextLabelMode;
+              rerenderTableRows$1(element, { labelMode: nextLabelMode });
+            }
           });
         }
 
@@ -3068,7 +3123,7 @@ div[data-tanvis-controls="species-selector"] {
         }
 
         clearElement(element);
-        const summary = createSummary$2(topN, 0);
+        const summary = createSummary$2(topN);
         element.appendChild(summary);
 
         createTableContainer$1({
@@ -3081,7 +3136,8 @@ div[data-tanvis-controls="species-selector"] {
               higherGeographyIdentifier,
               taxonGroupExternalKey,
               pageNumber,
-              pageSize: requestedPageSize
+              pageSize: requestedPageSize,
+              labelMode: getEffectiveLabelModeForElement$1(element, renderConfig)
             });
 
             if (element.__tanvisIncreasingLoadId !== loadId) {
@@ -3093,6 +3149,7 @@ div[data-tanvis-controls="species-selector"] {
             }
 
             updateSummary$1(summary, topN, pageResult.totalRows);
+            element.__tanvisLatestRows = pageResult.records;
             return {
               data: pageResult.records,
               last_page: pageResult.totalPages,
@@ -3118,15 +3175,44 @@ div[data-tanvis-controls="species-selector"] {
     };
   }
 
+  function rerenderTableRows$1(element, { labelMode }) {
+    const tableContainer = element?.querySelector('[data-tanvis-table-container="true"]');
+    if (!tableContainer?.__tanvisTable) {
+      return;
+    }
+
+    const table = tableContainer.__tanvisTable;
+    const tableRows = typeof table?.getData === 'function' ? table.getData() : null;
+    const rows = Array.isArray(tableRows) && tableRows.length > 0
+      ? tableRows
+      : (Array.isArray(element.__tanvisLatestRows)
+        ? element.__tanvisLatestRows
+        : []);
+
+    const remappedRows = rows.map((row) => ({
+      ...row,
+      taxonGroup: formatGroupName$1({
+        title: row?.taxonGroupTitle,
+        friendly: row?.taxonGroupFriendly
+      }, labelMode)
+    }));
+
+    if (typeof table.setData === 'function') {
+      table.setData(remappedRows);
+    }
+
+    element.__tanvisLatestRows = remappedRows;
+  }
+
   function createSummary$2(topN, count) {
     const summary = document.createElement('p');
-    summary.textContent = `${count} species returned (top ${topN} by frequency trend)`;
+    summary.textContent = `Top ${topN} species by frequency trend`;
     return summary;
   }
 
   function updateSummary$1(summary, topN, count) {
     if (summary) {
-      summary.textContent = `${count} species returned (top ${topN} by frequency trend)`;
+      summary.textContent = `Top ${topN} species by frequency trend`;
     }
   }
 
@@ -3136,7 +3222,8 @@ div[data-tanvis-controls="species-selector"] {
 
     const table = new Tabulator(container, {
       columns: columns$1,
-      layout: 'fitColumns',
+      layout: 'fitDataFill',
+      responsiveLayout: 'collapse',
       pagination: true,
       paginationMode: 'remote',
       paginationSize: pageSize,
@@ -3179,6 +3266,7 @@ div[data-tanvis-controls="species-selector"] {
 
     }
 
+    container.dataset.tanvisTableContainer = 'true';
     container.__tanvisTable = table;
     return { container, table };
   }
@@ -3200,13 +3288,25 @@ div[data-tanvis-controls="species-selector"] {
     return window.Tabulator || null;
   }
 
-  async function buildIncreasingSpeciesRecordsPage({ apiBase, topN, higherGeographyIdentifier, taxonGroupExternalKey, pageNumber, pageSize }) {
-    const offset = (pageNumber - 1) * pageSize;
-    const payload = await fetchTaxonStats({ apiBase, topN, higherGeographyIdentifier, taxonGroupExternalKey, limit: pageSize, offset });
+  async function buildIncreasingSpeciesRecordsPage({ apiBase, topN, higherGeographyIdentifier, taxonGroupExternalKey, pageNumber, pageSize, labelMode = 'scientific' }) {
+    const effectiveTopN = Math.max(0, Math.floor(topN ?? DEFAULT_TOP_N));
+    const effectivePageSize = Math.max(1, Math.floor(pageSize ?? DEFAULT_PAGE_SIZE$1));
+    const offset = (pageNumber - 1) * effectivePageSize;
+    const totalRows = effectiveTopN;
+    const totalPages = Math.max(1, Math.ceil(totalRows / effectivePageSize));
+
+    if (offset >= effectiveTopN) {
+      return {
+        records: [],
+        totalRows,
+        totalPages
+      };
+    }
+
+    const limit = Math.min(effectivePageSize, Math.max(1, effectiveTopN - offset));
+    const payload = await fetchTaxonStats({ apiBase, topN, higherGeographyIdentifier, taxonGroupExternalKey, limit, offset });
     const taxonStatsRows = getListData$4(payload);
-    const totalRows = getTotalCount$1(payload);
-    const totalPages = Math.max(1, Math.ceil(totalRows / pageSize));
-    const rankedRows = taxonStatsRows.slice(0, topN);
+    const rankedRows = taxonStatsRows.slice(0, effectiveTopN - offset);
 
     return {
       records: rankedRows.map((row) => {
@@ -3218,8 +3318,11 @@ div[data-tanvis-controls="species-selector"] {
           totalRecords: row.occurrences_count,
           occupiedGridSquares: row.grid_square_count,
           frequencyTrendScore: row.frequency_trend,
-          scientificName: row.taxon__scientific_name || '',
-          commonName: formatVernacularName$1(row)
+          scientificName: `<i>${row.taxon__scientific_name || ''}</i>`,
+          commonName: formatVernacularName$1(row),
+          taxonGroup: formatGroupName$1({ title: row.taxon_group__title, friendly: row.taxon_group__friendly }, labelMode),
+          taxonGroupTitle: row.taxon_group__title,
+          taxonGroupFriendly: row.taxon_group__friendly
         };
       }),
       totalRows,
@@ -3227,11 +3330,18 @@ div[data-tanvis-controls="species-selector"] {
     };
   }
 
+  function formatGroupName$1(group, labelMode = 'scientific') {
+    const parsedNames = parseTaxonGroupDisplayNames(group);
+    const displayName = labelMode === 'vernacular'
+      ? (parsedNames.vernacularName || parsedNames.scientificName)
+      : (parsedNames.scientificName || parsedNames.vernacularName);
+    return displayName;
+  }
+
   async function fetchTaxonStats({ apiBase, topN, higherGeographyIdentifier, taxonGroupExternalKey, limit, offset }) {
     const resourceUrl = resolveResourceUrl$4(apiBase, TAXON_STATS_RESOURCE$1);
     const pageUrl = new URL(resourceUrl.toString());
     pageUrl.searchParams.set('include', 'taxon, taxon-group');
-    console.log('higherGeographyIdentifier', higherGeographyIdentifier);
     const vcId = higherGeographyIdentifier === undefined ? null : higherGeographyIdentifier;
     pageUrl.searchParams.set('higher_geography_identifier[eq]', String(vcId));
     if (taxonGroupExternalKey) {
@@ -3289,22 +3399,6 @@ div[data-tanvis-controls="species-selector"] {
     return [];
   }
 
-  function getTotalCount$1(payload) {
-    if (Number.isFinite(payload?.meta?.total)) {
-      return Number(payload.meta.total);
-    }
-
-    if (Number.isFinite(payload?.total)) {
-      return Number(payload.total);
-    }
-
-    if (Number.isFinite(payload?.last_row)) {
-      return Number(payload.last_row);
-    }
-
-    return getListData$4(payload).length;
-  }
-
   function formatVernacularName$1(taxon) {
     const plural = taxon?.vernacular_names;
     if (Array.isArray(plural)) {
@@ -3346,18 +3440,23 @@ div[data-tanvis-controls="species-selector"] {
       return normalizeAreaValue(config.area);
     }
 
-    const latestEvent = getLatestControlEvent(config.control);
-    if (latestEvent?.type === 'area-change' && latestEvent.area) {
-      return normalizeAreaValue(latestEvent.area);
-    }
-
     if (typeof document === 'undefined') {
       return normalizeAreaValue(config.area);
     }
 
     const controlElement = document.getElementById(config.control);
-    const controlArea = controlElement?.dataset?.visArea;
-    return normalizeAreaValue(controlArea ?? config.area);
+    const controlAreaValue = controlElement?.dataset?.visArea;
+    const normalizedControlAreaValue = normalizeAreaValue(controlAreaValue);
+    if (controlElement && Object.prototype.hasOwnProperty.call(controlElement.dataset, 'visArea') && normalizedControlAreaValue !== undefined && normalizedControlAreaValue !== null && normalizedControlAreaValue !== '') {
+      return normalizedControlAreaValue;
+    }
+
+    const latestEvent = getLatestControlEvent(config.control);
+    if (latestEvent?.type === 'area-change' && latestEvent.area !== undefined && latestEvent.area !== null) {
+      return normalizeAreaValue(latestEvent.area);
+    }
+
+    return normalizeAreaValue(config.area);
   }
 
   function getEffectiveTaxonGroup$2(config) {
@@ -3367,6 +3466,32 @@ div[data-tanvis-controls="species-selector"] {
 
     const controlElement = document.getElementById(config.control);
     return controlElement?.dataset?.visTaxonGroup || '';
+  }
+
+  function getConfiguredPageSize$1(config) {
+    const configuredPageSize = Number(config?.pageSize ?? config?.['data-vis-page-size'] ?? config?.['data-visPageSize'] ?? DEFAULT_PAGE_SIZE$1);
+    if (!Number.isFinite(configuredPageSize) || configuredPageSize <= 0) {
+      return DEFAULT_PAGE_SIZE$1;
+    }
+
+    return configuredPageSize;
+  }
+
+  function getEffectiveLabelMode$1(config, fallbackMode) {
+    if (fallbackMode) {
+      return fallbackMode;
+    }
+
+    if (!config.control || typeof document === 'undefined') {
+      return 'scientific';
+    }
+
+    const controlElement = document.getElementById(config.control);
+    return controlElement?.dataset?.visTaxonGroupLabelMode || 'scientific';
+  }
+
+  function getEffectiveLabelModeForElement$1(element, config) {
+    return element?.dataset?.visTaxonGroupLabelMode || getEffectiveLabelMode$1(config);
   }
 
   const increasingSpeciesTableAdapter = createIncreasingSpeciesTableAdapter();
@@ -3380,11 +3505,11 @@ div[data-tanvis-controls="species-selector"] {
   const TAXON_STATS_RESOURCE = 'taxon-stats';
   const DEFAULT_PAGE_SIZE = 10;
   const columns = [
-    { title: 'Species ID', field: 'speciesId', sorter: 'string' },
-    { title: 'Scientific name', field: 'scientificName', sorter: 'string' },
-    { title: 'Common name', field: 'commonName', sorter: 'string' },
-    { title: 'Last record date', field: 'lastRecordDate', sorter: 'string' },
-    { title: 'VC number', field: 'vcNumber', sorter: 'number' }
+    { title: 'Scientific', field: 'scientificName', formatter: 'html', headerSort: false },
+    { title: 'Vernacular', field: 'commonName', headerSort: false, responsive: 9 },
+    { title: 'Last record', field: 'lastRecordDate', headerSort: false },
+    { title: 'Group', field: 'taxonGroup', headerSort: false, responsive: 9 },
+    { title: 'TVK', field: 'speciesId', headerSort: false }
   ];
 
   function createSpeciesAbsentSinceAdapter() {
@@ -3412,27 +3537,41 @@ div[data-tanvis-controls="species-selector"] {
         element.__tanvisSpeciesAbsentLoadId = loadId;
         element.dataset.visArea = renderConfig.area;
         element.dataset.visTaxonGroup = taxonGroupExternalKey;
-        const pageSize = DEFAULT_PAGE_SIZE;
+        element.dataset.visTaxonGroupLabelMode = getEffectiveLabelMode(renderConfig);
+        const pageSize = getConfiguredPageSize(renderConfig);
 
         if (renderConfig.control) {
           element.__tanvisControlCleanup = subscribeToControl(renderConfig.control, (event) => {
-            if (!event || (event.type !== 'area-change' && event.type !== 'taxon-group-change')) {
+            if (!event) {
               return;
             }
 
-            const nextArea = getEffectiveArea$2(renderConfig);
-            const nextTaxonGroupExternalKey = getEffectiveTaxonGroup$1(renderConfig);
+            if (event.type === 'area-change' || event.type === 'taxon-group-change') {
+              const nextArea = getEffectiveArea$2(renderConfig);
+              const nextTaxonGroupExternalKey = getEffectiveTaxonGroup$1(renderConfig);
 
-            if (nextArea === element.dataset.visArea && nextTaxonGroupExternalKey === (element.dataset.visTaxonGroup || '')) {
+              if (nextArea === element.dataset.visArea && nextTaxonGroupExternalKey === (element.dataset.visTaxonGroup || '')) {
+                return;
+              }
+
+              element.dataset.visArea = resolveAreaSelectionKey(nextArea);
+              element.dataset.visTaxonGroup = nextTaxonGroupExternalKey;
+              createSpeciesAbsentSinceAdapter().render(element, {
+                ...renderConfig,
+                area: nextArea
+              });
               return;
             }
 
-            element.dataset.visArea = resolveAreaSelectionKey(nextArea);
-            element.dataset.visTaxonGroup = nextTaxonGroupExternalKey;
-            createSpeciesAbsentSinceAdapter().render(element, {
-              ...renderConfig,
-              area: nextArea
-            });
+            if (event.type === 'name-language-change') {
+              const nextLabelMode = getEffectiveLabelMode(renderConfig, event.labelMode);
+              if (nextLabelMode === element.dataset.visTaxonGroupLabelMode) {
+                return;
+              }
+
+              element.dataset.visTaxonGroupLabelMode = nextLabelMode;
+              rerenderTableRows(element, { labelMode: nextLabelMode });
+            }
           });
         }
 
@@ -3458,7 +3597,8 @@ div[data-tanvis-controls="species-selector"] {
               higherGeographyIdentifier,
               taxonGroupExternalKey,
               pageNumber,
-              pageSize: requestedPageSize
+              pageSize: requestedPageSize,
+              labelMode: getEffectiveLabelModeForElement(element, renderConfig)
             });
 
             if (element.__tanvisSpeciesAbsentLoadId !== loadId) {
@@ -3470,6 +3610,7 @@ div[data-tanvis-controls="species-selector"] {
             }
 
             updateSummary(summary, year, pageResult.totalRows);
+            element.__tanvisLatestRows = pageResult.records;
             return {
               data: pageResult.records,
               last_page: pageResult.totalPages,
@@ -3495,6 +3636,33 @@ div[data-tanvis-controls="species-selector"] {
     };
   }
 
+  function rerenderTableRows(element, { labelMode }) {
+    const tableContainer = element?.querySelector('[data-tanvis-table-container="true"]');
+    if (!tableContainer?.__tanvisTable) {
+      return;
+    }
+
+    const table = tableContainer.__tanvisTable;
+    const tableRows = typeof table?.getData === 'function' ? table.getData() : null;
+    const rows = Array.isArray(tableRows) && tableRows.length > 0
+      ? tableRows
+      : (Array.isArray(element.__tanvisLatestRows) ? element.__tanvisLatestRows : []);
+
+    const remappedRows = rows.map((row) => ({
+      ...row,
+      taxonGroup: formatGroupName({
+        title: row?.taxonGroupTitle,
+        friendly: row?.taxonGroupFriendly
+      }, labelMode)
+    }));
+
+    if (typeof table.setData === 'function') {
+      table.setData(remappedRows);
+    }
+
+    element.__tanvisLatestRows = remappedRows;
+  }
+
   function createSummary$1(year, count) {
     const summary = document.createElement('p');
     summary.textContent = `${count} species with last record date on or before ${year}`;
@@ -3513,7 +3681,8 @@ div[data-tanvis-controls="species-selector"] {
 
     const table = new Tabulator(container, {
       columns,
-      layout: 'fitColumns',
+      layout: 'fitDataFill',
+      responsiveLayout: 'collapse',
       pagination: true,
       paginationMode: 'remote',
       paginationSize: pageSize,
@@ -3552,11 +3721,12 @@ div[data-tanvis-controls="species-selector"] {
       container.dispatchEvent(rowSelectedEvent);
     });
 
+    container.dataset.tanvisTableContainer = 'true';
     container.__tanvisTable = table;
     return { container, table };
   }
 
-  async function buildSpeciesAbsentSinceRecordsPage({ apiBase, year, higherGeographyIdentifier, taxonGroupExternalKey, pageNumber, pageSize }) {
+  async function buildSpeciesAbsentSinceRecordsPage({ apiBase, year, higherGeographyIdentifier, taxonGroupExternalKey, pageNumber, pageSize, labelMode = 'scientific' }) {
     const cutoffDate = `${year}-12-31`;
     const offset = (pageNumber - 1) * pageSize;
     const payload = await fetchTaxonStatsAbsentSince({
@@ -3576,9 +3746,12 @@ div[data-tanvis-controls="species-selector"] {
       records: taxonStatsRows.map((row) => {
         return {
           speciesId: row.taxon_identifier,
-          scientificName: row.taxon__scientific_name || '',
+          scientificName: `<i>${row.taxon__scientific_name || ''}</i>`,
           commonName: formatVernacularName(row),
           lastRecordDate: row.last_record_date,
+          taxonGroup: formatGroupName({ title: row.taxon_group__title, friendly: row.taxon_group__friendly }, labelMode),
+          taxonGroupTitle: row.taxon_group__title,
+          taxonGroupFriendly: row.taxon_group__friendly,
           vcNumber: row.geographic_region_identifier
         };
       }),
@@ -3673,6 +3846,14 @@ div[data-tanvis-controls="species-selector"] {
     return taxon?.vernacular_name || '';
   }
 
+  function formatGroupName(group, labelMode = 'scientific') {
+    const parsedNames = parseTaxonGroupDisplayNames(group);
+    const displayName = labelMode === 'vernacular'
+      ? (parsedNames.vernacularName || parsedNames.scientificName)
+      : (parsedNames.scientificName || parsedNames.vernacularName);
+    return displayName;
+  }
+
   function areaToHigherGeographyIdentifier(area) {
     const normalizedArea = normalizeAreaValue(area);
 
@@ -3705,18 +3886,32 @@ div[data-tanvis-controls="species-selector"] {
       return normalizeAreaValue(config.area);
     }
 
-    const latestEvent = getLatestControlEvent(config.control);
-    if (latestEvent?.type === 'area-change' && latestEvent.area) {
-      return normalizeAreaValue(latestEvent.area);
-    }
-
     if (typeof document === 'undefined') {
       return normalizeAreaValue(config.area);
     }
 
     const controlElement = document.getElementById(config.control);
-    const controlArea = controlElement?.dataset?.visArea;
-    return normalizeAreaValue(controlArea ?? config.area);
+    const controlAreaValue = controlElement?.dataset?.visArea;
+    const normalizedControlAreaValue = normalizeAreaValue(controlAreaValue);
+    if (controlElement && Object.prototype.hasOwnProperty.call(controlElement.dataset, 'visArea') && normalizedControlAreaValue !== undefined && normalizedControlAreaValue !== null && normalizedControlAreaValue !== '') {
+      return normalizedControlAreaValue;
+    }
+
+    const latestEvent = getLatestControlEvent(config.control);
+    if (latestEvent?.type === 'area-change' && latestEvent.area !== undefined && latestEvent.area !== null) {
+      return normalizeAreaValue(latestEvent.area);
+    }
+
+    return normalizeAreaValue(config.area);
+  }
+
+  function getConfiguredPageSize(config) {
+    const configuredPageSize = Number(config?.pageSize ?? config?.['data-vis-page-size'] ?? config?.['data-visPageSize'] ?? DEFAULT_PAGE_SIZE);
+    if (!Number.isFinite(configuredPageSize) || configuredPageSize <= 0) {
+      return DEFAULT_PAGE_SIZE;
+    }
+
+    return configuredPageSize;
   }
 
   function getEffectiveTaxonGroup$1(config) {
@@ -3726,6 +3921,23 @@ div[data-tanvis-controls="species-selector"] {
 
     const controlElement = document.getElementById(config.control);
     return controlElement?.dataset?.visTaxonGroup || '';
+  }
+
+  function getEffectiveLabelMode(config, fallbackMode) {
+    if (fallbackMode) {
+      return fallbackMode;
+    }
+
+    if (!config.control || typeof document === 'undefined') {
+      return 'scientific';
+    }
+
+    const controlElement = document.getElementById(config.control);
+    return controlElement?.dataset?.visTaxonGroupLabelMode || 'scientific';
+  }
+
+  function getEffectiveLabelModeForElement(element, config) {
+    return element?.dataset?.visTaxonGroupLabelMode || getEffectiveLabelMode(config);
   }
 
   function getTabulatorGlobal() {
@@ -4429,18 +4641,23 @@ div[data-tanvis-controls="species-selector"] {
       return normalizeAreaValue(config.area);
     }
 
-    const latestEvent = getLatestControlEvent(config.control);
-    if (latestEvent?.type === 'area-change' && latestEvent.area) {
-      return normalizeAreaValue(latestEvent.area);
-    }
-
     if (typeof document === 'undefined') {
       return normalizeAreaValue(config.area);
     }
 
     const controlElement = document.getElementById(config.control);
-    const controlArea = controlElement?.dataset?.visArea;
-    return normalizeAreaValue(controlArea ?? config.area);
+    const controlAreaValue = controlElement?.dataset?.visArea;
+    const normalizedControlAreaValue = normalizeAreaValue(controlAreaValue);
+    if (controlElement && Object.prototype.hasOwnProperty.call(controlElement.dataset, 'visArea') && normalizedControlAreaValue !== undefined && normalizedControlAreaValue !== null && normalizedControlAreaValue !== '') {
+      return normalizedControlAreaValue;
+    }
+
+    const latestEvent = getLatestControlEvent(config.control);
+    if (latestEvent?.type === 'area-change' && latestEvent.area !== undefined && latestEvent.area !== null) {
+      return normalizeAreaValue(latestEvent.area);
+    }
+
+    return normalizeAreaValue(config.area);
   }
 
   function getEffectiveTaxonGroup(config) {
@@ -4947,18 +5164,23 @@ div[data-tanvis-controls="species-selector"] {
       return normalizeAreaValue(config.area);
     }
 
-    const latestEvent = getLatestControlEvent(config.control);
-    if (latestEvent?.type === 'area-change' && latestEvent.area) {
-      return normalizeAreaValue(latestEvent.area);
-    }
-
     if (typeof document === 'undefined') {
       return normalizeAreaValue(config.area);
     }
 
     const controlElement = document.getElementById(config.control);
-    const controlArea = controlElement?.dataset?.visArea;
-    return normalizeAreaValue(controlArea ?? config.area);
+    const controlAreaValue = controlElement?.dataset?.visArea;
+    const normalizedControlAreaValue = normalizeAreaValue(controlAreaValue);
+    if (controlElement && Object.prototype.hasOwnProperty.call(controlElement.dataset, 'visArea') && normalizedControlAreaValue !== undefined && normalizedControlAreaValue !== null && normalizedControlAreaValue !== '') {
+      return normalizedControlAreaValue;
+    }
+
+    const latestEvent = getLatestControlEvent(config.control);
+    if (latestEvent?.type === 'area-change' && latestEvent.area !== undefined && latestEvent.area !== null) {
+      return normalizeAreaValue(latestEvent.area);
+    }
+
+    return normalizeAreaValue(config.area);
   }
 
   function clearControlSubscription(element) {

@@ -476,18 +476,23 @@ function getEffectiveArea(config) {
     return normalizeAreaValue(config.area);
   }
 
-  const latestEvent = getLatestControlEvent(config.control);
-  if (latestEvent?.type === 'area-change' && latestEvent.area) {
-    return normalizeAreaValue(latestEvent.area);
-  }
-
   if (typeof document === 'undefined') {
     return normalizeAreaValue(config.area);
   }
 
   const controlElement = document.getElementById(config.control);
-  const controlArea = controlElement?.dataset?.visArea;
-  return normalizeAreaValue(controlArea ?? config.area);
+  const controlAreaValue = controlElement?.dataset?.visArea;
+  const normalizedControlAreaValue = normalizeAreaValue(controlAreaValue);
+  if (controlElement && Object.prototype.hasOwnProperty.call(controlElement.dataset, 'visArea') && normalizedControlAreaValue !== undefined && normalizedControlAreaValue !== null && normalizedControlAreaValue !== '') {
+    return normalizedControlAreaValue;
+  }
+
+  const latestEvent = getLatestControlEvent(config.control);
+  if (latestEvent?.type === 'area-change' && latestEvent.area !== undefined && latestEvent.area !== null) {
+    return normalizeAreaValue(latestEvent.area);
+  }
+
+  return normalizeAreaValue(config.area);
 }
 
 function getEffectiveTaxonGroup(config) {
