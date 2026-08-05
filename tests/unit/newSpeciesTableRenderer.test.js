@@ -222,6 +222,35 @@ describe('renderNewSpeciesTable', () => {
     expect(String(fetchMock.mock.calls[0][0])).toContain('taxon_group__external_key%5Beq%5D=diptera');
   });
 
+  it('uses the control-block language when present and overrides the table language', async () => {
+    window.Tabulator = createMockTabulator();
+
+    const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue({
+      ok: true,
+      json: async () => ({ data: [] })
+    });
+
+    const controlElement = document.createElement('div');
+    controlElement.id = 'vc-control-new-species-language';
+    controlElement.dataset.visArea = 'vc-all';
+    controlElement.dataset.visTaxonGroup = '';
+    controlElement.dataset.visTaxonGroupLabelMode = 'vernacular';
+    document.body.appendChild(controlElement);
+
+    const element = document.createElement('div');
+    renderNewSpeciesTable(element, {
+      type: 'new-species-table',
+      startDate: '2025-01-01',
+      endDate: '2025-12-31',
+      control: 'vc-control-new-species-language',
+      language: 'scientific'
+    });
+
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    expect(element.dataset.visTaxonGroupLabelMode).toBe('vernacular');
+  });
+
   it('filters taxon-stats requests by the selected VC through higher_geography_identifier', async () => {
     window.Tabulator = createMockTabulator();
 
@@ -250,7 +279,7 @@ describe('renderNewSpeciesTable', () => {
     expect(String(fetchMock.mock.calls[0][0])).not.toContain('geographic_region_identifier%5Beq%5D');
   });
 
-  it('re-renders the visible rows on name-language-change without refetching', async () => {
+  it('re-renders the visible rows on language-change without refetching', async () => {
     const setDataCalls = [];
     window.Tabulator = function Tabulator(container, options) {
       container.dataset.tabulatorMounted = 'true';
@@ -298,7 +327,7 @@ describe('renderNewSpeciesTable', () => {
     expect(fetchMock).toHaveBeenCalledTimes(1);
 
     publishControlEvent('vc-control-new-species-name-mode', {
-      type: 'name-language-change',
+      type: 'language-change',
       labelMode: 'vernacular'
     });
 

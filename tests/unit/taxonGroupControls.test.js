@@ -8,7 +8,7 @@ describe('createTaxonGroupControls', () => {
     document.body.innerHTML = '';
   });
 
-  it('emits a name-language-change event when the label mode toggle changes', async () => {
+  it('emits a language-change event when the label mode toggle changes', async () => {
     const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue({
       ok: true,
       json: async () => ({ data: [] })
@@ -42,7 +42,7 @@ describe('createTaxonGroupControls', () => {
 
     expect(fetchMock).toHaveBeenCalledTimes(1);
     expect(events).toContainEqual({
-      type: 'name-language-change',
+      type: 'language-change',
       labelMode: 'vernacular'
     });
   });

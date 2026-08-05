@@ -187,6 +187,40 @@ describe('renderIncreasingSpeciesTable', () => {
     expect(String(fetchMock.mock.calls[0][0])).toContain('taxon_group__external_key%5Beq%5D=diptera');
   });
 
+  it('uses the control-block language when present and overrides the table language', async () => {
+    window.Tabulator = function Tabulator(container, options) {
+      container.dataset.tabulatorMounted = 'true';
+      void options.ajaxRequestFunc('custom_handler', {}, { page: 1, size: 10 });
+      return {
+        on() {}
+      };
+    };
+
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue({
+      ok: true,
+      json: async () => ({ data: [] })
+    });
+
+    const controlElement = document.createElement('div');
+    controlElement.id = 'vc-control-increasing-language';
+    controlElement.dataset.visArea = 'vc-all';
+    controlElement.dataset.visTaxonGroup = '';
+    controlElement.dataset.visTaxonGroupLabelMode = 'vernacular';
+    document.body.appendChild(controlElement);
+
+    const element = document.createElement('div');
+    renderIncreasingSpeciesTable(element, {
+      type: 'increasing-species-table',
+      topN: 10,
+      control: 'vc-control-increasing-language',
+      language: 'scientific'
+    });
+
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    expect(element.dataset.visTaxonGroupLabelMode).toBe('vernacular');
+  });
+
   it('filters taxon-stats requests by the selected VC through higher_geography_identifier', async () => {
     window.Tabulator = function Tabulator(container, options) {
       container.dataset.tabulatorMounted = 'true';
@@ -253,7 +287,7 @@ describe('renderIncreasingSpeciesTable', () => {
     expect(String(fetchMock.mock.calls[1][0])).toContain('offset=20');
   });
 
-  it('re-renders the group column on name-language-change and preserves it for paged requests', async () => {
+  it('re-renders the group column on language-change and preserves it for paged requests', async () => {
     const setDataCalls = [];
     let capturedOptions = null;
     window.Tabulator = function Tabulator(container, options) {
@@ -307,7 +341,7 @@ describe('renderIncreasingSpeciesTable', () => {
     await new Promise((resolve) => setTimeout(resolve, 0));
 
     publishControlEvent('vc-control-increasing-name-mode', {
-      type: 'name-language-change',
+      type: 'language-change',
       labelMode: 'vernacular'
     });
 

@@ -14,7 +14,7 @@ const LABEL_MODE_OPTIONS = [
 export function createTaxonGroupControls({ rootElement, apiBase, selectedValue = '', labelMode = 'scientific', loadToken, body, showSelector = true, showLabelMode = true }) {
   const initialGroupIdFromDataset = rootElement?.dataset?.visGroupid || '';
   const initialSelectedValue = selectedValue || initialGroupIdFromDataset || rootElement?.dataset?.visTaxonGroup || '';
-  const initialLabelMode = rootElement?.dataset?.visTaxonGroupLabelMode || labelMode || 'scientific';
+  const initialLabelMode = rootElement?.dataset?.visTaxonGroupLabelMode || rootElement?.dataset?.visLanguage || labelMode || 'scientific';
 
   const targetBody = body || createControlsPanel({
     label: 'Taxon groups',
@@ -71,7 +71,7 @@ export function createTaxonGroupControls({ rootElement, apiBase, selectedValue =
         state.labelMode = value;
         syncRootDataset();
         renderOptions();
-        publishNameLanguageChange();
+        publishLanguageChange();
       }
     });
 
@@ -151,6 +151,7 @@ export function createTaxonGroupControls({ rootElement, apiBase, selectedValue =
 
     rootElement.dataset.visTaxonGroup = state.selectedValue;
     rootElement.dataset.visTaxonGroupLabelMode = state.labelMode;
+    rootElement.dataset.visLanguage = state.labelMode;
     rootElement.dataset.visTaxonGroupNameMode = state.labelMode;
   }
 
@@ -165,13 +166,13 @@ export function createTaxonGroupControls({ rootElement, apiBase, selectedValue =
     });
   }
 
-  function publishNameLanguageChange() {
+  function publishLanguageChange() {
     if (!rootElement?.id) {
       return;
     }
 
     publishControlEvent(rootElement.id, {
-      type: 'name-language-change',
+      type: 'language-change',
       labelMode: state.labelMode
     });
   }

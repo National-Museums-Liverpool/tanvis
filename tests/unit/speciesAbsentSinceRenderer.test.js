@@ -183,7 +183,7 @@ describe('renderSpeciesAbsentSince', () => {
     expect(element.__tanvisLatestRows[0].taxonGroup).toBe('Diptera');
 
     publishControlEvent('vc-control-species-absent-label', {
-      type: 'name-language-change',
+      type: 'language-change',
       labelMode: 'vernacular'
     });
 
@@ -294,6 +294,40 @@ describe('renderSpeciesAbsentSince', () => {
     await new Promise((resolve) => setTimeout(resolve, 0));
 
     expect(String(fetchMock.mock.calls[0][0])).toContain('taxon_group__external_key%5Beq%5D=diptera');
+  });
+
+  it('uses the control-block language when present and overrides the table language', async () => {
+    window.Tabulator = function Tabulator(container, options) {
+      container.dataset.tabulatorMounted = 'true';
+      void options.ajaxRequestFunc('custom_handler', {}, { page: 1, size: 10 });
+      return {
+        on() {}
+      };
+    };
+
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue({
+      ok: true,
+      json: async () => ({ data: [] })
+    });
+
+    const controlElement = document.createElement('div');
+    controlElement.id = 'vc-control-species-absent-language';
+    controlElement.dataset.visArea = 'vc-all';
+    controlElement.dataset.visTaxonGroup = '';
+    controlElement.dataset.visTaxonGroupLabelMode = 'vernacular';
+    document.body.appendChild(controlElement);
+
+    const element = document.createElement('div');
+    renderSpeciesAbsentSince(element, {
+      type: 'species-absent-since',
+      year: 2024,
+      control: 'vc-control-species-absent-language',
+      language: 'scientific'
+    });
+
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    expect(element.dataset.visTaxonGroupLabelMode).toBe('vernacular');
   });
 
   it('filters taxon-stats requests by the selected VC through higher_geography_identifier', async () => {

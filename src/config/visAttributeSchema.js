@@ -218,7 +218,7 @@ const RULES = {
       if (typeof(value) === 'undefined' || value === null || value === '') {
         ret.value = rule.defaultValue;
       } else {
-        const allowedVals = new Set(['area', 'groups', 'name-type', 'species']);
+        const allowedVals = new Set(['area', 'groups', 'language', 'species']);
         const vals = value.split(/\s+/).map((token) => token.trim()).filter(Boolean);
         const hasInvalid = vals.some((token) => !allowedVals.has(token));
         if (hasInvalid) {
@@ -230,8 +230,8 @@ const RULES = {
       }
       return ret;
     },
-    defaultValue: 'area groups name-type species',
-    info: `A space-separated list of control-block sections to show. Allowed values are: area, groups, name-type, species.`
+    defaultValue: 'area groups language species',
+    info: `A space-separated list of control-block sections to show. Allowed values are: area, groups, language, species.`
   }),
   showDataOptsToggle: createRule({
     key: 'showDataOptsToggle',
@@ -267,6 +267,14 @@ const RULES = {
     datasetName: 'visGroupid',
     parseAndValidate: parseAndValidateString,
     info: `The taxon group ID to filter the data by or initialise the control block.`
+  }),
+  language: createRule({
+    key: 'language',
+    datasetName: 'visLanguage',
+    parseAndValidate: parseAndValidateSet,
+    allowedValues: ['scientific', 'vernacular'],
+    defaultValue: 'scientific',
+    info: `The language to use for taxon group labels. This can be either 'scientific' or 'vernacular'.`
   }),
   startDate: createRule({
     key: 'startDate',
@@ -520,13 +528,13 @@ const RULES = {
 // Add the new data attributes for control-block.
 
 const VIS_TYPE_RULE_SETS = {
-  'control-block': ['area', 'groupId', 'controlElements', 'showDataOptsToggle', 'showDataOptsExpanded'],
+  'control-block': ['area', 'groupId', 'language','controlElements', 'showDataOptsToggle', 'showDataOptsExpanded'],
   'species-map': ['taxonId', 'control', 'area', 'hectads', 'mapType', 'boundaries', 'dotShape', 'dotColour', 'transformation', 'dotShape', 'expand', 'width', 'height'],
   'grid-stats-map': ['gridStatsType', 'control', 'area', 'hectads', 'mapType', 'boundaries', 'dotShape', 'dotColour', 'transformation', 'expand', 'width', 'height'],
   'temporal-year-chart': ['taxonId', 'linkedTable', 'startYear', 'endYear', 'area', 'control', 'expand', 'width', 'height'],
-  'new-species-table': ['startDate', 'endDate', 'area', 'groupId', 'control', 'pageSize'],
-  'increasing-species-table': ['topN', 'area', 'groupId', 'control', 'pageSize'],
-  'species-absent-since': ['year', 'area', 'groupId', 'control', 'pageSize']
+  'new-species-table': ['startDate', 'endDate', 'area', 'groupId', 'language','control', 'pageSize'],
+  'increasing-species-table': ['topN', 'area', 'groupId', 'language','control', 'pageSize'],
+  'species-absent-since': ['year', 'area', 'groupId', 'language','control', 'pageSize']
 };
 
 export function getVisAttributeSchema(visType) {

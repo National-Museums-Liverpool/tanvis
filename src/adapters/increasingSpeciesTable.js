@@ -43,11 +43,12 @@ export function createIncreasingSpeciesTableAdapter() {
       const apiBase = resolveApiBase();
       const higherGeographyIdentifier = areaToHigherGeographyIdentifier(renderConfig.area);
       const taxonGroupExternalKey = getEffectiveTaxonGroup(renderConfig);
+      const effectiveLabelMode = getEffectiveLabelMode(renderConfig);
       const loadId = (element.__tanvisIncreasingLoadId || 0) + 1;
       element.__tanvisIncreasingLoadId = loadId;
       element.dataset.visArea = renderConfig.area;
       element.dataset.visTaxonGroup = taxonGroupExternalKey;
-      element.dataset.visTaxonGroupLabelMode = getEffectiveLabelMode(renderConfig);
+      element.dataset.visTaxonGroupLabelMode = effectiveLabelMode;
       const pageSize = getConfiguredPageSize(renderConfig);
 
       if (renderConfig.control) {
@@ -73,7 +74,7 @@ export function createIncreasingSpeciesTableAdapter() {
             return;
           }
 
-          if (event.type === 'name-language-change') {
+          if (event.type === 'language-change') {
             const nextLabelMode = getEffectiveLabelMode(renderConfig, event.labelMode);
             if (nextLabelMode === element.dataset.visTaxonGroupLabelMode) {
               return;

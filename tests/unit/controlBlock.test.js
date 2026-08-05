@@ -124,6 +124,40 @@ describe('control block species selector', () => {
     expect(fetchMock).toHaveBeenCalled();
   });
 
+  it('initialises the label-mode toggle from the control-block language when provided', async () => {
+    const fetchMock = vi.spyOn(globalThis, 'fetch').mockImplementation(async (url) => {
+      const requestUrl = typeof url === 'string' ? url : String(url);
+
+      if (requestUrl.includes('taxon-groups')) {
+        return {
+          ok: true,
+          json: async () => ({ data: [{ title: 'Bees', external_key: 'bees' }] })
+        };
+      }
+
+      return {
+        ok: true,
+        json: async () => ({ data: [] })
+      };
+    });
+
+    const element = document.createElement('div');
+    element.id = 'vc-control-language';
+    document.body.appendChild(element);
+
+    const adapter = createControlBlockAdapter();
+    adapter.render(element, {
+      area: 'vc-58',
+      language: 'vernacular'
+    });
+
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    expect(element.dataset.visLanguage).toBe('vernacular');
+    expect(element.dataset.visTaxonGroupLabelMode).toBe('vernacular');
+    expect(fetchMock).toHaveBeenCalled();
+  });
+
   it('restricts taxa search results to the selected taxon group', async () => {
     const fetchMock = vi.spyOn(globalThis, 'fetch').mockImplementation(async (url) => {
       const requestUrl = typeof url === 'string' ? url : String(url);
@@ -381,7 +415,7 @@ describe('control block species selector', () => {
     expect(element.querySelector('input.tanvis-species-search-input')).toBeNull();
   });
 
-  it('hides only the name-type toggle buttons when data-vis-control-elements omits name-type', async () => {
+  it('hides only the language toggle buttons when data-vis-control-elements omits language', async () => {
     const element = document.createElement('div');
     element.id = 'vc-control';
     element.dataset.visControlElements = 'area groups species';
@@ -402,7 +436,7 @@ describe('control block species selector', () => {
   it('hides only the groups selector when data-vis-control-elements omits groups', async () => {
     const element = document.createElement('div');
     element.id = 'vc-control';
-    element.dataset.visControlElements = 'area name-type species';
+    element.dataset.visControlElements = 'area language species';
     document.body.appendChild(element);
 
     const adapter = createControlBlockAdapter();

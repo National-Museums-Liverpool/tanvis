@@ -38,11 +38,12 @@ export function createSpeciesAbsentSinceAdapter() {
       const apiBase = resolveApiBase();
       const higherGeographyIdentifier = areaToHigherGeographyIdentifier(renderConfig.area);
       const taxonGroupExternalKey = getEffectiveTaxonGroup(renderConfig);
+      const effectiveLabelMode = getEffectiveLabelMode(renderConfig);
       const loadId = (element.__tanvisSpeciesAbsentLoadId || 0) + 1;
       element.__tanvisSpeciesAbsentLoadId = loadId;
       element.dataset.visArea = renderConfig.area;
       element.dataset.visTaxonGroup = taxonGroupExternalKey;
-      element.dataset.visTaxonGroupLabelMode = getEffectiveLabelMode(renderConfig);
+      element.dataset.visTaxonGroupLabelMode = effectiveLabelMode;
       const pageSize = getConfiguredPageSize(renderConfig);
 
       if (renderConfig.control) {
@@ -68,7 +69,7 @@ export function createSpeciesAbsentSinceAdapter() {
             return;
           }
 
-          if (event.type === 'name-language-change') {
+          if (event.type === 'language-change') {
             const nextLabelMode = getEffectiveLabelMode(renderConfig, event.labelMode);
             if (nextLabelMode === element.dataset.visTaxonGroupLabelMode) {
               return;
@@ -440,12 +441,30 @@ function getEffectiveLabelMode(config, fallbackMode) {
     return fallbackMode;
   }
 
+  const explicitControlValue = readControlLanguageValue(config);
+  if (explicitControlValue) {
+    return explicitControlValue;
+  }
+
+  if (config?.language) {
+    return config.language;
+  }
+
+  return 'scientific';
+}
+
+function readControlLanguageValue(config) {
   if (!config.control || typeof document === 'undefined') {
-    return 'scientific';
+    return '';
   }
 
   const controlElement = document.getElementById(config.control);
-  return controlElement?.dataset?.visTaxonGroupLabelMode || 'scientific';
+  const controlLanguageValue = controlElement?.dataset?.visTaxonGroupLabelMode || controlElement?.dataset?.visLanguage || '';
+  if (controlLanguageValue) {
+    return controlLanguageValue;
+  }
+
+  return '';
 }
 
 function getEffectiveLabelModeForElement(element, config) {

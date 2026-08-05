@@ -11,7 +11,7 @@ import { logApiRequest } from '../utils/apiRequest.js';
 const SPECIES_SEARCH_DEBOUNCE_MS = 300;
 const SPECIES_SEARCH_LIMIT = 10;
 
-const CONTROL_ELEMENT_TOKENS = new Set(['area', 'groups', 'name-type', 'species']);
+const CONTROL_ELEMENT_TOKENS = new Set(['area', 'groups', 'language', 'species']);
 
 export function createControlBlockAdapter() {
   return {
@@ -48,16 +48,17 @@ export function createControlBlockAdapter() {
         });
       }
 
-      if (visibleControls.has('groups') || visibleControls.has('name-type')) {
+      if (visibleControls.has('groups') || visibleControls.has('language')) {
        
         createTaxonGroupControls({
           rootElement: element,
           apiBase: resolveApiBase(),
           selectedValue: config.groupId || '',
+          labelMode: config.language || 'scientific',
           body,
           loadToken,
           showSelector: visibleControls.has('groups'),
-          showLabelMode: visibleControls.has('name-type')
+          showLabelMode: visibleControls.has('language')
         });
       }
 
@@ -82,14 +83,14 @@ export function createControlBlockAdapter() {
 
 function parseVisibleControls(value) {
   if (typeof value !== 'string') {
-    return new Set(['area', 'groups', 'name-type', 'species']);
+    return new Set(['area', 'groups', 'language', 'species']);
   }
 
   const controls = value.split(/\s+/)
     .map((token) => token.trim())
     .filter((token) => CONTROL_ELEMENT_TOKENS.has(token));
 
-  return new Set(controls.length > 0 ? controls : ['area', 'groups', 'name-type', 'species']);
+  return new Set(controls.length > 0 ? controls : ['area', 'groups', 'language', 'species']);
 }
 
 function createSpeciesSelectorControl({ rootElement, apiBase, body, loadToken }) {

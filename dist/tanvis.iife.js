@@ -229,7 +229,7 @@ var Tanvis = (function (exports) {
         if (typeof(value) === 'undefined' || value === null || value === '') {
           ret.value = rule.defaultValue;
         } else {
-          const allowedVals = new Set(['area', 'groups', 'name-type', 'species']);
+          const allowedVals = new Set(['area', 'groups', 'language', 'species']);
           const vals = value.split(/\s+/).map((token) => token.trim()).filter(Boolean);
           const hasInvalid = vals.some((token) => !allowedVals.has(token));
           if (hasInvalid) {
@@ -241,8 +241,8 @@ var Tanvis = (function (exports) {
         }
         return ret;
       },
-      defaultValue: 'area groups name-type species',
-      info: `A space-separated list of control-block sections to show. Allowed values are: area, groups, name-type, species.`
+      defaultValue: 'area groups language species',
+      info: `A space-separated list of control-block sections to show. Allowed values are: area, groups, language, species.`
     }),
     showDataOptsToggle: createRule({
       key: 'showDataOptsToggle',
@@ -278,6 +278,14 @@ var Tanvis = (function (exports) {
       datasetName: 'visGroupid',
       parseAndValidate: parseAndValidateString,
       info: `The taxon group ID to filter the data by or initialise the control block.`
+    }),
+    language: createRule({
+      key: 'language',
+      datasetName: 'visLanguage',
+      parseAndValidate: parseAndValidateSet,
+      allowedValues: ['scientific', 'vernacular'],
+      defaultValue: 'scientific',
+      info: `The language to use for taxon group labels. This can be either 'scientific' or 'vernacular'.`
     }),
     startDate: createRule({
       key: 'startDate',
@@ -530,13 +538,13 @@ var Tanvis = (function (exports) {
   // Add the new data attributes for control-block.
 
   const VIS_TYPE_RULE_SETS = {
-    'control-block': ['area', 'groupId', 'controlElements', 'showDataOptsToggle', 'showDataOptsExpanded'],
+    'control-block': ['area', 'groupId', 'language','controlElements', 'showDataOptsToggle', 'showDataOptsExpanded'],
     'species-map': ['taxonId', 'control', 'area', 'hectads', 'mapType', 'boundaries', 'dotShape', 'dotColour', 'transformation', 'dotShape', 'expand', 'width', 'height'],
     'grid-stats-map': ['gridStatsType', 'control', 'area', 'hectads', 'mapType', 'boundaries', 'dotShape', 'dotColour', 'transformation', 'expand', 'width', 'height'],
     'temporal-year-chart': ['taxonId', 'linkedTable', 'startYear', 'endYear', 'area', 'control', 'expand', 'width', 'height'],
-    'new-species-table': ['startDate', 'endDate', 'area', 'groupId', 'control', 'pageSize'],
-    'increasing-species-table': ['topN', 'area', 'groupId', 'control', 'pageSize'],
-    'species-absent-since': ['year', 'area', 'groupId', 'control', 'pageSize']
+    'new-species-table': ['startDate', 'endDate', 'area', 'groupId', 'language','control', 'pageSize'],
+    'increasing-species-table': ['topN', 'area', 'groupId', 'language','control', 'pageSize'],
+    'species-absent-since': ['year', 'area', 'groupId', 'language','control', 'pageSize']
   };
 
   function getVisAttributeSchema(visType) {
@@ -2009,7 +2017,7 @@ div[data-tanvis-controls="species-selector"] {
   function createTaxonGroupControls({ rootElement, apiBase, selectedValue = '', labelMode = 'scientific', loadToken, body, showSelector = true, showLabelMode = true }) {
     const initialGroupIdFromDataset = rootElement?.dataset?.visGroupid || '';
     const initialSelectedValue = selectedValue || initialGroupIdFromDataset || rootElement?.dataset?.visTaxonGroup || '';
-    const initialLabelMode = rootElement?.dataset?.visTaxonGroupLabelMode || labelMode || 'scientific';
+    const initialLabelMode = rootElement?.dataset?.visTaxonGroupLabelMode || rootElement?.dataset?.visLanguage || labelMode || 'scientific';
 
     const targetBody = body || createControlsPanel({
       label: 'Taxon groups',
@@ -2066,7 +2074,7 @@ div[data-tanvis-controls="species-selector"] {
           state.labelMode = value;
           syncRootDataset();
           renderOptions();
-          publishNameLanguageChange();
+          publishLanguageChange();
         }
       });
 
@@ -2146,6 +2154,7 @@ div[data-tanvis-controls="species-selector"] {
 
       rootElement.dataset.visTaxonGroup = state.selectedValue;
       rootElement.dataset.visTaxonGroupLabelMode = state.labelMode;
+      rootElement.dataset.visLanguage = state.labelMode;
       rootElement.dataset.visTaxonGroupNameMode = state.labelMode;
     }
 
@@ -2160,13 +2169,13 @@ div[data-tanvis-controls="species-selector"] {
       });
     }
 
-    function publishNameLanguageChange() {
+    function publishLanguageChange() {
       if (!rootElement?.id) {
         return;
       }
 
       publishControlEvent(rootElement.id, {
-        type: 'name-language-change',
+        type: 'language-change',
         labelMode: state.labelMode
       });
     }
@@ -2239,7 +2248,7 @@ div[data-tanvis-controls="species-selector"] {
   const SPECIES_SEARCH_DEBOUNCE_MS = 300;
   const SPECIES_SEARCH_LIMIT = 10;
 
-  const CONTROL_ELEMENT_TOKENS = new Set(['area', 'groups', 'name-type', 'species']);
+  const CONTROL_ELEMENT_TOKENS = new Set(['area', 'groups', 'language', 'species']);
 
   function createControlBlockAdapter() {
     return {
@@ -2276,16 +2285,17 @@ div[data-tanvis-controls="species-selector"] {
           });
         }
 
-        if (visibleControls.has('groups') || visibleControls.has('name-type')) {
+        if (visibleControls.has('groups') || visibleControls.has('language')) {
          
           createTaxonGroupControls({
             rootElement: element,
             apiBase: resolveApiBase(),
             selectedValue: config.groupId || '',
+            labelMode: config.language || 'scientific',
             body,
             loadToken,
             showSelector: visibleControls.has('groups'),
-            showLabelMode: visibleControls.has('name-type')
+            showLabelMode: visibleControls.has('language')
           });
         }
 
@@ -2310,14 +2320,14 @@ div[data-tanvis-controls="species-selector"] {
 
   function parseVisibleControls(value) {
     if (typeof value !== 'string') {
-      return new Set(['area', 'groups', 'name-type', 'species']);
+      return new Set(['area', 'groups', 'language', 'species']);
     }
 
     const controls = value.split(/\s+/)
       .map((token) => token.trim())
       .filter((token) => CONTROL_ELEMENT_TOKENS.has(token));
 
-    return new Set(controls.length > 0 ? controls : ['area', 'groups', 'name-type', 'species']);
+    return new Set(controls.length > 0 ? controls : ['area', 'groups', 'language', 'species']);
   }
 
   function createSpeciesSelectorControl({ rootElement, apiBase, body, loadToken }) {
@@ -2623,11 +2633,12 @@ div[data-tanvis-controls="species-selector"] {
         const apiBase = resolveApiBase();
         const higherGeographyIdentifier = areaToHigherGeographyIdentifier$2(renderConfig.area);
         const taxonGroupExternalKey = getEffectiveTaxonGroup$3(renderConfig);
+        const effectiveLabelMode = getEffectiveLabelMode$2(renderConfig);
         const loadId = (element.__tanvisNewSpeciesLoadId || 0) + 1;
         element.__tanvisNewSpeciesLoadId = loadId;
         element.dataset.visArea = renderConfig.area;
         element.dataset.visTaxonGroup = taxonGroupExternalKey;
-        element.dataset.visTaxonGroupLabelMode = getEffectiveLabelMode$2(renderConfig);
+        element.dataset.visTaxonGroupLabelMode = effectiveLabelMode;
         const pageSize = getConfiguredPageSize$2(renderConfig);
 
         if (renderConfig.control) {
@@ -2653,7 +2664,7 @@ div[data-tanvis-controls="species-selector"] {
               return;
             }
 
-            if (event.type === 'name-language-change') {
+            if (event.type === 'language-change') {
               const nextLabelMode = getEffectiveLabelMode$2(renderConfig, event.labelMode);
               if (nextLabelMode === element.dataset.visTaxonGroupLabelMode) {
                 return;
@@ -3025,12 +3036,30 @@ div[data-tanvis-controls="species-selector"] {
       return fallbackMode;
     }
 
+    const explicitControlValue = readControlLanguageValue$1(config);
+    if (explicitControlValue) {
+      return explicitControlValue;
+    }
+
+    if (config?.language) {
+      return config.language;
+    }
+
+    return 'scientific';
+  }
+
+  function readControlLanguageValue$1(config) {
     if (!config.control || typeof document === 'undefined') {
-      return 'scientific';
+      return '';
     }
 
     const controlElement = document.getElementById(config.control);
-    return controlElement?.dataset?.visTaxonGroupLabelMode || 'scientific';
+    const controlLanguageValue = controlElement?.dataset?.visTaxonGroupLabelMode || controlElement?.dataset?.visLanguage || '';
+    if (controlLanguageValue) {
+      return controlLanguageValue;
+    }
+
+    return '';
   }
 
   function getEffectiveLabelModeForElement$2(element, config) {
@@ -3089,11 +3118,12 @@ div[data-tanvis-controls="species-selector"] {
         const apiBase = resolveApiBase();
         const higherGeographyIdentifier = areaToHigherGeographyIdentifier$1(renderConfig.area);
         const taxonGroupExternalKey = getEffectiveTaxonGroup$2(renderConfig);
+        const effectiveLabelMode = getEffectiveLabelMode$1(renderConfig);
         const loadId = (element.__tanvisIncreasingLoadId || 0) + 1;
         element.__tanvisIncreasingLoadId = loadId;
         element.dataset.visArea = renderConfig.area;
         element.dataset.visTaxonGroup = taxonGroupExternalKey;
-        element.dataset.visTaxonGroupLabelMode = getEffectiveLabelMode$1(renderConfig);
+        element.dataset.visTaxonGroupLabelMode = effectiveLabelMode;
         const pageSize = getConfiguredPageSize$1(renderConfig);
 
         if (renderConfig.control) {
@@ -3119,7 +3149,7 @@ div[data-tanvis-controls="species-selector"] {
               return;
             }
 
-            if (event.type === 'name-language-change') {
+            if (event.type === 'language-change') {
               const nextLabelMode = getEffectiveLabelMode$1(renderConfig, event.labelMode);
               if (nextLabelMode === element.dataset.visTaxonGroupLabelMode) {
                 return;
@@ -3557,11 +3587,12 @@ div[data-tanvis-controls="species-selector"] {
         const apiBase = resolveApiBase();
         const higherGeographyIdentifier = areaToHigherGeographyIdentifier(renderConfig.area);
         const taxonGroupExternalKey = getEffectiveTaxonGroup$1(renderConfig);
+        const effectiveLabelMode = getEffectiveLabelMode(renderConfig);
         const loadId = (element.__tanvisSpeciesAbsentLoadId || 0) + 1;
         element.__tanvisSpeciesAbsentLoadId = loadId;
         element.dataset.visArea = renderConfig.area;
         element.dataset.visTaxonGroup = taxonGroupExternalKey;
-        element.dataset.visTaxonGroupLabelMode = getEffectiveLabelMode(renderConfig);
+        element.dataset.visTaxonGroupLabelMode = effectiveLabelMode;
         const pageSize = getConfiguredPageSize(renderConfig);
 
         if (renderConfig.control) {
@@ -3587,7 +3618,7 @@ div[data-tanvis-controls="species-selector"] {
               return;
             }
 
-            if (event.type === 'name-language-change') {
+            if (event.type === 'language-change') {
               const nextLabelMode = getEffectiveLabelMode(renderConfig, event.labelMode);
               if (nextLabelMode === element.dataset.visTaxonGroupLabelMode) {
                 return;
@@ -3959,12 +3990,30 @@ div[data-tanvis-controls="species-selector"] {
       return fallbackMode;
     }
 
+    const explicitControlValue = readControlLanguageValue(config);
+    if (explicitControlValue) {
+      return explicitControlValue;
+    }
+
+    if (config?.language) {
+      return config.language;
+    }
+
+    return 'scientific';
+  }
+
+  function readControlLanguageValue(config) {
     if (!config.control || typeof document === 'undefined') {
-      return 'scientific';
+      return '';
     }
 
     const controlElement = document.getElementById(config.control);
-    return controlElement?.dataset?.visTaxonGroupLabelMode || 'scientific';
+    const controlLanguageValue = controlElement?.dataset?.visTaxonGroupLabelMode || controlElement?.dataset?.visLanguage || '';
+    if (controlLanguageValue) {
+      return controlLanguageValue;
+    }
+
+    return '';
   }
 
   function getEffectiveLabelModeForElement(element, config) {
