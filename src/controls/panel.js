@@ -6,6 +6,7 @@ export function createControlsPanel(options = {}) {
   const label = options.label || 'Data options';
   const ariaLabel = options.ariaLabel || 'Toggle controls';
   const expanded = options.expanded !== false;
+  const showToggle = options.showToggle !== false;
 
   const panel = document.createElement('div');
   panel.className = 'tanvis-controls';
@@ -32,6 +33,9 @@ export function createControlsPanel(options = {}) {
 
   toggle.appendChild(toggleIcon);
   toggle.appendChild(toggleLabel);
+  if (!showToggle) {
+    toggle.style.display = 'none';
+  }
 
   const body = document.createElement('div');
   body.className = 'tanvis-controls-group';

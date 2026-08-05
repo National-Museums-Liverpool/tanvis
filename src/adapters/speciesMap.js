@@ -5,6 +5,7 @@ import { createVisStatusReporter } from '../utils/visStatus.js';
 import { logApiRequest } from '../utils/apiRequest.js';
 import { renderLeafletAtlasMap } from './map/leafletBackend.js';
 import { renderStaticAtlasMap } from './map/staticBackend.js';
+import { normalizeAreaValue } from './map/common.js';
 import { ensureSharedStyles } from '../styles/sharedStyles.js';
 import {
   createMapTypeSwitchControl,
@@ -46,6 +47,8 @@ export function createSpeciesMapAdapter() {
       if (!shouldPreserveControlSubscription) {
         clearControlSubscription(element);
       }
+      mapData = [];
+
       const status = createVisStatusReporter(element);
       const existingMap = element.__tanvisSpeciesMapInstance;
       const shouldReuseExistingMap = Boolean(
@@ -176,7 +179,6 @@ export function createSpeciesMapAdapter() {
         apiBase,
         speciesCode,
         area: renderConfig.area,
-        includeAreaFilter: Boolean(config.control || config.area)
       })
         .then((rows) => {
           if (element.__tanvisSpeciesMapLoadId !== loadId) {
@@ -360,9 +362,14 @@ function getDotStyleOptions(config = {}, hostElement) {
 export function applyOccurrenceDataToMap(map, occurrenceRows = []) {
   mapData = Array.isArray(occurrenceRows) ? occurrenceRows : [];
 
+  console.log(`[species-map] applying ${mapData.length} occurrence records to map...`);
+          
+
   if (!map || typeof map.setMapType !== 'function' || typeof map.redrawMap !== 'function') {
     return;
   }
+
+  console.log('Redrawing map', OCCURRENCES_MAP_TYPE_KEY);
 
   map.setMapType(OCCURRENCES_MAP_TYPE_KEY);
   map.redrawMap();
@@ -372,21 +379,21 @@ export function applyOccurrenceDataToMap(map, occurrenceRows = []) {
 
 function getEffectiveArea(config) {
   if (!config.control) {
-    return config.area;
+    return normalizeAreaValue(config.area);
   }
 
   const latestEvent = getLatestControlEvent(config.control);
   if (latestEvent?.type === 'area-change' && latestEvent.area) {
-    return latestEvent.area;
+    return normalizeAreaValue(latestEvent.area);
   }
 
   if (typeof document === 'undefined') {
-    return config.area;
+    return normalizeAreaValue(config.area);
   }
 
   const controlElement = document.getElementById(config.control);
   const controlArea = controlElement?.dataset?.visArea;
-  return controlArea || config.area;
+  return normalizeAreaValue(controlArea ?? config.area);
 }
 
 function getEffectiveTaxonGroup(config) {
@@ -398,7 +405,7 @@ function getEffectiveTaxonGroup(config) {
   return controlElement?.dataset?.visTaxonGroup || '';
 }
 
-async function fetchSpeciesOccurrences({ apiBase, speciesCode, area, includeAreaFilter }) {
+async function fetchSpeciesOccurrences({ apiBase, speciesCode, area }) {
   if (!speciesCode) {
     return [];
   }
@@ -411,11 +418,8 @@ async function fetchSpeciesOccurrences({ apiBase, speciesCode, area, includeArea
     const pageUrl = new URL(resourceUrl.toString());
     pageUrl.searchParams.set('taxon_identifier[eq]', speciesCode);
 
-    if (includeAreaFilter) {
-      const higherGeographyIdentifiers = areaToHigherGeographyIdentifiers(area);
-      if (higherGeographyIdentifiers.length > 0) {
-        pageUrl.searchParams.set('higher_geography_identifier[in]', higherGeographyIdentifiers.join(','));
-      }
+    if (area) {
+      pageUrl.searchParams.set('higher_geography_identifier[eq]', String(area));
     }
 
     pageUrl.searchParams.set('limit', String(DEFAULT_PAGE_LIMIT));
@@ -433,27 +437,6 @@ async function fetchSpeciesOccurrences({ apiBase, speciesCode, area, includeArea
   }
 
   return rows;
-}
-
-function areaToHigherGeographyIdentifiers(area) {
-  if (area === 'vc-58') {
-    return [58];
-  }
-
-  if (area === 'vc-59') {
-    return [59];
-  }
-
-  if (area === 'vc-60') {
-    return [60];
-  }
-
-  // Combined VC selection means "all relevant areas", so no additional filter is required.
-  if (area === 'vc-all') {
-    return [];
-  }
-
-  return [];
 }
 
 function resolveResourceUrl(apiBase, resourceName) {

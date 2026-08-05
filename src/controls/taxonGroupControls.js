@@ -4,6 +4,7 @@ import { publishControlEvent } from './controlBus.js';
 import { createApiError, normalizeErrorMessage, parseJsonSafe } from '../utils/apiError.js';
 import { createVisStatusReporter } from '../utils/visStatus.js';
 import { logApiRequest } from '../../src/utils/apiRequest.js';
+import { parseTaxonGroupDisplayNames } from '../utils/taxonGroupLabels.js';
 
 const LABEL_MODE_OPTIONS = [
   { label: 'Scientific', value: 'scientific' },
@@ -11,6 +12,9 @@ const LABEL_MODE_OPTIONS = [
 ];
 
 export function createTaxonGroupControls({ rootElement, apiBase, selectedValue = '', labelMode = 'scientific', loadToken, body, showSelector = true, showLabelMode = true }) {
+  const initialSelectedValue = rootElement?.dataset?.visTaxonGroup || selectedValue || '';
+  const initialLabelMode = rootElement?.dataset?.visTaxonGroupLabelMode || labelMode || 'scientific';
+
   const targetBody = body || createControlsPanel({
     label: 'Taxon groups',
     ariaLabel: 'Toggle taxon group controls'
@@ -22,8 +26,8 @@ export function createTaxonGroupControls({ rootElement, apiBase, selectedValue =
 
   const state = {
     groups: [],
-    selectedValue,
-    labelMode
+    selectedValue: initialSelectedValue,
+    labelMode: initialLabelMode
   };
 
   syncRootDataset();
@@ -120,11 +124,15 @@ export function createTaxonGroupControls({ rootElement, apiBase, selectedValue =
     for (const group of state.groups) {
       const option = document.createElement('option');
       option.value = group.external_key;
-      option.textContent = state.labelMode === 'vernacular' ? (group.friendly || group.title || group.external_key) : (group.title || group.friendly || group.external_key);
+      const parsedNames = parseTaxonGroupDisplayNames(group);
+      const displayName = state.labelMode === 'vernacular'
+        ? (parsedNames.vernacularName || parsedNames.scientificName || group.external_key)
+        : (parsedNames.scientificName || parsedNames.vernacularName || group.external_key);
+      option.textContent = displayName;
       select.appendChild(option);
     }
 
-    if (!state.groups.some((group) => group.external_key === currentSelectedValue)) {
+    if (state.groups.length > 0 && !state.groups.some((group) => group.external_key === currentSelectedValue)) {
       state.selectedValue = '';
       select.value = '';
     } else {

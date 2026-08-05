@@ -1,6 +1,7 @@
 import * as d3 from 'd3';
 import { beforeEach, describe, it, expect, vi, afterEach } from 'vitest';
 import { renderGridStatsMap } from '../../src/renderers/gridStatsMap.js';
+import { publishControlEvent } from '../../src/controls/controlBus.js';
 
 describe('renderGridStatsMap', () => {
   beforeEach(() => {
@@ -130,6 +131,49 @@ describe('renderGridStatsMap', () => {
     expect(svgMapCalls).toHaveLength(1);
     expect(svgMapCalls[0].mapTypesKey).toBe('grid-stats-rarity');
     expect(element.querySelector('.tanvis-grid-stats-switch')).toBeNull();
+  });
+
+  it('uses control-driven vc values to filter grid-square stats by the corresponding geographic region identifier', async () => {
+    const requestedUrls = [];
+
+    window.brcatlas = {
+      svgMap: (opts) => ({
+        setMapType() {},
+        redrawMap() {}
+      })
+    };
+
+    vi.spyOn(globalThis, 'fetch').mockImplementation(async (url) => {
+      requestedUrls.push(String(url));
+      return {
+        ok: true,
+        json: async () => ({ data: [] })
+      };
+    });
+
+    const controlElement = document.createElement('div');
+    controlElement.id = 'control';
+    controlElement.dataset.visArea = 'vc-all';
+    document.body.appendChild(controlElement);
+
+    const element = document.createElement('div');
+    renderGridStatsMap(element, {
+      type: 'grid-stats-map',
+      mapType: 'static',
+      area: 'vc-all',
+      gridStatsType: 'switch',
+      control: 'control'
+    });
+
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    publishControlEvent('control', { type: 'area-change', area: 'vc-58' });
+
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    expect(requestedUrls.at(-1)).toContain('higher_geography_identifier%5Bin%5D=58');
+
+    controlElement.remove();
   });
 
   it('supports mapType switch with initial static render and toggles to leaflet without refetching', async () => {

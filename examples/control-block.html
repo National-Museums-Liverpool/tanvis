@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Tanvis Increasing Species Table Example</title>
+    <title>Tanvis control block example</title>
     <script src="https://unpkg.com/tabulator-tables@6.3.0/dist/js/tabulator.min.js"></script>
     <link rel="stylesheet" href="https://unpkg.com/tabulator-tables@6.3.0/dist/css/tabulator.min.css" />
     <style>
@@ -18,31 +18,20 @@
     </style>
   </head>
   <body>
-    <h1>Tanvis Increasing Species Table Example</h1>
-    <p>This renders the top increasing species ranked by frequency trend score.</p>
+    <h1>Tanvis control block example</h1>
+    <p>This demonstrates the Tanvis control block functionality.</p>
 
     <div
       id="vc-control"
       class="tanvis"
       data-vis-type="control-block"
-      data-vis-control-elements="area groups name-type"
-      data-vis-area="vc-all"
     ></div>
 
-    <div
-      id="my-increasing-species-table"
-      class="tanvis"
-      data-vis-type="increasing-species-table"
-      data-vis-top-n="25"
-      data-vis-control="vc-control"
-    ></div>
-
+  
     <script src="../dist/tanvis.iife.js"></script>
     <script type="module">
       // import { installTaxonGroupsMockApi } from './mock/taxonGroupsMockApi.js';
-      // import { installSpeciesStatsMockApi } from './mock/speciesStatsMockApi.js';
       // installTaxonGroupsMockApi({ baseUrl: '/api', latencyMs: 150 });
-      // installSpeciesStatsMockApi({ baseUrl: '/api', latencyMs: 150 });
       
       window.Tanvis.init();
 

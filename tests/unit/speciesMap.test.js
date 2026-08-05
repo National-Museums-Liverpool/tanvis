@@ -81,6 +81,68 @@ describe('species map redraw flow', () => {
     expect(payload.records).toEqual([]);
   });
 
+  it('ignores stale occurrence responses from an earlier area selection', async () => {
+    const mapTypeHandlers = {};
+    let resolveSecondFetch;
+
+    window.brcatlas = {
+      svgMap: (opts) => {
+        Object.assign(mapTypeHandlers, opts.mapTypesSel);
+        return {
+          setMapType() {},
+          redrawMap() {}
+        };
+      }
+    };
+
+    vi.spyOn(globalThis, 'fetch').mockImplementation(async (url) => {
+      const area = new URL(url).searchParams.get('higher_geography_identifier[eq]');
+      if (area === '58') {
+        return {
+          ok: true,
+          json: async () => ({ data: [{ grid_ref_2km: 'SJ58' }] })
+        };
+      }
+
+      return new Promise((resolve) => {
+        resolveSecondFetch = resolve;
+      });
+    });
+
+    const element = document.createElement('div');
+    renderSpeciesMap(element, {
+      type: 'species-map',
+      area: 'vc-58',
+      taxonId: 'ABC123'
+    });
+
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    let payload = await mapTypeHandlers.occurrences();
+    expect(payload.records[0]).toMatchObject({ gr: 'SJ58', val: 1 });
+
+    renderSpeciesMap(element, {
+      type: 'species-map',
+      area: 'vc-59',
+      taxonId: 'ABC123'
+    });
+
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    payload = await mapTypeHandlers.occurrences();
+    expect(payload.records).toEqual([]);
+
+    resolveSecondFetch?.({
+      ok: true,
+      json: async () => ({ data: [{ grid_ref_2km: 'SJ59' }] })
+    });
+
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    payload = await mapTypeHandlers.occurrences();
+    expect(payload.records[0]).toMatchObject({ gr: 'SJ59', val: 1 });
+  });
+
   it('uses host element dataset values for dot styling when rendering the map', async () => {
     const mapTypeHandlers = {};
 
@@ -434,6 +496,48 @@ describe('species map redraw flow', () => {
     controlElement.remove();
   });
 
+  it('uses control-driven vc values to filter occurrences by the corresponding higher geography identifier', async () => {
+    const requestedUrls = [];
+
+    window.brcatlas = {
+      svgMap: () => ({
+        setMapType() {},
+        redrawMap() {}
+      })
+    };
+
+    vi.spyOn(globalThis, 'fetch').mockImplementation(async (url) => {
+      requestedUrls.push(String(url));
+      return {
+        ok: true,
+        json: async () => ({ data: [] })
+      };
+    });
+
+    const controlElement = document.createElement('div');
+    controlElement.id = 'control';
+    controlElement.dataset.visArea = '';
+    document.body.appendChild(controlElement);
+
+    const element = document.createElement('div');
+    renderSpeciesMap(element, {
+      type: 'species-map',
+      area: 'vc-all',
+      taxonId: 'ABC123',
+      control: 'control'
+    });
+
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    publishControlEvent('control', { type: 'area-change', area: 'vc-58' });
+
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    expect(requestedUrls.at(-1)).toContain('higher_geography_identifier%5Beq%5D=58');
+
+    controlElement.remove();
+  });
+
   it('keeps linked-table updates working after a control-driven re-render', async () => {
     const requestedSpecies = [];
 
@@ -477,7 +581,7 @@ describe('species map redraw flow', () => {
     await new Promise((resolve) => setTimeout(resolve, 0));
 
     controlElement.dataset.visArea = 'vc-59';
-    publishControlEvent('control', { type: 'area-change', area: 'vc-59' });
+    publishControlEvent('control', { type: 'area-change', area: 59 });
 
     await new Promise((resolve) => setTimeout(resolve, 0));
 

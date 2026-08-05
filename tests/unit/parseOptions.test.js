@@ -10,9 +10,23 @@ describe('parseOptions', () => {
 
     expect(parsed).toMatchObject({
       type: 'control-block',
-      area: 'vc-all',
+      area: '',
     });
     expect(parsed).not.toHaveProperty('source');
+  });
+
+  it('parses vice-county attributes to numeric identifiers for specific areas and empty string for vc-all', () => {
+    const element = document.createElement('div');
+    element.dataset.visType = 'species-map';
+    element.dataset.visArea = 'vc-all';
+
+    expect(parseOptions(element).area).toBe('');
+
+    const vc59Element = document.createElement('div');
+    vc59Element.dataset.visType = 'species-map';
+    vc59Element.dataset.visArea = 'vc-59';
+
+    expect(parseOptions(vc59Element).area).toBe(59);
   });
 
   it('does not default to a supported vis-type when data-vis-type is missing', () => {
@@ -24,7 +38,7 @@ describe('parseOptions', () => {
   it('defaults boundaries to true when not supplied', () => {
     const element = document.createElement('div');
 
-    expect(parseOptions(element).boundaries).toBe('true');
+    expect(parseOptions(element).boundaries).toBe(true);
   });
 
   it('parses boundaries true when supplied as true', () => {
@@ -37,7 +51,7 @@ describe('parseOptions', () => {
   it('defaults hectads to true when not supplied', () => {
     const element = document.createElement('div');
 
-    expect(parseOptions(element).hectads).toBe('true');
+    expect(parseOptions(element).hectads).toBe(true);
   });
 
   it('parses hectads false when supplied as false', () => {
@@ -52,7 +66,7 @@ describe('parseOptions', () => {
     const parsed = parseOptions(element);
 
     expect(parsed).toHaveProperty('expand');
-    expect(parsed.expand).toBe('false');
+    expect(parsed.expand).toBe(false);
   });
 
   it('parses expand true when supplied as true', () => {

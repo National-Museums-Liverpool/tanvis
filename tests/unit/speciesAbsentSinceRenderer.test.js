@@ -48,7 +48,10 @@ describe('renderSpeciesAbsentSince', () => {
     await new Promise((resolve) => setTimeout(resolve, 0));
 
     expect(fetchMock).toHaveBeenCalledTimes(1);
-    expect(String(fetchMock.mock.calls[0][0])).toContain('/api/v1/taxon-stats?last_record_date%5Blte%5D=2024-12-31&include=taxon&limit=10&offset=0');
+    expect(String(fetchMock.mock.calls[0][0])).toContain('last_record_date%5Blte%5D=2024-12-31');
+    expect(String(fetchMock.mock.calls[0][0])).toContain('include=taxon');
+    expect(String(fetchMock.mock.calls[0][0])).toContain('limit=10');
+    expect(String(fetchMock.mock.calls[0][0])).toContain('offset=0');
     expect(tabulatorCalls).toHaveLength(1);
     expect(tabulatorCalls[0].options.columns).toHaveLength(5);
     expect(tabulatorCalls[0].options.data).toBeUndefined();
@@ -162,7 +165,40 @@ describe('renderSpeciesAbsentSince', () => {
     await new Promise((resolve) => setTimeout(resolve, 0));
 
     expect(fetchMock).toHaveBeenCalledTimes(2);
-    expect(String(fetchMock.mock.calls[1][0])).toContain('taxon_group_external_key%5Beq%5D=diptera');
+    expect(String(fetchMock.mock.calls[1][0])).toContain('taxon_group__external_key%5Beq%5D=diptera');
     expect(String(fetchMock.mock.calls[1][0])).toContain('include=taxon');
+  });
+
+  it('filters taxon-stats requests by the selected VC through higher_geography_identifier', async () => {
+    window.Tabulator = function Tabulator(container, options) {
+      container.dataset.tabulatorMounted = 'true';
+      void options.ajaxRequestFunc('custom_handler', {}, { page: 1, size: 10 });
+      return {
+        on() {}
+      };
+    };
+
+    const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue({
+      ok: true,
+      json: async () => ({ data: [] })
+    });
+
+    const controlElement = document.createElement('div');
+    controlElement.id = 'vc-control-species-absent-area';
+    controlElement.dataset.visArea = 'vc-60';
+    controlElement.dataset.visTaxonGroup = '';
+    document.body.appendChild(controlElement);
+
+    const element = document.createElement('div');
+    renderSpeciesAbsentSince(element, {
+      type: 'species-absent-since',
+      year: 2024,
+      control: 'vc-control-species-absent-area'
+    });
+
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    expect(String(fetchMock.mock.calls[0][0])).toContain('higher_geography_identifier%5Beq%5D=60');
+    expect(String(fetchMock.mock.calls[0][0])).not.toContain('geographic_region_identifier%5Beq%5D');
   });
 });

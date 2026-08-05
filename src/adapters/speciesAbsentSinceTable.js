@@ -4,6 +4,7 @@ import { createApiError, normalizeErrorMessage, parseJsonSafe } from '../utils/a
 import { createVisStatusReporter, ensureStylesheetDependency } from '../utils/visStatus.js';
 import { resolveApiBase } from '../config/apiBase.js';
 import { logApiRequest } from '../utils/apiRequest.js';
+import { normalizeAreaValue, resolveAreaSelectionKey } from './map/common.js';
 
 const TAXON_STATS_RESOURCE = 'taxon-stats';
 const DEFAULT_PAGE_SIZE = 10;
@@ -34,7 +35,7 @@ export function createSpeciesAbsentSinceAdapter() {
 
       const year = Number(renderConfig.year);
       const apiBase = resolveApiBase();
-      const geographicRegionIdentifier = areaToGeographicRegionIdentifier(renderConfig.area);
+      const higherGeographyIdentifier = areaToHigherGeographyIdentifier(renderConfig.area);
       const taxonGroupExternalKey = getEffectiveTaxonGroup(renderConfig);
       const loadId = (element.__tanvisSpeciesAbsentLoadId || 0) + 1;
       element.__tanvisSpeciesAbsentLoadId = loadId;
@@ -55,7 +56,7 @@ export function createSpeciesAbsentSinceAdapter() {
             return;
           }
 
-          element.dataset.visArea = nextArea;
+          element.dataset.visArea = resolveAreaSelectionKey(nextArea);
           element.dataset.visTaxonGroup = nextTaxonGroupExternalKey;
           createSpeciesAbsentSinceAdapter().render(element, {
             ...renderConfig,
@@ -83,7 +84,7 @@ export function createSpeciesAbsentSinceAdapter() {
           const pageResult = await buildSpeciesAbsentSinceRecordsPage({
             apiBase,
             year,
-            geographicRegionIdentifier,
+            higherGeographyIdentifier,
             taxonGroupExternalKey,
             pageNumber,
             pageSize: requestedPageSize
@@ -184,13 +185,13 @@ function createTableContainer({ Tabulator, pageSize, requestPage, element, loadI
   return { container, table };
 }
 
-async function buildSpeciesAbsentSinceRecordsPage({ apiBase, year, geographicRegionIdentifier, taxonGroupExternalKey, pageNumber, pageSize }) {
+async function buildSpeciesAbsentSinceRecordsPage({ apiBase, year, higherGeographyIdentifier, taxonGroupExternalKey, pageNumber, pageSize }) {
   const cutoffDate = `${year}-12-31`;
   const offset = (pageNumber - 1) * pageSize;
   const payload = await fetchTaxonStatsAbsentSince({
     apiBase,
     cutoffDate,
-    geographicRegionIdentifier,
+    higherGeographyIdentifier,
     taxonGroupExternalKey,
     limit: pageSize,
     offset
@@ -204,7 +205,7 @@ async function buildSpeciesAbsentSinceRecordsPage({ apiBase, year, geographicReg
     records: taxonStatsRows.map((row) => {
       return {
         speciesId: row.taxon_identifier,
-        scientificName: row.scientific_name || '',
+        scientificName: row.taxon__scientific_name || '',
         commonName: formatVernacularName(row),
         lastRecordDate: row.last_record_date,
         vcNumber: row.geographic_region_identifier
@@ -215,16 +216,15 @@ async function buildSpeciesAbsentSinceRecordsPage({ apiBase, year, geographicReg
   };
 }
 
-async function fetchTaxonStatsAbsentSince({ apiBase, cutoffDate, geographicRegionIdentifier, taxonGroupExternalKey, limit, offset }) {
+async function fetchTaxonStatsAbsentSince({ apiBase, cutoffDate, higherGeographyIdentifier, taxonGroupExternalKey, limit, offset }) {
   const resourceUrl = resolveResourceUrl(apiBase, TAXON_STATS_RESOURCE);
   const pageUrl = new URL(resourceUrl.toString());
   pageUrl.searchParams.set('last_record_date[lte]', cutoffDate);
-  pageUrl.searchParams.set('include', 'taxon');
-  if (Number.isFinite(geographicRegionIdentifier)) {
-    pageUrl.searchParams.set('geographic_region_identifier[eq]', String(geographicRegionIdentifier));
-  }
+  pageUrl.searchParams.set('include', 'taxon,taxon-group');
+  const vcId = higherGeographyIdentifier === undefined ? null : higherGeographyIdentifier;
+  pageUrl.searchParams.set('higher_geography_identifier[eq]', String(vcId));
   if (taxonGroupExternalKey) {
-    pageUrl.searchParams.set('taxon_group_external_key[eq]', taxonGroupExternalKey);
+    pageUrl.searchParams.set('taxon_group__external_key[eq]', taxonGroupExternalKey);
   }
   pageUrl.searchParams.set('limit', String(limit));
   pageUrl.searchParams.set('offset', String(offset));
@@ -294,7 +294,7 @@ function getTotalCount(payload) {
 }
 
 function formatVernacularName(taxon) {
-  const plural = taxon?.vernacular_names;
+  const plural = taxon?.taxon__vernacular_names;
   if (Array.isArray(plural)) {
     return plural.join(', ');
   }
@@ -302,16 +302,18 @@ function formatVernacularName(taxon) {
   return taxon?.vernacular_name || '';
 }
 
-function areaToGeographicRegionIdentifier(area) {
-  if (area === 'vc-58') {
+function areaToHigherGeographyIdentifier(area) {
+  const normalizedArea = normalizeAreaValue(area);
+
+  if (normalizedArea === 58) {
     return 58;
   }
 
-  if (area === 'vc-59') {
+  if (normalizedArea === 59) {
     return 59;
   }
 
-  if (area === 'vc-60') {
+  if (normalizedArea === 60) {
     return 60;
   }
 
@@ -329,21 +331,21 @@ function clearControlSubscription(element) {
 
 function getEffectiveArea(config) {
   if (!config.control) {
-    return config.area;
+    return normalizeAreaValue(config.area);
   }
 
   const latestEvent = getLatestControlEvent(config.control);
   if (latestEvent?.type === 'area-change' && latestEvent.area) {
-    return latestEvent.area;
+    return normalizeAreaValue(latestEvent.area);
   }
 
   if (typeof document === 'undefined') {
-    return config.area;
+    return normalizeAreaValue(config.area);
   }
 
   const controlElement = document.getElementById(config.control);
   const controlArea = controlElement?.dataset?.visArea;
-  return controlArea || config.area;
+  return normalizeAreaValue(controlArea ?? config.area);
 }
 
 function getEffectiveTaxonGroup(config) {

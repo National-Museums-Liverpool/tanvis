@@ -4,6 +4,7 @@ import { createApiError, normalizeErrorMessage, parseJsonSafe } from '../utils/a
 import { createVisStatusReporter } from '../utils/visStatus.js';
 import { renderLeafletAtlasMap } from './map/leafletBackend.js';
 import { renderStaticAtlasMap } from './map/staticBackend.js';
+import { normalizeAreaValue } from './map/common.js';
 import { createRadioGroup } from '../controls/radioGroup.js';
 import { ensureSharedStyles } from '../styles/sharedStyles.js';
 import {
@@ -363,15 +364,17 @@ function getListData(payload) {
 }
 
 function areaToGeographicRegionIdentifier(area) {
-  if (area === 'vc-58') {
+  const normalizedArea = normalizeAreaValue(area);
+
+  if (normalizedArea === 58) {
     return 58;
   }
 
-  if (area === 'vc-59') {
+  if (normalizedArea === 59) {
     return 59;
   }
 
-  if (area === 'vc-60') {
+  if (normalizedArea === 60) {
     return 60;
   }
 
@@ -380,21 +383,21 @@ function areaToGeographicRegionIdentifier(area) {
 
 function getEffectiveArea(config) {
   if (!config.control) {
-    return config.area;
+    return normalizeAreaValue(config.area);
   }
 
   const latestEvent = getLatestControlEvent(config.control);
   if (latestEvent?.type === 'area-change' && latestEvent.area) {
-    return latestEvent.area;
+    return normalizeAreaValue(latestEvent.area);
   }
 
   if (typeof document === 'undefined') {
-    return config.area;
+    return normalizeAreaValue(config.area);
   }
 
   const controlElement = document.getElementById(config.control);
   const controlArea = controlElement?.dataset?.visArea;
-  return controlArea || config.area;
+  return normalizeAreaValue(controlArea ?? config.area);
 }
 
 function clearControlSubscription(element) {

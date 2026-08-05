@@ -4,6 +4,7 @@ import { createApiError, normalizeErrorMessage, parseJsonSafe } from '../utils/a
 import { createVisStatusReporter, ensureStylesheetDependency } from '../utils/visStatus.js';
 import { resolveApiBase } from '../config/apiBase.js';
 import { logApiRequest } from '../utils/apiRequest.js';
+import { normalizeAreaValue, resolveAreaSelectionKey } from './map/common.js';
 
 const TAXON_STATS_RESOURCE = 'taxon-stats';
 const DEFAULT_PAGE_SIZE = 10;
@@ -37,7 +38,7 @@ export function createIncreasingSpeciesTableAdapter() {
 
       const topN = parseTopN(renderConfig.topN) ?? DEFAULT_TOP_N;
       const apiBase = resolveApiBase();
-      const geographicRegionIdentifier = areaToGeographicRegionIdentifier(renderConfig.area);
+      const higherGeographyIdentifier = areaToHigherGeographyIdentifier(renderConfig.area);
       const taxonGroupExternalKey = getEffectiveTaxonGroup(renderConfig);
       const loadId = (element.__tanvisIncreasingLoadId || 0) + 1;
       element.__tanvisIncreasingLoadId = loadId;
@@ -58,7 +59,7 @@ export function createIncreasingSpeciesTableAdapter() {
             return;
           }
 
-          element.dataset.visArea = nextArea;
+          element.dataset.visArea = resolveAreaSelectionKey(nextArea);
           element.dataset.visTaxonGroup = nextTaxonGroupExternalKey;
           createIncreasingSpeciesTableAdapter().render(element, {
             ...renderConfig,
@@ -86,7 +87,7 @@ export function createIncreasingSpeciesTableAdapter() {
           const pageResult = await buildIncreasingSpeciesRecordsPage({
             apiBase,
             topN,
-            geographicRegionIdentifier,
+            higherGeographyIdentifier,
             taxonGroupExternalKey,
             pageNumber,
             pageSize: requestedPageSize
@@ -208,28 +209,25 @@ function getTabulatorGlobal() {
   return window.Tabulator || null;
 }
 
-async function buildIncreasingSpeciesRecordsPage({ apiBase, topN, geographicRegionIdentifier, taxonGroupExternalKey, pageNumber, pageSize }) {
+async function buildIncreasingSpeciesRecordsPage({ apiBase, topN, higherGeographyIdentifier, taxonGroupExternalKey, pageNumber, pageSize }) {
   const offset = (pageNumber - 1) * pageSize;
-  const payload = await fetchTaxonStats({ apiBase, geographicRegionIdentifier, taxonGroupExternalKey, limit: pageSize, offset });
+  const payload = await fetchTaxonStats({ apiBase, topN, higherGeographyIdentifier, taxonGroupExternalKey, limit: pageSize, offset });
   const taxonStatsRows = getListData(payload);
   const totalRows = getTotalCount(payload);
   const totalPages = Math.max(1, Math.ceil(totalRows / pageSize));
-  const rankedRows = taxonStatsRows
-    .slice()
-    .sort((a, b) => Number(b?.frequency_trend || 0) - Number(a?.frequency_trend || 0))
-    .slice(0, topN);
+  const rankedRows = taxonStatsRows.slice(0, topN);
 
   return {
     records: rankedRows.map((row) => {
       return {
         speciesId: row.taxon_identifier,
         vcNumber: row.geographic_region_identifier,
-        rarityCategory: row.rarity_group_name || '',
+        rarityCategory: row.taxon__rarity_category || '',
         firstRecordDate: row.first_record_date,
         totalRecords: row.occurrences_count,
         occupiedGridSquares: row.grid_square_count,
         frequencyTrendScore: row.frequency_trend,
-        scientificName: row.scientific_name || '',
+        scientificName: row.taxon__scientific_name || '',
         commonName: formatVernacularName(row)
       };
     }),
@@ -238,16 +236,18 @@ async function buildIncreasingSpeciesRecordsPage({ apiBase, topN, geographicRegi
   };
 }
 
-async function fetchTaxonStats({ apiBase, geographicRegionIdentifier, taxonGroupExternalKey, limit, offset }) {
+async function fetchTaxonStats({ apiBase, topN, higherGeographyIdentifier, taxonGroupExternalKey, limit, offset }) {
   const resourceUrl = resolveResourceUrl(apiBase, TAXON_STATS_RESOURCE);
   const pageUrl = new URL(resourceUrl.toString());
-  pageUrl.searchParams.set('include', 'taxon');
-  if (Number.isFinite(geographicRegionIdentifier)) {
-    pageUrl.searchParams.set('geographic_region_identifier[eq]', String(geographicRegionIdentifier));
-  }
+  pageUrl.searchParams.set('include', 'taxon, taxon-group');
+  console.log('higherGeographyIdentifier', higherGeographyIdentifier);
+  const vcId = higherGeographyIdentifier === undefined ? null : higherGeographyIdentifier;
+  pageUrl.searchParams.set('higher_geography_identifier[eq]', String(vcId));
   if (taxonGroupExternalKey) {
-    pageUrl.searchParams.set('taxon_group_external_key[eq]', taxonGroupExternalKey);
+    pageUrl.searchParams.set('taxon_group__external_key[eq]', taxonGroupExternalKey);
   }
+  // Once the API exposes frequency_trend in taxon-stats responses, switch this to sort=frequency_trend.
+  pageUrl.searchParams.set('sort', '-occurrences_count');
   pageUrl.searchParams.set('limit', String(limit));
   pageUrl.searchParams.set('offset', String(offset));
 
@@ -320,19 +320,21 @@ function formatVernacularName(taxon) {
     return plural.join(', ');
   }
 
-  return taxon?.vernacular_name || '';
+  return taxon?.taxon__vernacular_name || '';
 }
 
-function areaToGeographicRegionIdentifier(area) {
-  if (area === 'vc-58') {
+function areaToHigherGeographyIdentifier(area) {
+  const normalizedArea = normalizeAreaValue(area);
+
+  if (normalizedArea === 58) {
     return 58;
   }
 
-  if (area === 'vc-59') {
+  if (normalizedArea === 59) {
     return 59;
   }
 
-  if (area === 'vc-60') {
+  if (normalizedArea === 60) {
     return 60;
   }
 
@@ -350,21 +352,21 @@ function clearControlSubscription(element) {
 
 function getEffectiveArea(config) {
   if (!config.control) {
-    return config.area;
+    return normalizeAreaValue(config.area);
   }
 
   const latestEvent = getLatestControlEvent(config.control);
   if (latestEvent?.type === 'area-change' && latestEvent.area) {
-    return latestEvent.area;
+    return normalizeAreaValue(latestEvent.area);
   }
 
   if (typeof document === 'undefined') {
-    return config.area;
+    return normalizeAreaValue(config.area);
   }
 
   const controlElement = document.getElementById(config.control);
   const controlArea = controlElement?.dataset?.visArea;
-  return controlArea || config.area;
+  return normalizeAreaValue(controlArea ?? config.area);
 }
 
 function getEffectiveTaxonGroup(config) {

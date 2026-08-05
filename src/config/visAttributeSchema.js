@@ -105,7 +105,6 @@ function parseAndValidateSet(value, dataset, config, element, rule) {
     ret.value = rule.defaultValue;
   } else {
     // Validate that the value is in the allowed set
-    console.log('rule', rule);
     if (!rule.allowedValues?.includes(value)) {
       ret.error = true;
       ret.message = infoString(value, rule);
@@ -234,6 +233,20 @@ const RULES = {
     defaultValue: 'area groups name-type species',
     info: `A space-separated list of control-block sections to show. Allowed values are: area, groups, name-type, species.`
   }),
+  showDataOptsToggle: createRule({
+    key: 'showDataOptsToggle',
+    datasetName: 'visShowDataOptsToggle',
+    parseAndValidate: parseAndValidateBoolean,
+    defaultValue: true,
+    info: `Whether to show the data options toggle above the control block.` 
+  }),
+  showDataOptsExpanded: createRule({
+    key: 'showDataOptsExpanded',
+    datasetName: 'visShowDataOptsExpanded',
+    parseAndValidate: parseAndValidateBoolean,
+    defaultValue: true,
+    info: `Whether to show the data options expanded in the control block.` 
+  }),
   linkedTable: createRule({
     key: 'linkedTable',
     datasetName: 'visLinkedTable',
@@ -334,7 +347,21 @@ const RULES = {
   area: createRule({
     key: 'area',
     datasetName: 'visArea',
-    parseAndValidate: parseAndValidateSet,
+    parseAndValidate: (value, dataset, config, element, rule) => {
+      const ret = parseAndValidateSet(value, dataset, config, element, rule);
+      if (ret.error) {
+        return ret;
+      }
+      if (ret.value === 'vc-all') {
+        ret.value = '';
+      } else if (typeof ret.value === 'string' && /^vc-\d+$/.test(ret.value)) {
+        ret.value = parseInt(ret.value.substring(3), 10);
+      } else {
+        ret.error = true;
+        ret.message = infoString(value, rule);
+      }
+      return ret;
+    },
     allowedValues: ['vc-58', 'vc-59', 'vc-60', 'vc-all'],
     defaultValue: 'vc-all',
     info: `The vice county area to visualize. This can be one of the following values: 
@@ -346,7 +373,7 @@ const RULES = {
     key: 'boundaries',
     datasetName: 'visBoundaries',
     parseAndValidate: parseAndValidateBoolean,
-    defaultValue: 'true',
+    defaultValue: true,
     info: `Whether to show boundaries on the map visualizations - Leaflet maps only,
       the boundary is always displayed on the static map. This is a boolean value.`
   }),
@@ -366,7 +393,7 @@ const RULES = {
     key: 'hectads',
     datasetName: 'visHectads',
     parseAndValidate: parseAndValidateBoolean,
-    defaultValue: 'true',
+    defaultValue: true,
     info: `Whether to show hectad grid lines on the map visualizations. This is a boolean value.`
   }),
   mapType: createRule({
@@ -423,7 +450,7 @@ const RULES = {
     key: 'expand',
     datasetName: 'visExpand',
     parseAndValidate: parseAndValidateBoolean,
-    defaultValue: 'false',
+    defaultValue: false,
     info: `Whether to expand the visualization to fill its container. Can be 'true' or 'false'`
   }),
   width: createRule({
@@ -442,7 +469,7 @@ const RULES = {
     key: 'topN',
     datasetName: 'visTopN',
     parseAndValidate: parseAndValidatePositiveInteger,
-    defaultValue: '50',
+    defaultValue: 50,
     info: `The number of top species to display. Must be a positive integer.`
   }),
   year: createRule({
@@ -480,7 +507,7 @@ const RULES = {
 // Add the new data attributes for control-block.
 
 const VIS_TYPE_RULE_SETS = {
-  'control-block': ['area', 'controlElements'],
+  'control-block': ['area', 'controlElements', 'showDataOptsToggle', 'showDataOptsExpanded'],
   'species-map': ['taxonId', 'control', 'area', 'hectads', 'mapType', 'boundaries', 'dotShape', 'dotColour', 'transformation', 'dotShape', 'expand', 'width', 'height'],
   'grid-stats-map': ['gridStatsType', 'control', 'area', 'hectads', 'mapType', 'boundaries', 'dotShape', 'dotColour', 'transformation', 'expand', 'width', 'height'],
   'temporal-year-chart': ['taxonId', 'linkedTable', 'startYear', 'endYear', 'area', 'control', 'expand', 'width', 'height'],

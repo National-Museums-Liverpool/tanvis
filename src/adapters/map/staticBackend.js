@@ -11,6 +11,7 @@ import {
   getBrcAtlasGlobal,
   getEffectiveArea,
   parseOptionalPositiveNumber,
+  resolveAreaSelectionKey,
   subscribeToAreaControl
 } from './common.js';
 import { transOptsSel } from '../transOptsSel.js';
@@ -50,12 +51,13 @@ export function renderStaticAtlasMap(element, config, options = {}) {
 
     element.dataset.visArea = renderConfig.area;
 
-    console.log('config', createStaticMapOptions(element, renderConfig, options));
+    //console.log('config', createStaticMapOptions(element, renderConfig, options));
+    console.log('rendering static map for area:', renderConfig.area);
     const map = brcAtlas.svgMap(createStaticMapOptions(element, renderConfig, options));
 
 
     if (map && typeof map.redrawMap === 'function') {
-      console.log('redrawing map for area:', renderConfig.area);
+      //console.log('redrawing map for area:', renderConfig.area);
       map.redrawMap();
     }
 
@@ -92,17 +94,19 @@ function createStaticMapOptions(element, config, options) {
   const selectedBounds = getAreaBounds(config.area);
   const height = explicitHeight ?? calculateHeightFromBounds(width, selectedBounds);
 
+  const areaSelectionKey = resolveAreaSelectionKey(config.area);
+
   return {
     selector: `#${element.id}`,
     captionId: 'map-tetrad-info',
     transOptsControl: false,
     transOptsSel,
-    transOptsKey: config.area,
-    boundaryGjson: `/data/vcs/simp-100/${config.area}-100.geojson`,
+    transOptsKey: areaSelectionKey,
+    boundaryGjson: `/data/vcs/simp-100/${areaSelectionKey}-100.geojson`,
     ...(height !== undefined ? { height } : {}),
     ...(shouldExpand ? { expand: true } : {}),
     ...(includeHectads
-      ? { gridGjson: `/data/vcs/hectad-grids/${config.area}-hectads.geojson` }
+      ? { gridGjson: `/data/vcs/hectad-grids/${areaSelectionKey}-hectads.geojson` }
       : { gridLineStyle: 'none' }),
     mapTypesSel: options.mapTypesSel,
     mapTypesKey: options.mapTypesKey,

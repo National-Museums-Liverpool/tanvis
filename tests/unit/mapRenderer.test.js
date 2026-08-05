@@ -21,13 +21,13 @@ describe('renderStaticMap', () => {
 
     const controlElement = document.createElement('div');
     controlElement.id = 'vc-control-static';
-    controlElement.dataset.visArea = 'vc-all';
+    controlElement.dataset.visArea = '';
     document.body.appendChild(controlElement);
 
     const element = document.createElement('div');
     const config = {
       type: 'map',
-      area: 'vc-all',
+      area: '',
       control: 'vc-control-static'
     };
 
@@ -44,10 +44,10 @@ describe('renderStaticMap', () => {
 
     publishControlEvent('vc-control-static', {
       type: 'area-change',
-      area: 'vc-59'
+      area: 59
     });
 
-    expect(element.dataset.visArea).toBe('vc-59');
+    expect(element.dataset.visArea).toBe('59');
     expect(svgMapCalls).toHaveLength(2);
     expect(svgMapCalls[1].transOptsKey).toBe('vc-59');
     expect(svgMapCalls[1].boundaryGjson).toBe('/data/vcs/simp-100/vc-59-100.geojson');
@@ -192,13 +192,13 @@ describe('renderLeafletMap', () => {
 
     const controlElement = document.createElement('div');
     controlElement.id = 'vc-control-leaflet';
-    controlElement.dataset.visArea = 'vc-all';
+    controlElement.dataset.visArea = '';
     document.body.appendChild(controlElement);
 
     const element = document.createElement('div');
     renderLeafletMap(element, {
       type: 'leaflet-map',
-      area: 'vc-all',
+      area: '',
       control: 'vc-control-leaflet'
     });
 
@@ -207,28 +207,28 @@ describe('renderLeafletMap', () => {
 
     publishControlEvent('vc-control-leaflet', {
       type: 'area-change',
-      area: 'vc-59'
+      area: 59
     });
 
-    expect(element.dataset.visArea).toBe('vc-59');
+    expect(element.dataset.visArea).toBe('59');
     expect(leafletMapCalls).toHaveLength(1);
     expect(setViewCalls[1]).toEqual({ coords: [53.629982, -2.606334], zoom: 9 });
 
     publishControlEvent('vc-control-leaflet', {
       type: 'area-change',
-      area: 'vc-58'
+      area: 58
     });
     expect(setViewCalls[2]).toEqual({ coords: [53.225875, -2.525714], zoom: 9 });
 
     publishControlEvent('vc-control-leaflet', {
       type: 'area-change',
-      area: 'vc-60'
+      area: 60
     });
     expect(setViewCalls[3]).toEqual({ coords: [53.988606, -2.764047], zoom: 9 });
 
     publishControlEvent('vc-control-leaflet', {
       type: 'area-change',
-      area: 'vc-all'
+      area: ''
     });
     expect(setViewCalls[4]).toEqual({ coords: [53.585317, -2.549048], zoom: 8 });
   });

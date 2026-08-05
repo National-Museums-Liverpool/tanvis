@@ -1,6 +1,6 @@
 import { clearElement } from '../utils/dom.js';
 import { createControlsPanel } from '../controls/panel.js';
-import { createAreaControls } from '../controls/areaControls.js';
+import { createAreaControls, normalizeAreaContractValue } from '../controls/areaControls.js';
 import { createTaxonGroupControls } from '../controls/taxonGroupControls.js';
 import { publishControlEvent } from '../controls/controlBus.js';
 import { resolveApiBase } from '../config/apiBase.js';
@@ -26,7 +26,9 @@ export function createControlBlockAdapter() {
 
       const { panel, body } = createControlsPanel({
         label: 'Data options',
-        ariaLabel: 'Toggle data controls'
+        ariaLabel: 'Toggle data controls',
+        expanded: config.showDataOptsExpanded === true,
+        showToggle: config.showDataOptsToggle !== false
       });
       panel.dataset.tanvisControls = 'data-options';
       element.appendChild(panel);
@@ -39,7 +41,7 @@ export function createControlBlockAdapter() {
           onAreaChange: (value) => {
             publishControlEvent(element.id, {
               type: 'area-change',
-              area: value
+              area: normalizeAreaContractValue(value)
             });
           }
         });
@@ -68,7 +70,7 @@ export function createControlBlockAdapter() {
       if (visibleControls.has('area')) {
         publishControlEvent(element.id, {
           type: 'area-change',
-          area: config.area
+          area: normalizeAreaContractValue(config.area)
         });
       }
     }
@@ -163,10 +165,13 @@ function createSpeciesSelectorControl({ rootElement, apiBase, body, loadToken })
     const currentRequestToken = ++searchState.activeRequestToken;
     const searchField = searchState.searchMode === 'vernacular' ? 'vernacular_name' : 'scientific_name';
 
+    const taxonGroupExternalKey = rootElement?.dataset?.visTaxonGroup || '';
+
     fetchSuggestedTaxa({
       apiBase,
       query,
-      searchField
+      searchField,
+      taxonGroupExternalKey
     }).then((taxa) => {
       if (searchState.activeRequestToken !== currentRequestToken) {
         return;
@@ -280,7 +285,7 @@ function createSpeciesSelectorControl({ rootElement, apiBase, body, loadToken })
   return panel;
 }
 
-async function fetchSuggestedTaxa({ apiBase, query, searchField }) {
+async function fetchSuggestedTaxa({ apiBase, query, searchField, taxonGroupExternalKey }) {
   if (!query) {
     return [];
   }
@@ -288,6 +293,10 @@ async function fetchSuggestedTaxa({ apiBase, query, searchField }) {
   const resourceUrl = resolveResourceUrl(apiBase, 'taxa');
   const url = new URL(resourceUrl.toString());
   url.searchParams.set(`${searchField}[contains]`, query);
+  if (taxonGroupExternalKey) {
+    url.searchParams.set('include', 'taxon-group');
+    url.searchParams.set('taxon_group__external_key', taxonGroupExternalKey);
+  }
   url.searchParams.set('limit', String(SPECIES_SEARCH_LIMIT));
 
   const payload = await fetchJson(url.toString(), 'Failed to search taxa');

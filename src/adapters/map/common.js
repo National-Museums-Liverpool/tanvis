@@ -39,7 +39,7 @@ export function getEffectiveArea(config) {
   }
 
   const latestEvent = getLatestControlEvent(config.control);
-  if (latestEvent?.type === 'area-change' && latestEvent.area) {
+  if (latestEvent?.type === 'area-change' && latestEvent.area !== undefined && latestEvent.area !== null) {
     return latestEvent.area;
   }
 
@@ -49,12 +49,12 @@ export function getEffectiveArea(config) {
 
   const controlElement = document.getElementById(config.control);
   const controlArea = controlElement?.dataset?.visArea;
-  return controlArea || config.area;
+  return controlArea !== undefined && controlArea !== null ? controlArea : config.area;
 }
 
 export function subscribeToAreaControl(controlId, handler) {
   return subscribeToControl(controlId, (event) => {
-    if (!event || event.type !== 'area-change' || !event.area) {
+    if (!event || event.type !== 'area-change' || event.area === undefined || event.area === null) {
       return;
     }
 
@@ -152,16 +152,53 @@ export function resizeExpandedMap(element, config, map) {
   }
 }
 
+export function normalizeAreaValue(area) {
+  if (area === undefined || area === null || area === '') {
+    return '';
+  }
+
+  if (typeof area === 'number' && Number.isFinite(area)) {
+    return area;
+  }
+
+  if (typeof area === 'string') {
+    const trimmed = area.trim();
+    if (!trimmed || trimmed === 'vc-all') {
+      return '';
+    }
+
+    if (/^vc-\d+$/.test(trimmed)) {
+      return Number.parseInt(trimmed.substring(3), 10);
+    }
+
+    const parsed = Number(trimmed);
+    if (Number.isFinite(parsed)) {
+      return parsed;
+    }
+  }
+
+  return area;
+}
+
+export function resolveAreaSelectionKey(area) {
+  const normalized = normalizeAreaValue(area);
+  if (normalized === '' || normalized === 'vc-all') {
+    return 'vc-all';
+  }
+
+  return `vc-${normalized}`;
+}
+
 export function getAreaBounds(area) {
-  return transOptsSel[area]?.bounds;
+  return transOptsSel[resolveAreaSelectionKey(area)]?.bounds;
 }
 
 export function getAreaCentroid(area) {
-  return transOptsSel[area]?.centroid;
+  return transOptsSel[resolveAreaSelectionKey(area)]?.centroid;
 }
 
 export function getAreaInitZoom(area) {
-  return transOptsSel[area]?.initZoom ?? 10;
+  return transOptsSel[resolveAreaSelectionKey(area)]?.initZoom ?? 10;
 }
 
 export function getBrcAtlasGlobal() {
