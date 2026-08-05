@@ -18,7 +18,7 @@ import { resolveApiBase } from '../config/apiBase.js';
 
 const OCCURRENCES_RESOURCE = 'occurrences';
 const OCCURRENCES_MAP_TYPE_KEY = 'occurrences';
-const DEFAULT_PAGE_LIMIT = 1000;
+const DEFAULT_PAGE_LIMIT = 10000;
 let mapData = [];
 
 function shouldLogSpeciesMapDebug() {

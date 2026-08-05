@@ -18,7 +18,7 @@ import { logApiRequest } from '../utils/apiRequest.js';
 import { resolveApiBase } from '../config/apiBase.js';
 
 const GRID_SQUARE_STATS_RESOURCE = 'grid-square-stats';
-const DEFAULT_PAGE_LIMIT = 1000;
+const DEFAULT_PAGE_LIMIT = 10000;
 const GRID_STATS_RECORDS_KEY = 'grid-stats-records';
 const GRID_STATS_SPECIES_KEY = 'grid-stats-species';
 const GRID_STATS_RARITY_KEY = 'grid-stats-rarity';

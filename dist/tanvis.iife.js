@@ -3897,7 +3897,7 @@ div[data-tanvis-controls="species-selector"] {
 
   const OCCURRENCES_RESOURCE = 'occurrences';
   const OCCURRENCES_MAP_TYPE_KEY = 'occurrences';
-  const DEFAULT_PAGE_LIMIT$2 = 1000;
+  const DEFAULT_PAGE_LIMIT$2 = 10000;
   let mapData$1 = [];
 
   function shouldLogSpeciesMapDebug() {
@@ -4506,7 +4506,7 @@ div[data-tanvis-controls="species-selector"] {
   }
 
   const GRID_SQUARE_STATS_RESOURCE = 'grid-square-stats';
-  const DEFAULT_PAGE_LIMIT$1 = 1000;
+  const DEFAULT_PAGE_LIMIT$1 = 10000;
   const GRID_STATS_RECORDS_KEY = 'grid-stats-records';
   const GRID_STATS_SPECIES_KEY = 'grid-stats-species';
   const GRID_STATS_RARITY_KEY = 'grid-stats-rarity';
