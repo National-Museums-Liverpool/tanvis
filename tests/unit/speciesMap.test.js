@@ -57,6 +57,70 @@ describe('species map redraw flow', () => {
     ]);
   });
 
+  it('does not recreate the map when the control bus reports the same normalized area', () => {
+    let createCount = 0;
+
+    window.brcatlas = {
+      svgMap: () => {
+        createCount += 1;
+        return {
+          setMapType() {},
+          redrawMap() {}
+        };
+      }
+    };
+
+    const element = document.createElement('div');
+    renderSpeciesMap(element, {
+      type: 'species-map',
+      area: 'vc-59',
+      taxonId: 'ABC123',
+      control: 'control-block'
+    });
+
+    publishControlEvent('control-block', {
+      type: 'area-change',
+      area: 59
+    });
+
+    expect(createCount).toBe(1);
+  });
+
+  it('uses the created map instance for the initial occurrence redraw after the first fetch', async () => {
+    const calls = [];
+
+    window.brcatlas = {
+      svgMap: () => ({
+        setMapType(type) {
+          calls.push(['setMapType', type]);
+        },
+        redrawMap() {
+          calls.push(['redrawMap']);
+        }
+      })
+    };
+
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue({
+      ok: true,
+      json: async () => ({ data: [{ grid_ref_2km: 'SJ58' }] })
+    });
+
+    const element = document.createElement('div');
+    renderSpeciesMap(element, {
+      type: 'species-map',
+      area: 'vc-58',
+      taxonId: 'ABC123'
+    });
+
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    expect(calls).toEqual([
+      ['redrawMap'],
+      ['setMapType', 'occurrences'],
+      ['redrawMap']
+    ]);
+  });
+
   it('uses the latest occurrence rows in the occurrences adapter', async () => {
     applyOccurrenceDataToMap({ setMapType() {}, redrawMap() {} }, [{ grid_ref_2km: 'SJ58' }]);
 
@@ -81,7 +145,7 @@ describe('species map redraw flow', () => {
     expect(payload.records).toEqual([]);
   });
 
-  it('ignores stale occurrence responses from an earlier area selection', async () => {
+  it('uses the most recently available occurrence data while a new area fetch is pending', async () => {
     const mapTypeHandlers = {};
     let resolveSecondFetch;
 
@@ -130,7 +194,7 @@ describe('species map redraw flow', () => {
     await new Promise((resolve) => setTimeout(resolve, 0));
 
     payload = await mapTypeHandlers.occurrences();
-    expect(payload.records).toEqual([]);
+    expect(payload.records[0]).toMatchObject({ gr: 'SJ58', val: 1 });
 
     resolveSecondFetch?.({
       ok: true,

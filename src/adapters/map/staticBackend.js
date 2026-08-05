@@ -54,14 +54,29 @@ export function renderStaticAtlasMap(element, config, options = {}) {
     //console.log('config', createStaticMapOptions(element, renderConfig, options));
     console.log('rendering static map for area:', renderConfig.area);
     const map = brcAtlas.svgMap(createStaticMapOptions(element, renderConfig, options));
+    const instanceId = `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+    map.__tanvisMapInstanceId = instanceId;
+    map.__tanvisMapArea = renderConfig.area;
+    map.__tanvisMapElementId = element.id;
+    console.log('[species-map] created static map instance', {
+      instanceId,
+      area: renderConfig.area,
+      elementId: element.id
+    });
+    // pause execution to allow the map to render before continuing (for testing purposes)
 
+    //await new Promise(resolve => setTimeout(resolve, 1000));
 
     if (map && typeof map.redrawMap === 'function') {
-      //console.log('redrawing map for area:', renderConfig.area);
+      console.log('[species-map] redraw static map instance', {
+        instanceId,
+        area: renderConfig.area,
+        elementId: element.id
+      });
       map.redrawMap();
     }
 
-    if (renderConfig.control) {
+    if (renderConfig.control && options.subscribeToAreaControl !== false) {
       element.__tanvisControlCleanup = subscribeToAreaControl(renderConfig.control, (area) => {
         if (area === element.dataset.visArea) {
           return;

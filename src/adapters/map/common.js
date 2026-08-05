@@ -35,21 +35,21 @@ export function clearExpandResizeHandlers(element) {
 
 export function getEffectiveArea(config) {
   if (!config.control) {
-    return config.area;
+    return normalizeAreaValue(config.area);
   }
 
   const latestEvent = getLatestControlEvent(config.control);
   if (latestEvent?.type === 'area-change' && latestEvent.area !== undefined && latestEvent.area !== null) {
-    return latestEvent.area;
+    return normalizeAreaValue(latestEvent.area);
   }
 
   if (typeof document === 'undefined') {
-    return config.area;
+    return normalizeAreaValue(config.area);
   }
 
   const controlElement = document.getElementById(config.control);
   const controlArea = controlElement?.dataset?.visArea;
-  return controlArea !== undefined && controlArea !== null ? controlArea : config.area;
+  return normalizeAreaValue(controlArea !== undefined && controlArea !== null ? controlArea : config.area);
 }
 
 export function subscribeToAreaControl(controlId, handler) {

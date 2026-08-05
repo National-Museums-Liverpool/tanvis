@@ -21,17 +21,37 @@ const OCCURRENCES_MAP_TYPE_KEY = 'occurrences';
 const DEFAULT_PAGE_LIMIT = 1000;
 let mapData = [];
 
+function shouldLogSpeciesMapDebug() {
+  if (typeof window === 'undefined') {
+    return false;
+  }
+
+  if (window.__tanvisSpeciesMapDebug === true) {
+    return true;
+  }
+
+  const searchParams = new URLSearchParams(window.location?.search || '');
+  return searchParams.get('tanvisDebug') === 'species-map';
+}
+
+function logSpeciesMapDebug(message, details = {}) {
+  if (!shouldLogSpeciesMapDebug()) {
+    return;
+  }
+
+  console.log('[species-map]', message, details);
+}
+
 export function createSpeciesMapAdapter() {
   return {
     name: 'species-map',
     render(element, config) {
       const effectiveArea = getEffectiveArea(config);
-      const renderConfig = effectiveArea === config.area
-        ? config
-        : {
-            ...config,
-            area: effectiveArea
-          };
+      const normalizedArea = normalizeAreaValue(effectiveArea);
+      const renderConfig = {
+        ...config,
+        area: normalizedArea
+      };
       const linkedTableId = renderConfig.linkedTable || '';
       const shouldPreserveLinkedTableSubscription = Boolean(
         element.__tanvisLinkedTableCleanup &&
@@ -47,7 +67,6 @@ export function createSpeciesMapAdapter() {
       if (!shouldPreserveControlSubscription) {
         clearControlSubscription(element);
       }
-      mapData = [];
 
       const status = createVisStatusReporter(element);
       const existingMap = element.__tanvisSpeciesMapInstance;
@@ -58,6 +77,16 @@ export function createSpeciesMapAdapter() {
 
       const speciesCode = renderConfig.species || renderConfig.taxonId || '';
       const apiBase = resolveApiBase();
+      const areaValue = normalizeAreaValue(renderConfig.area ?? '');
+
+      logSpeciesMapDebug('render:start', {
+        loadId: (element.__tanvisSpeciesMapLoadId || 0) + 1,
+        area: areaValue,
+        species: speciesCode,
+        control: renderConfig.control || '',
+        reuseExistingMap: shouldReuseExistingMap,
+        forceCreateMap: Boolean(config.forceCreateMap)
+      });
 
       if (!hasD3Dependency()) {
         status.showError(D3_DEPENDENCY_MESSAGE);
@@ -80,13 +109,20 @@ export function createSpeciesMapAdapter() {
 
             const nextArea = getEffectiveArea(renderConfig);
             const nextTaxonGroupExternalKey = getEffectiveTaxonGroup(renderConfig);
+            const currentArea = normalizeAreaValue(element.dataset.visArea);
+            const currentTaxonGroup = element.dataset.visTaxonGroup || '';
 
-            if (nextArea === element.dataset.visArea && nextTaxonGroupExternalKey === (element.dataset.visTaxonGroup || '')) {
+            if (nextArea === currentArea && nextTaxonGroupExternalKey === currentTaxonGroup) {
               return;
             }
 
             element.dataset.visArea = nextArea;
             element.dataset.visTaxonGroup = nextTaxonGroupExternalKey;
+            logSpeciesMapDebug('control:area-change', {
+              area: nextArea,
+              taxonGroup: nextTaxonGroupExternalKey,
+              control: renderConfig.control || ''
+            });
             createSpeciesMapAdapter().render(element, {
               ...renderConfig,
               area: nextArea
@@ -165,6 +201,14 @@ export function createSpeciesMapAdapter() {
           map = renderMapBackend(mapContainer, renderConfig, element);
           element.__tanvisSpeciesMapInstance = map;
         }
+
+        logSpeciesMapDebug('render:map-ready', {
+          loadId,
+          area: renderConfig.area ?? '',
+          species: speciesCode,
+          reusedExistingMap: shouldReuseExistingMap,
+          hasMapInstance: Boolean(map)
+        });
       } catch (error) {
         if (element.__tanvisSpeciesMapLoadId !== loadId) {
           return;
@@ -175,6 +219,12 @@ export function createSpeciesMapAdapter() {
         return;
       }
 
+      logSpeciesMapDebug('fetch:start', {
+        loadId,
+        area: renderConfig.area ?? '',
+        species: speciesCode
+      });
+
       fetchSpeciesOccurrences({
         apiBase,
         speciesCode,
@@ -182,18 +232,52 @@ export function createSpeciesMapAdapter() {
       })
         .then((rows) => {
           if (element.__tanvisSpeciesMapLoadId !== loadId) {
+            logSpeciesMapDebug('fetch:ignored-stale-response', {
+              loadId,
+              area: renderConfig.area ?? '',
+              species: speciesCode
+            });
             return;
           }
 
           const occurrenceRows = Array.isArray(rows) ? rows : [];
 
-          applyOccurrenceDataToMap(map, occurrenceRows);
+          logSpeciesMapDebug('fetch:resolved', {
+            loadId,
+            area: renderConfig.area ?? '',
+            species: speciesCode,
+            rowCount: occurrenceRows.length
+          });
+
+          logSpeciesMapDebug('adapter:apply-data', {
+            loadId,
+            area: renderConfig.area ?? '',
+            species: speciesCode,
+            mapInstanceId: map?.__tanvisMapInstanceId,
+            mapArea: map?.__tanvisMapArea,
+            elementId: element.id
+          });
+
+          applyOccurrenceDataToMap(map, occurrenceRows, {
+            loadId,
+            area: renderConfig.area ?? '',
+            species: speciesCode,
+            mapInstanceId: map?.__tanvisMapInstanceId,
+            mapArea: map?.__tanvisMapArea,
+            elementId: element.id
+          });
         })
         .catch((error) => {
           if (element.__tanvisSpeciesMapLoadId !== loadId) {
             return;
           }
 
+          logSpeciesMapDebug('fetch:error', {
+            loadId,
+            area: renderConfig.area ?? '',
+            species: speciesCode,
+            error: normalizeErrorMessage(error, 'Failed to render species map')
+          });
           console.error('[species-map] failed to fetch occurrences:', error);
           status.showError(normalizeErrorMessage(error, 'Failed to render species map'));
         });
@@ -231,7 +315,8 @@ function renderMapBackend(element, config, hostElement) {
       idPrefix: 'tanvis-species-map',
       errorMessage: 'Failed to render species map',
       mapTypesSel,
-      mapTypesKey: OCCURRENCES_MAP_TYPE_KEY
+      mapTypesKey: OCCURRENCES_MAP_TYPE_KEY,
+      subscribeToAreaControl: false
     });
   }
 
@@ -359,19 +444,28 @@ function getDotStyleOptions(config = {}, hostElement) {
   };
 }
 
-export function applyOccurrenceDataToMap(map, occurrenceRows = []) {
+export function applyOccurrenceDataToMap(map, occurrenceRows = [], context = {}) {
   mapData = Array.isArray(occurrenceRows) ? occurrenceRows : [];
 
-  console.log(`[species-map] applying ${mapData.length} occurrence records to map...`);
-          
+  logSpeciesMapDebug('map:apply-data', {
+    ...context,
+    rowCount: mapData.length
+  });
 
   if (!map || typeof map.setMapType !== 'function' || typeof map.redrawMap !== 'function') {
+    logSpeciesMapDebug('map:skipped', { ...context, rowCount: mapData.length });
     return;
   }
 
-  console.log('Redrawing map', OCCURRENCES_MAP_TYPE_KEY);
-
+  logSpeciesMapDebug('map:redraw', {
+    ...context,
+    rowCount: mapData.length,
+    mapInstanceId: map?.__tanvisMapInstanceId,
+    mapArea: map?.__tanvisMapArea,
+    elementId: map?.__tanvisMapElementId
+  });
   map.setMapType(OCCURRENCES_MAP_TYPE_KEY);
+
   map.redrawMap();
 
   return map;
