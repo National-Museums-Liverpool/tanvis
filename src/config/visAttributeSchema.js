@@ -76,6 +76,27 @@ function parseAndValidateBoolean (value, dataset, config, element, rule) {
   return ret;
 }
 
+function parseAndValidateColour(value, dataset, config, element, rule) {
+  const ret = {value: undefined, error: undefined, message: undefined};
+  // Check if the value is required
+  const rm = requiredButMissing(value, dataset, config, element, rule);
+  if (rm) return rm;
+
+  if (typeof(value) === 'undefined' || value === null || value === '') {
+    // Set default if missing
+    ret.value = rule.defaultValue;
+  } else {
+    // Basic validation for CSS colour string (can be improved)
+    if (!CSS.supports("color", value)) {
+      ret.error = true;
+      ret.message = infoString(value, rule);
+    } else {
+      ret.value = value;
+    }
+  }
+  return ret;
+}
+
 function parseAndValidateString (value, dataset, config, element, rule) {
   const ret = {value: undefined, error: undefined, message: undefined};
   
@@ -533,6 +554,30 @@ const RULES = {
       the format 'yyyy' or one of these relative year values: 'year-n', where n is
       any integer, which resolves to the current year minus n years (e.g. year-0 is 
       the current year, year-1 is the previous year, etc.).`
+  }),
+  chartType: createRule({
+    key: 'chartType',
+    datasetName: 'visChartType',
+    parseAndValidate: parseAndValidateSet,
+    allowedValues: ['line', 'bar'],
+    defaultValue: 'line',
+    info: `The type of chart to render. This can be one of the following values:
+      'line' - to render a line chart,
+      'bar' - to render a bar chart.`
+  }),
+  recordsColour: createRule({
+    key: 'recordsColour',
+    datasetName: 'visRecordsColour',
+    parseAndValidate: parseAndValidateColour,
+    defaultValue: '#1d4ed8',
+    info: `The colour to use for records in the chart. Must be a valid CSS colour string.`
+  }),
+  squaresColour: createRule({
+    key: 'squaresColour',
+    datasetName: 'visSquaresColour',
+    parseAndValidate: parseAndValidateColour,
+    defaultValue: '#c2410c',
+    info: `The colour to use for squares in the chart. Must be a valid CSS colour string.`
   })
 };
 
@@ -542,7 +587,7 @@ const VIS_TYPE_RULE_SETS = {
   'control-block': ['area', 'groupId', 'language','controlElements', 'showDataOptsToggle', 'showDataOptsExpanded'],
   'species-map': ['taxonId', 'linkedTable', 'control', 'area', 'hectads', 'mapType', 'boundaries', 'dotShape', 'dotColour', 'transformation', 'dotShape', 'expand', 'width', 'height'],
   'grid-stats-map': ['gridStatsType', 'control', 'area', 'hectads', 'mapType', 'boundaries', 'dotShape', 'dotColour', 'transformation', 'expand', 'width', 'height'],
-  'temporal-year-chart': ['taxonId', 'temporalStatsType', 'linkedTable', 'startYear', 'endYear', 'area', 'control', 'expand', 'width', 'height'],
+  'temporal-year-chart': ['taxonId', 'temporalStatsType', 'linkedTable', 'chartType', 'recordsColour', 'squaresColour','startYear', 'endYear', 'area', 'control', 'expand', 'width', 'height'],
   'new-species-table': ['startDate', 'endDate', 'area', 'groupId', 'language','control', 'pageSize'],
   'increasing-species-table': ['topN', 'area', 'groupId', 'language','control', 'pageSize'],
   'species-absent-since': ['year', 'area', 'groupId', 'language','control', 'pageSize']

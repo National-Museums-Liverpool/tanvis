@@ -1,10 +1,16 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { renderTemporalYearChart } from '../../src/renderers/temporalYearChart.js';
 
+const DEFAULT_CHART_TYPE = 'line';
+const DEFAULT_RECORDS_COLOUR = '#1d4ed8';
+const DEFAULT_SQUARES_COLOUR = '#c2410c';
+
 describe('renderTemporalYearChart', () => {
   afterEach(() => {
     vi.restoreAllMocks();
     delete window.brccharts;
+    document.body.innerHTML = '';
+    document.head.querySelectorAll('link[rel="stylesheet"]').forEach((link) => link.remove());
   });
 
   it('shows a clear error when BRC Charts is not available', async () => {
@@ -106,6 +112,9 @@ describe('renderTemporalYearChart', () => {
     renderTemporalYearChart(element, {
       type: 'temporal-year-chart',
       taxonId: 'NHMSYS0001234567',
+      chartType: DEFAULT_CHART_TYPE,
+      recordsColour: DEFAULT_RECORDS_COLOUR,
+      squaresColour: DEFAULT_SQUARES_COLOUR,
       startYear: 2016,
       endYear: 2017
     });
@@ -119,18 +128,16 @@ describe('renderTemporalYearChart', () => {
     expect(temporalCalls[0].chartStyle).toBe('line');
     expect(temporalCalls[0]).not.toHaveProperty('taxa');
     expect(temporalCalls[0].metrics).toEqual([
-      { prop: 'occurrences_count', label: 'Occurrences', colour: '#c2410c' }
+      { prop: 'count', label: 'Records', colour: DEFAULT_RECORDS_COLOUR }
     ]);
     expect(temporalCalls[0].data).toEqual([
       {
         period: 2016,
-        occurrences_count: 14,
-        grid_square_count: 8
+        count: 14
       },
       {
         period: 2017,
-        occurrences_count: 21,
-        grid_square_count: 13
+        count: 21
       }
     ]);
     expect(element.querySelector('[data-tanvis-temporal-year-chart="chart"]')).not.toBeNull();
@@ -220,34 +227,43 @@ describe('renderTemporalYearChart', () => {
     renderTemporalYearChart(element, {
       type: 'temporal-year-chart',
       taxonId: 'NHMSYS0001234567',
+      chartType: DEFAULT_CHART_TYPE,
+      recordsColour: DEFAULT_RECORDS_COLOUR,
+      squaresColour: DEFAULT_SQUARES_COLOUR,
       temporalStatsType: 'switch'
     });
 
     await new Promise((resolve) => setTimeout(resolve, 0));
 
     expect(temporalCalls[0].metrics).toEqual([
-      { prop: 'occurrences_count', label: 'Occurrences', colour: '#c2410c' }
+      { prop: 'count', label: 'Records', colour: DEFAULT_RECORDS_COLOUR }
     ]);
 
     const squaresInput = element.querySelector('.tanvis-temporal-year-chart-switch input[value="squares"]');
     squaresInput.checked = true;
     squaresInput.dispatchEvent(new Event('change', { bubbles: true }));
 
-    await new Promise((resolve) => setTimeout(resolve, 0));
+    await new Promise((resolve) => setTimeout(resolve, 10));
 
     expect(setChartOptsCalls).toHaveLength(1);
     expect(setChartOptsCalls[0].metrics).toEqual([
-      { prop: 'grid_square_count', label: 'Grid squares', colour: '#1d4ed8' }
+      { prop: 'count', label: 'Grid squares', colour: DEFAULT_SQUARES_COLOUR }
     ]);
   });
 
-  it('listens to linked table species-row-selected events and rerenders with the selected speciesId', async () => {
+  it('updates the existing chart in place when a linked-table species selection changes', async () => {
     const temporalCalls = [];
+    const setChartOptsCalls = [];
     window.d3 = {};
     window.brccharts = {
       temporal: (options) => {
         temporalCalls.push(options);
-        return {};
+        return {
+          setChartOpts: (opts) => {
+            setChartOptsCalls.push(opts);
+            return Promise.resolve();
+          }
+        };
       }
     };
 
@@ -272,6 +288,9 @@ describe('renderTemporalYearChart', () => {
     renderTemporalYearChart(element, {
       type: 'temporal-year-chart',
       taxonId: 'NHMSYS0001234567',
+      chartType: DEFAULT_CHART_TYPE,
+      recordsColour: DEFAULT_RECORDS_COLOUR,
+      squaresColour: DEFAULT_SQUARES_COLOUR,
       linkedTable: 'linked-table'
     });
 
@@ -287,6 +306,74 @@ describe('renderTemporalYearChart', () => {
 
     expect(fetchMock).toHaveBeenCalledTimes(2);
     expect(String(fetchMock.mock.calls[1][0])).toContain('taxon_identifier%5Beq%5D=NHMSYS0007654321');
-    expect(temporalCalls).toHaveLength(2);
+    expect(temporalCalls).toHaveLength(1);
+    expect(setChartOptsCalls).toHaveLength(1);
+    expect(setChartOptsCalls[0].metrics).toEqual([
+      { prop: 'count', label: 'Records', colour: DEFAULT_RECORDS_COLOUR }
+    ]);
+  });
+
+  it('preserves the selected squares metric when a linked-table species selection changes after toggling the switch', async () => {
+    const setChartOptsCalls = [];
+    window.d3 = {};
+    window.brccharts = {
+      temporal: () => ({
+        setChartOpts: (opts) => {
+          setChartOptsCalls.push(opts);
+          return Promise.resolve();
+        }
+      })
+    };
+
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        data: [
+          {
+            year: 2020,
+            occurrences_count: 4,
+            grid_square_count: 2
+          }
+        ]
+      })
+    });
+
+    const linkedTable = document.createElement('div');
+    linkedTable.id = 'linked-table';
+    document.body.appendChild(linkedTable);
+
+    const element = document.createElement('div');
+    renderTemporalYearChart(element, {
+      type: 'temporal-year-chart',
+      taxonId: 'NHMSYS0001234567',
+      chartType: DEFAULT_CHART_TYPE,
+      recordsColour: DEFAULT_RECORDS_COLOUR,
+      squaresColour: DEFAULT_SQUARES_COLOUR,
+      temporalStatsType: 'switch',
+      linkedTable: 'linked-table'
+    });
+
+    await new Promise((resolve) => setTimeout(resolve, 20));
+
+    const squaresInput = element.querySelector('.tanvis-temporal-year-chart-switch input[value="squares"]');
+    squaresInput.checked = true;
+    squaresInput.dispatchEvent(new Event('change', { bubbles: true }));
+
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    setChartOptsCalls.length = 0;
+
+    linkedTable.dispatchEvent(new CustomEvent('species-row-selected', {
+      detail: {
+        speciesId: 'NHMSYS0007654321'
+      }
+    }));
+
+    await new Promise((resolve) => setTimeout(resolve, 10));
+
+    expect(setChartOptsCalls).toHaveLength(1);
+    expect(setChartOptsCalls[0].metrics).toEqual([
+      { prop: 'count', label: 'Grid squares', colour: DEFAULT_SQUARES_COLOUR }
+    ]);
   });
 });
