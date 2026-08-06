@@ -4,7 +4,7 @@ import { createApiError, normalizeErrorMessage, parseJsonSafe } from '../utils/a
 import { createVisStatusReporter } from '../utils/visStatus.js';
 import { logApiRequest } from '../../src/utils/apiRequest.js';
 import { parseTaxonGroupDisplayNames } from '../utils/taxonGroupLabels.js';
-import { createLabelModeControls } from './labelModeControls.js';
+import { createLanguageControls } from './languageControls.js';
 
 export function createTaxonGroupControls({ rootElement, apiBase, selectedValue = '', labelMode = 'scientific', loadToken, body, showSelector = true, showLabelMode = true }) {
   const initialGroupIdFromDataset = rootElement?.dataset?.visGroupid || '';
@@ -54,7 +54,7 @@ export function createTaxonGroupControls({ rootElement, apiBase, selectedValue =
   status.showInfo('Loading taxon groups...');
 
   if (showLabelMode) {
-    createLabelModeControls({
+    createLanguageControls({
       rootElement,
       body: targetBody,
       state,

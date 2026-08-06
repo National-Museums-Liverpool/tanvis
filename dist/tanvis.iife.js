@@ -2041,7 +2041,7 @@ div[data-tanvis-controls="species-selector"] {
     { label: 'Vernacular', value: 'vernacular' }
   ];
 
-  function createLabelModeControls({ rootElement, body, state, onChange }) {
+  function createLanguageControls({ rootElement, body, state, onChange }) {
     if (!body) {
       return null;
     }
@@ -2114,7 +2114,7 @@ div[data-tanvis-controls="species-selector"] {
     status.showInfo('Loading taxon groups...');
 
     if (showLabelMode) {
-      createLabelModeControls({
+      createLanguageControls({
         rootElement,
         body: targetBody,
         state,
