@@ -6,6 +6,7 @@ import { logApiRequest } from '../utils/apiRequest.js';
 import { D3_DEPENDENCY_MESSAGE } from '../utils/colourMapDots.js';
 import { createRadioGroup } from '../controls/radioGroup.js';
 import { subscribeToControl } from '../controls/controlBus.js';
+import { normalizeAreaContractValue } from '../controls/areaControls.js';
 import { ensureSharedStyles } from '../styles/sharedStyles.js';
 
 // Adapter for Tanvis temporal year charts backed by BRC Charts.
@@ -34,13 +35,13 @@ export function createTemporalYearChartAdapter() {
           const nextArea = event.area === undefined || event.area === null
             ? renderConfig.area
             : event.area;
-          const currentArea = element.dataset.visArea ?? renderConfig.area;
+          const currentArea = normalizeAreaContractValue(element.dataset.visArea ?? renderConfig.area);
 
           if (nextArea === currentArea) {
             return;
           }
 
-          element.dataset.visArea = nextArea ?? '';
+          element.dataset.visArea = nextArea === '' ? '' : String(nextArea ?? '');
           updateTemporalYearChartForSpecies(element, {
             ...renderConfig,
             area: nextArea,
@@ -62,7 +63,7 @@ export function createTemporalYearChartAdapter() {
           element.dataset.visTaxonid = trimmedSpeciesId;
           updateTemporalYearChartForSpecies(element, {
             ...renderConfig,
-            area: element.dataset.visArea ?? renderConfig.area,
+            area: normalizeAreaContractValue(element.dataset.visArea ?? renderConfig.area),
             taxonId: trimmedSpeciesId
           });
         };

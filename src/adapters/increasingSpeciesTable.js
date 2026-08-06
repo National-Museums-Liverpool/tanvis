@@ -4,7 +4,8 @@ import { createApiError, normalizeErrorMessage, parseJsonSafe } from '../utils/a
 import { createVisStatusReporter, ensureStylesheetDependency } from '../utils/visStatus.js';
 import { resolveApiBase } from '../config/apiBase.js';
 import { logApiRequest } from '../utils/apiRequest.js';
-import { normalizeAreaValue, resolveAreaSelectionKey } from './map/common.js';
+import { resolveAreaSelectionKey } from './map/common.js';
+import { normalizeAreaContractValue } from '../controls/areaControls.js';
 import { parseTaxonGroupDisplayNames } from '../utils/taxonGroupLabels.js';
 
 const TAXON_STATS_RESOURCE = 'taxon-stats';
@@ -65,7 +66,7 @@ export function createIncreasingSpeciesTableAdapter() {
               return;
             }
 
-            element.dataset.visArea = resolveAreaSelectionKey(nextArea);
+            element.dataset.visArea = nextArea === '' ? '' : String(nextArea);
             element.dataset.visTaxonGroup = nextTaxonGroupExternalKey;
             createIncreasingSpeciesTableAdapter().render(element, {
               ...renderConfig,
@@ -394,7 +395,7 @@ function formatVernacularName(taxon) {
 }
 
 function areaToHigherGeographyIdentifier(area) {
-  const normalizedArea = normalizeAreaValue(area);
+  const normalizedArea = normalizeAreaContractValue(area);
 
   if (normalizedArea === 58) {
     return 58;
@@ -422,26 +423,26 @@ function clearControlSubscription(element) {
 
 function getEffectiveArea(config) {
   if (!config.control) {
-    return normalizeAreaValue(config.area);
+    return normalizeAreaContractValue(config.area);
   }
 
   if (typeof document === 'undefined') {
-    return normalizeAreaValue(config.area);
+    return normalizeAreaContractValue(config.area);
   }
 
   const controlElement = document.getElementById(config.control);
   const controlAreaValue = controlElement?.dataset?.visArea;
-  const normalizedControlAreaValue = normalizeAreaValue(controlAreaValue);
+  const normalizedControlAreaValue = normalizeAreaContractValue(controlAreaValue);
   if (controlElement && Object.prototype.hasOwnProperty.call(controlElement.dataset, 'visArea') && normalizedControlAreaValue !== undefined && normalizedControlAreaValue !== null && normalizedControlAreaValue !== '') {
     return normalizedControlAreaValue;
   }
 
   const latestEvent = getLatestControlEvent(config.control);
   if (latestEvent?.type === 'area-change' && latestEvent.area !== undefined && latestEvent.area !== null) {
-    return normalizeAreaValue(latestEvent.area);
+    return normalizeAreaContractValue(latestEvent.area);
   }
 
-  return normalizeAreaValue(config.area);
+  return normalizeAreaContractValue(config.area);
 }
 
 function getEffectiveTaxonGroup(config) {

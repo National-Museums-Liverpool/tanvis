@@ -1,15 +1,10 @@
 import { createControlsPanel } from './panel.js';
-import { createRadioGroup } from './radioGroup.js';
 import { publishControlEvent } from './controlBus.js';
 import { createApiError, normalizeErrorMessage, parseJsonSafe } from '../utils/apiError.js';
 import { createVisStatusReporter } from '../utils/visStatus.js';
 import { logApiRequest } from '../../src/utils/apiRequest.js';
 import { parseTaxonGroupDisplayNames } from '../utils/taxonGroupLabels.js';
-
-const LABEL_MODE_OPTIONS = [
-  { label: 'Scientific', value: 'scientific' },
-  { label: 'Vernacular', value: 'vernacular' }
-];
+import { createLabelModeControls } from './labelModeControls.js';
 
 export function createTaxonGroupControls({ rootElement, apiBase, selectedValue = '', labelMode = 'scientific', loadToken, body, showSelector = true, showLabelMode = true }) {
   const initialGroupIdFromDataset = rootElement?.dataset?.visGroupid || '';
@@ -59,14 +54,10 @@ export function createTaxonGroupControls({ rootElement, apiBase, selectedValue =
   status.showInfo('Loading taxon groups...');
 
   if (showLabelMode) {
-    const labelModeField = document.createElement('div');
-    labelModeField.className = 'tanvis-controls-field tanvis-controls-gap-top';
-    targetBody.appendChild(labelModeField);
-
-    const radioGroup = createRadioGroup({
-      name: `${rootElement?.id || 'tanvis'}-taxon-group-label-mode`,
-      selectedValue: state.labelMode,
-      items: LABEL_MODE_OPTIONS,
+    createLabelModeControls({
+      rootElement,
+      body: targetBody,
+      state,
       onChange: (value) => {
         state.labelMode = value;
         syncRootDataset();
@@ -74,8 +65,6 @@ export function createTaxonGroupControls({ rootElement, apiBase, selectedValue =
         publishLanguageChange();
       }
     });
-
-    labelModeField.appendChild(radioGroup);
   }
 
   renderOptions();

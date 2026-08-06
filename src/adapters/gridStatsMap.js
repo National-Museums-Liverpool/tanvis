@@ -4,7 +4,7 @@ import { createApiError, normalizeErrorMessage, parseJsonSafe } from '../utils/a
 import { createVisStatusReporter } from '../utils/visStatus.js';
 import { renderLeafletAtlasMap } from './map/leafletBackend.js';
 import { renderStaticAtlasMap } from './map/staticBackend.js';
-import { normalizeAreaValue } from './map/common.js';
+import { normalizeAreaContractValue } from '../controls/areaControls.js';
 import { createRadioGroup } from '../controls/radioGroup.js';
 import { ensureSharedStyles } from '../styles/sharedStyles.js';
 import {
@@ -364,7 +364,7 @@ function getListData(payload) {
 }
 
 function areaToGeographicRegionIdentifier(area) {
-  const normalizedArea = normalizeAreaValue(area);
+  const normalizedArea = normalizeAreaContractValue(area);
 
   if (normalizedArea === 58) {
     return 58;
@@ -383,26 +383,26 @@ function areaToGeographicRegionIdentifier(area) {
 
 function getEffectiveArea(config) {
   if (!config.control) {
-    return normalizeAreaValue(config.area);
+    return normalizeAreaContractValue(config.area);
   }
 
   if (typeof document === 'undefined') {
-    return normalizeAreaValue(config.area);
+    return normalizeAreaContractValue(config.area);
   }
 
   const controlElement = document.getElementById(config.control);
   const controlAreaValue = controlElement?.dataset?.visArea;
-  const normalizedControlAreaValue = normalizeAreaValue(controlAreaValue);
+  const normalizedControlAreaValue = normalizeAreaContractValue(controlAreaValue);
   if (controlElement && Object.prototype.hasOwnProperty.call(controlElement.dataset, 'visArea') && normalizedControlAreaValue !== undefined && normalizedControlAreaValue !== null && normalizedControlAreaValue !== '') {
     return normalizedControlAreaValue;
   }
 
   const latestEvent = getLatestControlEvent(config.control);
   if (latestEvent?.type === 'area-change' && latestEvent.area !== undefined && latestEvent.area !== null) {
-    return normalizeAreaValue(latestEvent.area);
+    return normalizeAreaContractValue(latestEvent.area);
   }
 
-  return normalizeAreaValue(config.area);
+  return normalizeAreaContractValue(config.area);
 }
 
 function clearControlSubscription(element) {

@@ -5,7 +5,7 @@ import { createVisStatusReporter } from '../utils/visStatus.js';
 import { logApiRequest } from '../utils/apiRequest.js';
 import { renderLeafletAtlasMap } from './map/leafletBackend.js';
 import { renderStaticAtlasMap } from './map/staticBackend.js';
-import { normalizeAreaValue } from './map/common.js';
+import { normalizeAreaContractValue } from '../controls/areaControls.js';
 import { ensureSharedStyles } from '../styles/sharedStyles.js';
 import {
   createMapTypeSwitchControl,
@@ -47,7 +47,7 @@ export function createSpeciesMapAdapter() {
     name: 'species-map',
     render(element, config) {
       const effectiveArea = getEffectiveArea(config);
-      const normalizedArea = normalizeAreaValue(effectiveArea);
+      const normalizedArea = normalizeAreaContractValue(effectiveArea);
       const renderConfig = {
         ...config,
         area: normalizedArea
@@ -78,7 +78,7 @@ export function createSpeciesMapAdapter() {
       const currentSpeciesFromElement = element.dataset.visTaxonid || '';
       const speciesCode = currentSpeciesFromElement || renderConfig.species || renderConfig.taxonId || '';
       const apiBase = resolveApiBase();
-      const areaValue = normalizeAreaValue(renderConfig.area ?? '');
+      const areaValue = normalizeAreaContractValue(renderConfig.area ?? '');
 
       logSpeciesMapDebug('render:start', {
         loadId: (element.__tanvisSpeciesMapLoadId || 0) + 1,
@@ -110,7 +110,7 @@ export function createSpeciesMapAdapter() {
 
             const nextArea = getEffectiveArea(renderConfig);
             const nextTaxonGroupExternalKey = getEffectiveTaxonGroup(renderConfig);
-            const currentArea = normalizeAreaValue(element.dataset.visArea);
+            const currentArea = normalizeAreaContractValue(element.dataset.visArea);
             const currentTaxonGroup = element.dataset.visTaxonGroup || '';
 
             if (nextArea === currentArea && nextTaxonGroupExternalKey === currentTaxonGroup) {
@@ -474,26 +474,26 @@ export function applyOccurrenceDataToMap(map, occurrenceRows = [], context = {})
 
 function getEffectiveArea(config) {
   if (!config.control) {
-    return normalizeAreaValue(config.area);
+    return normalizeAreaContractValue(config.area);
   }
 
   if (typeof document === 'undefined') {
-    return normalizeAreaValue(config.area);
+    return normalizeAreaContractValue(config.area);
   }
 
   const controlElement = document.getElementById(config.control);
   const controlAreaValue = controlElement?.dataset?.visArea;
-  const normalizedControlAreaValue = normalizeAreaValue(controlAreaValue);
+  const normalizedControlAreaValue = normalizeAreaContractValue(controlAreaValue);
   if (controlElement && Object.prototype.hasOwnProperty.call(controlElement.dataset, 'visArea') && normalizedControlAreaValue !== undefined && normalizedControlAreaValue !== null && normalizedControlAreaValue !== '') {
     return normalizedControlAreaValue;
   }
 
   const latestEvent = getLatestControlEvent(config.control);
   if (latestEvent?.type === 'area-change' && latestEvent.area !== undefined && latestEvent.area !== null) {
-    return normalizeAreaValue(latestEvent.area);
+    return normalizeAreaContractValue(latestEvent.area);
   }
 
-  return normalizeAreaValue(config.area);
+  return normalizeAreaContractValue(config.area);
 }
 
 function getEffectiveTaxonGroup(config) {

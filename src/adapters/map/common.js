@@ -1,4 +1,5 @@
 import { getLatestControlEvent, subscribeToControl } from '../../controls/controlBus.js';
+import { normalizeAreaContractValue } from '../../controls/areaControls.js';
 import { transOptsSel } from '../transOptsSel.js';
 
 const elementIdCounters = new Map();
@@ -35,26 +36,26 @@ export function clearExpandResizeHandlers(element) {
 
 export function getEffectiveArea(config) {
   if (!config.control) {
-    return normalizeAreaValue(config.area);
+    return normalizeAreaContractValue(config.area);
   }
 
   if (typeof document === 'undefined') {
-    return normalizeAreaValue(config.area);
+    return normalizeAreaContractValue(config.area);
   }
 
   const controlElement = document.getElementById(config.control);
   const controlAreaValue = controlElement?.dataset?.visArea;
-  const normalizedControlAreaValue = normalizeAreaValue(controlAreaValue);
+  const normalizedControlAreaValue = normalizeAreaContractValue(controlAreaValue);
   if (controlElement && Object.prototype.hasOwnProperty.call(controlElement.dataset, 'visArea') && normalizedControlAreaValue !== undefined && normalizedControlAreaValue !== null && normalizedControlAreaValue !== '') {
     return normalizedControlAreaValue;
   }
 
   const latestEvent = getLatestControlEvent(config.control);
   if (latestEvent?.type === 'area-change' && latestEvent.area !== undefined && latestEvent.area !== null) {
-    return normalizeAreaValue(latestEvent.area);
+    return normalizeAreaContractValue(latestEvent.area);
   }
 
-  return normalizeAreaValue(config.area);
+  return normalizeAreaContractValue(config.area);
 }
 
 export function subscribeToAreaControl(controlId, handler) {
@@ -157,41 +158,12 @@ export function resizeExpandedMap(element, config, map) {
   }
 }
 
-export function normalizeAreaValue(area) {
-  if (area === undefined || area === null || area === '') {
-    return '';
-  }
-
-  if (typeof area === 'number' && Number.isFinite(area)) {
-    return area;
-  }
-
-  if (typeof area === 'string') {
-    const trimmed = area.trim();
-    if (!trimmed || trimmed === 'vc-all') {
-      return '';
-    }
-
-    if (/^vc-\d+$/.test(trimmed)) {
-      return Number.parseInt(trimmed.substring(3), 10);
-    }
-
-    const parsed = Number(trimmed);
-    if (Number.isFinite(parsed)) {
-      return parsed;
-    }
-  }
-
-  return area;
-}
-
 export function resolveAreaSelectionKey(area) {
-  const normalized = normalizeAreaValue(area);
-  if (normalized === '' || normalized === 'vc-all') {
+  if (area === '') {
     return 'vc-all';
   }
 
-  return `vc-${normalized}`;
+  return `vc-${area}`;
 }
 
 export function getAreaBounds(area) {
