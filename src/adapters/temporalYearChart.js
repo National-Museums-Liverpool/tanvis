@@ -5,6 +5,7 @@ import { resolveApiBase } from '../config/apiBase.js';
 import { logApiRequest } from '../utils/apiRequest.js';
 import { D3_DEPENDENCY_MESSAGE } from '../utils/colourMapDots.js';
 import { createRadioGroup } from '../controls/radioGroup.js';
+import { subscribeToControl } from '../controls/controlBus.js';
 import { ensureSharedStyles } from '../styles/sharedStyles.js';
 
 // Adapter for Tanvis temporal year charts backed by BRC Charts.
@@ -20,7 +21,64 @@ export function createTemporalYearChartAdapter() {
     name: 'temporal-year-chart',
     render(element, config) {
       clearLinkedTableSubscription(element);
+      clearControlSubscriptions(element);
       const renderConfig = { ...config };
+
+      if (renderConfig.control) {
+        const controlElement = document.getElementById(renderConfig.control);
+        const controlBusCleanup = subscribeToControl(renderConfig.control, (event) => {
+          if (!event || event.type !== 'area-change') {
+            return;
+          }
+
+          const nextArea = event.area === undefined || event.area === null
+            ? renderConfig.area
+            : event.area;
+          const currentArea = element.dataset.visArea ?? renderConfig.area;
+
+          if (nextArea === currentArea) {
+            return;
+          }
+
+          element.dataset.visArea = nextArea ?? '';
+          updateTemporalYearChartForSpecies(element, {
+            ...renderConfig,
+            area: nextArea,
+            taxonId: element.dataset.visTaxonid || renderConfig.taxonId
+          });
+        });
+
+        const onSpeciesSelection = (event) => {
+          const speciesId = event?.detail?.speciesId;
+          if (typeof speciesId !== 'string' || !speciesId.trim()) {
+            return;
+          }
+
+          const trimmedSpeciesId = speciesId.trim();
+          if (trimmedSpeciesId === element.dataset.visTaxonid) {
+            return;
+          }
+
+          element.dataset.visTaxonid = trimmedSpeciesId;
+          updateTemporalYearChartForSpecies(element, {
+            ...renderConfig,
+            area: element.dataset.visArea ?? renderConfig.area,
+            taxonId: trimmedSpeciesId
+          });
+        };
+
+        if (controlElement) {
+          controlElement.addEventListener('species-row-selected', onSpeciesSelection);
+        }
+
+        element.__tanvisControlCleanup = () => {
+          controlBusCleanup?.();
+          if (controlElement) {
+            controlElement.removeEventListener('species-row-selected', onSpeciesSelection);
+          }
+        };
+        element.__tanvisControlId = renderConfig.control;
+      }
 
       if (renderConfig.linkedTable) {
         element.__tanvisLinkedTableCleanup = subscribeToLinkedTable(renderConfig.linkedTable, (speciesId) => {
@@ -96,6 +154,16 @@ function clearLinkedTableSubscription(element) {
   }
 
   delete element.__tanvisLinkedTableCleanup;
+}
+
+function clearControlSubscriptions(element) {
+  const cleanup = element?.__tanvisControlCleanup;
+  if (typeof cleanup === 'function') {
+    cleanup();
+  }
+
+  delete element.__tanvisControlCleanup;
+  delete element.__tanvisControlId;
 }
 
 async function updateTemporalYearChartForSpecies(element, config) {

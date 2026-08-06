@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { renderTemporalYearChart } from '../../src/renderers/temporalYearChart.js';
+import { publishControlEvent } from '../../src/controls/controlBus.js';
 
 const DEFAULT_CHART_TYPE = 'line';
 const DEFAULT_RECORDS_COLOUR = '#1d4ed8';
@@ -375,5 +376,68 @@ describe('renderTemporalYearChart', () => {
     expect(setChartOptsCalls[0].metrics).toEqual([
       { prop: 'count', label: 'Grid squares', colour: DEFAULT_SQUARES_COLOUR }
     ]);
+  });
+
+  it('reacts to control-block area changes and species selection events', async () => {
+    const setChartOptsCalls = [];
+    window.d3 = {};
+    window.brccharts = {
+      temporal: () => ({
+        setChartOpts: (opts) => {
+          setChartOptsCalls.push(opts);
+          return Promise.resolve();
+        }
+      })
+    };
+
+    const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        data: [
+          {
+            year: 2020,
+            occurrences_count: 4,
+            grid_square_count: 2
+          }
+        ]
+      })
+    });
+
+    const controlElement = document.createElement('div');
+    controlElement.id = 'control-block';
+    document.body.appendChild(controlElement);
+
+    const element = document.createElement('div');
+    renderTemporalYearChart(element, {
+      type: 'temporal-year-chart',
+      taxonId: 'NHMSYS0001234567',
+      chartType: DEFAULT_CHART_TYPE,
+      recordsColour: DEFAULT_RECORDS_COLOUR,
+      squaresColour: DEFAULT_SQUARES_COLOUR,
+      control: 'control-block',
+      area: 'GB-123'
+    });
+
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    publishControlEvent('control-block', {
+      type: 'area-change',
+      area: 'GB-999'
+    });
+
+    await new Promise((resolve) => setTimeout(resolve, 10));
+
+    controlElement.dispatchEvent(new CustomEvent('species-row-selected', {
+      detail: {
+        speciesId: 'NHMSYS0007654321'
+      }
+    }));
+
+    await new Promise((resolve) => setTimeout(resolve, 10));
+
+    expect(fetchMock).toHaveBeenCalledTimes(3);
+    expect(String(fetchMock.mock.calls[1][0])).toContain('higher_geography_identifier%5Beq%5D=GB-999');
+    expect(String(fetchMock.mock.calls[2][0])).toContain('taxon_identifier%5Beq%5D=NHMSYS0007654321');
+    expect(setChartOptsCalls).toHaveLength(2);
   });
 });
