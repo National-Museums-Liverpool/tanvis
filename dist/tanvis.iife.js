@@ -163,7 +163,7 @@ var Tanvis = (function (exports) {
     if (/^\d{4}$/.test(value)) {
       const year = parseInt(value, 10);
       if (year >= 1000 && year <= 3000) {
-        ret.value = value;
+        ret.value = year;
       } else {
         ret.error = true;
         ret.message = infoString(value, rule);
@@ -172,7 +172,7 @@ var Tanvis = (function (exports) {
       const n = parseInt(value.split('-')[1], 10);
       const now = new Date();
       now.setDate(1);
-      ret.value = `${now.getFullYear() - n}`;
+      ret.value = now.getFullYear() - n;
     } else {
       ret.error = true;
       ret.message = infoString(value, rule);
@@ -413,6 +413,17 @@ var Tanvis = (function (exports) {
       'rarity' - to visualize rarity scores,
       'switch' - provide a control to switch between different grid statistics.`
     }),
+    temporalStatsType: createRule({
+      key: 'temporalStatsType',
+      datasetName: 'visTemporalStatsType',
+      parseAndValidate: parseAndValidateSet,
+      allowedValues: ['records', 'squares', 'switch'],
+      defaultValue: 'records',  
+      info: `The type of temporal statistics to visualize. This can be one of the following values:
+      'records' - to visualize record counts,
+      'squares' - to visualize square counts,
+      'switch' - provide a control to switch between different temporal statistics.`
+    }), 
     hectads: createRule({
       key: 'hectads',
       datasetName: 'visHectads',
@@ -517,7 +528,7 @@ var Tanvis = (function (exports) {
       key: 'startYear',
       datasetName: 'visStartYear',
       parseAndValidate: parseAndValidateYear,
-      defaultValue: '2000',
+      defaultValue: 'year-11',
       info: `The start year for the data. This can be a specific year string of 
       the format 'yyyy' or one of these relative year values: 'year-n', where n is
       any integer, which resolves to the current year minus n years (e.g. year-0 is 
@@ -527,7 +538,7 @@ var Tanvis = (function (exports) {
       key: 'endYear',
       datasetName: 'visEndYear',
       parseAndValidate: parseAndValidateYear,
-      defaultValue: '2000',
+      defaultValue: 'year-3',
       info: `The end year for the data. This can be a specific year string of 
       the format 'yyyy' or one of these relative year values: 'year-n', where n is
       any integer, which resolves to the current year minus n years (e.g. year-0 is 
@@ -541,7 +552,7 @@ var Tanvis = (function (exports) {
     'control-block': ['area', 'groupId', 'language','controlElements', 'showDataOptsToggle', 'showDataOptsExpanded'],
     'species-map': ['taxonId', 'linkedTable', 'control', 'area', 'hectads', 'mapType', 'boundaries', 'dotShape', 'dotColour', 'transformation', 'dotShape', 'expand', 'width', 'height'],
     'grid-stats-map': ['gridStatsType', 'control', 'area', 'hectads', 'mapType', 'boundaries', 'dotShape', 'dotColour', 'transformation', 'expand', 'width', 'height'],
-    'temporal-year-chart': ['taxonId', 'linkedTable', 'startYear', 'endYear', 'area', 'control', 'expand', 'width', 'height'],
+    'temporal-year-chart': ['taxonId', 'temporalStatsType', 'linkedTable', 'startYear', 'endYear', 'area', 'control', 'expand', 'width', 'height'],
     'new-species-table': ['startDate', 'endDate', 'area', 'groupId', 'language','control', 'pageSize'],
     'increasing-species-table': ['topN', 'area', 'groupId', 'language','control', 'pageSize'],
     'species-absent-since': ['year', 'area', 'groupId', 'language','control', 'pageSize']
@@ -5478,21 +5489,27 @@ div[data-tanvis-controls="species-selector"] {
       throw new Error('BRC Charts temporal chart is not available. Include a compatible brccharts.umd.js bundle.');
     }
 
+    ensureSharedStyles();
+
+    const normalizedStartYear = normalizeYearValue(config.startYear);
+    const normalizedEndYear = normalizeYearValue(config.endYear);
     const chartRecords = await fetchTaxonYearStats({
       apiBase: resolveApiBase(),
       taxonIdentifier: config.taxonId,
-      startYear: config.startYear,
-      endYear: config.endYear
+      startYear: normalizedStartYear,
+      endYear: normalizedEndYear
     });
 
     const chartContainer = createTemporalYearChartContainer(element);
+    const initialStatsType = resolveTemporalStatsType(config.temporalStatsType);
     const chartOptions = createTemporalYearChartOptions({
       config,
       chartContainer,
-      chartRecords
+      chartRecords,
+      temporalStatsType: initialStatsType,
+      startYear: normalizedStartYear,
+      endYear: normalizedEndYear
     });
-
-    console.log("chart options", chartOptions);
 
     const statusElement = element.__tanvisVisStatusElement;
     clearElement(element);
@@ -5502,8 +5519,22 @@ div[data-tanvis-controls="species-selector"] {
     }
 
     element.appendChild(chartContainer);
-    console.log('Rendering temporal year chart with options:', chartOptions);
-    brcCharts.temporal(chartOptions);
+
+    const chartInstance = brcCharts.temporal(chartOptions);
+
+    if (config.temporalStatsType === 'switch') {
+      element.appendChild(createTemporalStatsTypeSwitchControl({
+        chartElement: element,
+        selectedValue: initialStatsType,
+        chartInstance,
+        config,
+        chartRecords
+      }));
+    }
+
+    if (config.temporalStatsType === 'records' || config.temporalStatsType === 'squares') {
+      element.dataset.tanvisTemporalStatsType = initialStatsType;
+    }
   }
 
   async function fetchTaxonYearStats({ apiBase, taxonIdentifier, startYear, endYear }) {
@@ -5557,7 +5588,44 @@ div[data-tanvis-controls="species-selector"] {
     return container;
   }
 
-  function createTemporalYearChartOptions({ config, chartContainer, chartRecords }) {
+  function createTemporalStatsTypeSwitchControl({ chartElement, selectedValue = 'records', chartInstance, config, chartRecords }) {
+    const group = createRadioGroup({
+      name: `${chartElement.id || 'tanvis-temporal-year-chart'}-temporal-stats-switch`,
+      selectedValue,
+      items: [
+        { value: 'records', label: 'Records' },
+        { value: 'squares', label: 'Squares' }
+      ],
+      onChange: (value) => {
+        if (!chartInstance || typeof chartInstance.setChartOpts !== 'function') {
+          return;
+        }
+
+        const temporalStatsType = resolveTemporalStatsType(value);
+        const metric = temporalStatsType === 'squares'
+          ? { prop: 'grid_square_count', label: 'Grid squares', colour: '#1d4ed8' }
+          : { prop: 'occurrences_count', label: 'Occurrences', colour: '#c2410c' };
+
+        chartInstance.setChartOpts({
+          metrics: [metric],
+          data: chartRecords.map((row) => ({
+            period: Number(row.year),
+            occurrences_count: Number(row.occurrences_count || 0),
+            grid_square_count: Number(row.grid_square_count || 0)
+          }))
+        });
+
+        chartElement.dataset.tanvisTemporalStatsType = temporalStatsType;
+      }
+    });
+
+    group.classList.add('tanvis-temporal-year-chart-switch', 'tanvis-grid-stats-switch');
+    return group;
+  }
+
+  function createTemporalYearChartOptions({ config, chartContainer, chartRecords, temporalStatsType, startYear, endYear }) {
+    const metric = resolveTemporalMetric(temporalStatsType);
+
     return {
       selector: `#${chartContainer.id}`,
       data: chartRecords.map((row) => ({
@@ -5565,10 +5633,7 @@ div[data-tanvis-controls="species-selector"] {
         occurrences_count: Number(row.occurrences_count || 0),
         grid_square_count: Number(row.grid_square_count || 0)
       })),
-      metrics: [
-        { prop: 'occurrences_count', label: 'Occurrences', colour: '#c2410c' },
-        { prop: 'grid_square_count', label: 'Grid squares', colour: '#1d4ed8' }
-      ],
+      metrics: [metric],
       periodType: 'year',
       chartStyle: 'line',
       lineInterpolator: 'curveMonotoneX',
@@ -5576,12 +5641,49 @@ div[data-tanvis-controls="species-selector"] {
       interactivity: 'mousemove',
       minY: 0,
       perRow: 1,
-      ...(Number.isFinite(config.startYear) ? { minPeriod: config.startYear } : {}),
-      ...(Number.isFinite(config.endYear) ? { maxPeriod: config.endYear } : {}),
+      ...(Number.isFinite(startYear) ? { minPeriod: startYear } : {}),
+      ...(Number.isFinite(endYear) ? { maxPeriod: endYear } : {}),
       ...(config.expand !== undefined ? { expand: config.expand } : {}),
       ...(config.width !== undefined ? { width: config.width } : {}),
       ...(config.height !== undefined ? { height: config.height } : {})
     };
+  }
+
+  function normalizeYearValue(value) {
+    if (typeof value === 'number' && Number.isFinite(value)) {
+      return value;
+    }
+
+    if (typeof value === 'string') {
+      const parsed = Number(value);
+      if (Number.isFinite(parsed)) {
+        return parsed;
+      }
+    }
+
+    return undefined;
+  }
+
+  function resolveTemporalStatsType(value) {
+    const normalized = String(value || '').trim().toLowerCase();
+
+    if (normalized === 'squares') {
+      return 'squares';
+    }
+
+    if (normalized === 'records') {
+      return 'records';
+    }
+
+    return 'records';
+  }
+
+  function resolveTemporalMetric(temporalStatsType) {
+    if (temporalStatsType === 'squares') {
+      return { prop: 'grid_square_count', label: 'Grid squares', colour: '#1d4ed8' };
+    }
+
+    return { prop: 'occurrences_count', label: 'Occurrences', colour: '#c2410c' };
   }
 
   function resolveResourceUrl(apiBase, resourceName) {

@@ -152,7 +152,7 @@ function parseAndValidateYear(value, dataset, config, element, rule) {
   if (/^\d{4}$/.test(value)) {
     const year = parseInt(value, 10);
     if (year >= 1000 && year <= 3000) {
-      ret.value = value;
+      ret.value = year;
     } else {
       ret.error = true;
       ret.message = infoString(value, rule);
@@ -161,7 +161,7 @@ function parseAndValidateYear(value, dataset, config, element, rule) {
     const n = parseInt(value.split('-')[1], 10);
     const now = new Date();
     now.setDate(1);
-    ret.value = `${now.getFullYear() - n}`;
+    ret.value = now.getFullYear() - n;
   } else {
     ret.error = true;
     ret.message = infoString(value, rule);
@@ -403,6 +403,17 @@ const RULES = {
       'rarity' - to visualize rarity scores,
       'switch' - provide a control to switch between different grid statistics.`
   }),
+  temporalStatsType: createRule({
+    key: 'temporalStatsType',
+    datasetName: 'visTemporalStatsType',
+    parseAndValidate: parseAndValidateSet,
+    allowedValues: ['records', 'squares', 'switch'],
+    defaultValue: 'records',  
+    info: `The type of temporal statistics to visualize. This can be one of the following values:
+      'records' - to visualize record counts,
+      'squares' - to visualize square counts,
+      'switch' - provide a control to switch between different temporal statistics.`
+  }), 
   hectads: createRule({
     key: 'hectads',
     datasetName: 'visHectads',
@@ -507,7 +518,7 @@ const RULES = {
     key: 'startYear',
     datasetName: 'visStartYear',
     parseAndValidate: parseAndValidateYear,
-    defaultValue: '2000',
+    defaultValue: 'year-11',
     info: `The start year for the data. This can be a specific year string of 
       the format 'yyyy' or one of these relative year values: 'year-n', where n is
       any integer, which resolves to the current year minus n years (e.g. year-0 is 
@@ -517,7 +528,7 @@ const RULES = {
     key: 'endYear',
     datasetName: 'visEndYear',
     parseAndValidate: parseAndValidateYear,
-    defaultValue: '2000',
+    defaultValue: 'year-3',
     info: `The end year for the data. This can be a specific year string of 
       the format 'yyyy' or one of these relative year values: 'year-n', where n is
       any integer, which resolves to the current year minus n years (e.g. year-0 is 
@@ -531,7 +542,7 @@ const VIS_TYPE_RULE_SETS = {
   'control-block': ['area', 'groupId', 'language','controlElements', 'showDataOptsToggle', 'showDataOptsExpanded'],
   'species-map': ['taxonId', 'linkedTable', 'control', 'area', 'hectads', 'mapType', 'boundaries', 'dotShape', 'dotColour', 'transformation', 'dotShape', 'expand', 'width', 'height'],
   'grid-stats-map': ['gridStatsType', 'control', 'area', 'hectads', 'mapType', 'boundaries', 'dotShape', 'dotColour', 'transformation', 'expand', 'width', 'height'],
-  'temporal-year-chart': ['taxonId', 'linkedTable', 'startYear', 'endYear', 'area', 'control', 'expand', 'width', 'height'],
+  'temporal-year-chart': ['taxonId', 'temporalStatsType', 'linkedTable', 'startYear', 'endYear', 'area', 'control', 'expand', 'width', 'height'],
   'new-species-table': ['startDate', 'endDate', 'area', 'groupId', 'language','control', 'pageSize'],
   'increasing-species-table': ['topN', 'area', 'groupId', 'language','control', 'pageSize'],
   'species-absent-since': ['year', 'area', 'groupId', 'language','control', 'pageSize']

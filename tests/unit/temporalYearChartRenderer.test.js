@@ -119,8 +119,7 @@ describe('renderTemporalYearChart', () => {
     expect(temporalCalls[0].chartStyle).toBe('line');
     expect(temporalCalls[0]).not.toHaveProperty('taxa');
     expect(temporalCalls[0].metrics).toEqual([
-      { prop: 'occurrences_count', label: 'Occurrences', colour: '#c2410c' },
-      { prop: 'grid_square_count', label: 'Grid squares', colour: '#1d4ed8' }
+      { prop: 'occurrences_count', label: 'Occurrences', colour: '#c2410c' }
     ]);
     expect(temporalCalls[0].data).toEqual([
       {
@@ -161,6 +160,85 @@ describe('renderTemporalYearChart', () => {
     await new Promise((resolve) => setTimeout(resolve, 0));
 
     expect(element.textContent).toContain('API error: year range is invalid');
+  });
+
+  it('renders a switch control under the chart when temporalStatsType is switch', async () => {
+    window.d3 = {};
+    window.brccharts = {
+      temporal: () => ({})
+    };
+
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue({
+      ok: true,
+      json: async () => ({ data: [] })
+    });
+
+    const element = document.createElement('div');
+
+    renderTemporalYearChart(element, {
+      type: 'temporal-year-chart',
+      taxonId: 'NHMSYS0001234567',
+      temporalStatsType: 'switch'
+    });
+
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    const control = element.querySelector('.tanvis-temporal-year-chart-switch');
+    const buttons = element.querySelectorAll('.tanvis-temporal-year-chart-switch input[type="radio"]');
+
+    expect(control).not.toBeNull();
+    expect(control.classList.contains('tanvis-grid-stats-switch')).toBe(true);
+    expect(document.getElementById('tanvis-shared-styles')).not.toBeNull();
+    expect(buttons).toHaveLength(2);
+    expect(Array.from(buttons).map((button) => button.value)).toEqual(['records', 'squares']);
+  });
+
+  it('updates the chart metrics via setChartOpts when the temporal stats switch changes', async () => {
+    const temporalCalls = [];
+    const setChartOptsCalls = [];
+    window.d3 = {};
+    window.brccharts = {
+      temporal: (options) => {
+        temporalCalls.push(options);
+        const chart = {
+          setChartOpts: (opts) => {
+            setChartOptsCalls.push(opts);
+            return Promise.resolve();
+          }
+        };
+        return chart;
+      }
+    };
+
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue({
+      ok: true,
+      json: async () => ({ data: [] })
+    });
+
+    const element = document.createElement('div');
+
+    renderTemporalYearChart(element, {
+      type: 'temporal-year-chart',
+      taxonId: 'NHMSYS0001234567',
+      temporalStatsType: 'switch'
+    });
+
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    expect(temporalCalls[0].metrics).toEqual([
+      { prop: 'occurrences_count', label: 'Occurrences', colour: '#c2410c' }
+    ]);
+
+    const squaresInput = element.querySelector('.tanvis-temporal-year-chart-switch input[value="squares"]');
+    squaresInput.checked = true;
+    squaresInput.dispatchEvent(new Event('change', { bubbles: true }));
+
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    expect(setChartOptsCalls).toHaveLength(1);
+    expect(setChartOptsCalls[0].metrics).toEqual([
+      { prop: 'grid_square_count', label: 'Grid squares', colour: '#1d4ed8' }
+    ]);
   });
 
   it('listens to linked table species-row-selected events and rerenders with the selected speciesId', async () => {

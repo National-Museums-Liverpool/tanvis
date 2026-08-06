@@ -49,7 +49,7 @@ describe('species map redraw flow', () => {
       }
     };
 
-    applyOccurrenceDataToMap(map, [{ grid_ref_2km: 'SJ58' }]);
+    applyOccurrenceDataToMap(map, [{ grid_ref_2km: 'SJ58D' }]);
 
     expect(calls).toEqual([
       ['setMapType', 'occurrences'],
@@ -102,7 +102,7 @@ describe('species map redraw flow', () => {
 
     vi.spyOn(globalThis, 'fetch').mockResolvedValue({
       ok: true,
-      json: async () => ({ data: [{ grid_ref_2km: 'SJ58' }] })
+      json: async () => ({ data: [{ grid_ref_2km: 'SJ58D' }] })
     });
 
     const element = document.createElement('div');
@@ -122,21 +122,21 @@ describe('species map redraw flow', () => {
   });
 
   it('uses the latest occurrence rows in the occurrences adapter', async () => {
-    applyOccurrenceDataToMap({ setMapType() {}, redrawMap() {} }, [{ grid_ref_2km: 'SJ58' }]);
+    applyOccurrenceDataToMap({ setMapType() {}, redrawMap() {} }, [{ grid_ref_2km: 'SJ58D' }]);
 
     //const adapter = createOccurrenceData();
     //const payload = await adapter();
     const payload = await createOccurrenceData();
 
     expect(payload.records[0]).toMatchObject({
-      gr: 'SJ58',
+      gr: 'SJ58D',
       val: 1,
-      caption: 'SJ58: 1 records'
+      caption: 'SJ58D: 1 records'
     });
   });
 
   it('ignores rows without grid_ref_2km', async () => {
-    applyOccurrenceDataToMap({ setMapType() {}, redrawMap() {} }, [{ grid_square: 'SJ58' }]);
+    applyOccurrenceDataToMap({ setMapType() {}, redrawMap() {} }, [{ grid_square: 'SJ58D' }]);
 
     //const adapter = createOccurrenceData();
     //const payload = await adapter();
@@ -164,7 +164,7 @@ describe('species map redraw flow', () => {
       if (area === '58') {
         return {
           ok: true,
-          json: async () => ({ data: [{ grid_ref_2km: 'SJ58' }] })
+          json: async () => ({ data: [{ grid_ref_2km: 'SJ58D' }] })
         };
       }
 
@@ -183,7 +183,7 @@ describe('species map redraw flow', () => {
     await new Promise((resolve) => setTimeout(resolve, 0));
 
     let payload = await mapTypeHandlers.occurrences();
-    expect(payload.records[0]).toMatchObject({ gr: 'SJ58', val: 1 });
+    expect(payload.records[0]).toMatchObject({ gr: 'SJ58D', val: 1 });
 
     renderSpeciesMap(element, {
       type: 'species-map',
@@ -194,17 +194,17 @@ describe('species map redraw flow', () => {
     await new Promise((resolve) => setTimeout(resolve, 0));
 
     payload = await mapTypeHandlers.occurrences();
-    expect(payload.records[0]).toMatchObject({ gr: 'SJ58', val: 1 });
+    expect(payload.records[0]).toMatchObject({ gr: 'SJ58D', val: 1 });
 
     resolveSecondFetch?.({
       ok: true,
-      json: async () => ({ data: [{ grid_ref_2km: 'SJ59' }] })
+      json: async () => ({ data: [{ grid_ref_2km: 'SJ59Y' }] })
     });
 
     await new Promise((resolve) => setTimeout(resolve, 0));
 
     payload = await mapTypeHandlers.occurrences();
-    expect(payload.records[0]).toMatchObject({ gr: 'SJ59', val: 1 });
+    expect(payload.records[0]).toMatchObject({ gr: 'SJ59Y', val: 1 });
   });
 
   it('uses host element dataset values for dot styling when rendering the map', async () => {
@@ -222,7 +222,7 @@ describe('species map redraw flow', () => {
 
     vi.spyOn(globalThis, 'fetch').mockResolvedValue({
       ok: true,
-      json: async () => ({ data: [{ grid_ref_2km: 'SJ58' }] })
+      json: async () => ({ data: [{ grid_ref_2km: 'SJ58D' }] })
     });
 
     const element = document.createElement('div');
@@ -243,7 +243,7 @@ describe('species map redraw flow', () => {
     expect(payload.shape).toBe('triangle');
     expect(payload.opacity).toBe(1);
     expect(payload.records[0]).toMatchObject({
-      gr: 'SJ58',
+      gr: 'SJ58D',
       colour: 'orange'
     });
   });
@@ -270,7 +270,7 @@ describe('species map redraw flow', () => {
 
     vi.spyOn(globalThis, 'fetch').mockResolvedValue({
       ok: true,
-      json: async () => ({ data: [{ grid_ref_2km: 'SJ58' }] })
+      json: async () => ({ data: [{ grid_ref_2km: 'SJ58D' }] })
     });
 
     const element = document.createElement('div');
@@ -307,7 +307,7 @@ describe('species map redraw flow', () => {
 
     vi.spyOn(globalThis, 'fetch').mockResolvedValue({
       ok: true,
-      json: async () => ({ data: [{ grid_ref_2km: 'SJ58' }] })
+      json: async () => ({ data: [{ grid_ref_2km: 'SJ58D' }] })
     });
 
     const element = document.createElement('div');
@@ -353,8 +353,8 @@ describe('species map redraw flow', () => {
       requestedSpecies.push(speciesCode);
 
       const payloadRows = speciesCode === 'XYZ999'
-        ? [{ grid_ref_2km: 'SJ99' }]
-        : [{ grid_ref_2km: 'SJ58' }];
+        ? [{ grid_ref_2km: 'SJ99A' }]
+        : [{ grid_ref_2km: 'SJ58D' }];
 
       return {
         ok: true,
@@ -385,7 +385,7 @@ describe('species map redraw flow', () => {
     const payload = await mapTypeHandlers.occurrences();
 
     expect(requestedSpecies).toEqual(['ABC123', 'XYZ999']);
-    expect(payload.records[0]).toMatchObject({ gr: 'SJ99', val: 1 });
+    expect(payload.records[0]).toMatchObject({ gr: 'SJ99A', val: 1 });
 
     linkedTable.remove();
   });
@@ -406,7 +406,7 @@ describe('species map redraw flow', () => {
 
     vi.spyOn(globalThis, 'fetch').mockResolvedValue({
       ok: true,
-      json: async () => ({ data: [{ grid_ref_2km: 'SJ58' }] })
+      json: async () => ({ data: [{ grid_ref_2km: 'SJ58D' }] })
     });
 
     const linkedTable = document.createElement('div');
@@ -477,7 +477,7 @@ describe('species map redraw flow', () => {
       const speciesCode = new URL(url).searchParams.get('taxon_identifier[eq]');
       return {
         ok: true,
-        json: async () => ({ data: [{ grid_ref_2km: speciesCode === 'XYZ999' ? 'SJ99' : 'SJ58' }] })
+        json: async () => ({ data: [{ grid_ref_2km: speciesCode === 'XYZ999' ? 'SJ99A' : 'SJ58D' }] })
       };
     });
 
@@ -531,7 +531,7 @@ describe('species map redraw flow', () => {
 
       return {
         ok: true,
-        json: async () => ({ data: [{ grid_ref_2km: speciesCode === 'XYZ999' ? 'SJ99' : 'SJ58' }] })
+        json: async () => ({ data: [{ grid_ref_2km: speciesCode === 'XYZ999' ? 'SJ99A' : 'SJ58D' }] })
       };
     });
 
@@ -577,7 +577,7 @@ describe('species map redraw flow', () => {
 
       return {
         ok: true,
-        json: async () => ({ data: [{ grid_ref_2km: 'SJ58' }] })
+        json: async () => ({ data: [{ grid_ref_2km: 'SJ58D' }] })
       };
     });
 
@@ -709,7 +709,7 @@ describe('species map redraw flow', () => {
 
       return {
         ok: true,
-        json: async () => ({ data: [{ grid_ref_2km: speciesCode === 'XYZ999' ? 'SJ99' : 'SJ58' }] })
+        json: async () => ({ data: [{ grid_ref_2km: speciesCode === 'XYZ999' ? 'SJ99A' : 'SJ58D' }] })
       };
     });
 

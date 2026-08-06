@@ -162,8 +162,8 @@ describe('parseOptions', () => {
     expect(parseOptions(element)).toMatchObject({
       type: 'temporal-year-chart',
       taxonId: 'NHMSYS0001234567',
-      startYear: '1970',
-      endYear: '2024'
+      startYear: 1970,
+      endYear: 2024
     });
   });
 
@@ -196,7 +196,7 @@ describe('parseOptions', () => {
 
     expect(parseOptions(element)).toMatchObject({
       type: 'species-absent-since',
-      year: '2024'
+      year: 2024
     });
   });
 

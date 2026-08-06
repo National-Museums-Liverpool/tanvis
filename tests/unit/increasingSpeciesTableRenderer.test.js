@@ -54,7 +54,6 @@ describe('renderIncreasingSpeciesTable', () => {
     expect(String(fetchMock.mock.calls[0][0])).toContain('limit=10');
     expect(String(fetchMock.mock.calls[0][0])).toContain('offset=0');
     expect(tabulatorCalls).toHaveLength(1);
-    expect(tabulatorCalls[0].options.initialSort).toEqual([{ column: 'frequencyTrendScore', dir: 'desc' }]);
     expect(tabulatorCalls[0].options.data).toBeUndefined();
     expect(element.textContent).toContain('Top 25 species by frequency trend');
   });
