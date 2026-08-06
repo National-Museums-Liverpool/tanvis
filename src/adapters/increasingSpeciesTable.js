@@ -199,9 +199,6 @@ function createTableContainer({ Tabulator, pageSize, requestPage, element, loadI
     pagination: true,
     paginationMode: 'remote',
     paginationSize: pageSize,
-    initialSort: [
-      { column: 'frequencyTrendScore', dir: 'desc' }
-    ],
     placeholder: 'No records found',
     ajaxURL: 'custom_handler',
     ajaxURLGenerator: function ajaxURLGenerator(url) {

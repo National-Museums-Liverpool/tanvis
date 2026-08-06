@@ -278,6 +278,7 @@ async function fetchTaxonStatsAbsentSince({ apiBase, cutoffDate, higherGeography
   }
   pageUrl.searchParams.set('limit', String(limit));
   pageUrl.searchParams.set('offset', String(offset));
+  pageUrl.searchParams.set('sort', '-last_record_date');
 
   const payload = await fetchJson(pageUrl.toString(), 'Failed to load taxon-stats');
   return payload || {};

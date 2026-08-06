@@ -2847,6 +2847,8 @@ div[data-tanvis-controls="species-selector"] {
       offset
     });
 
+    //console.log('Fetched verified dates:', payload.data.map((row) => row.first_verified_record_date));
+
     const rows = getListData$5(payload);
     const totalRows = getTotalCount$1(payload);
     const totalPages = Math.max(1, Math.ceil(totalRows / pageSize));
@@ -2890,6 +2892,7 @@ div[data-tanvis-controls="species-selector"] {
     }
     pageUrl.searchParams.set('limit', String(limit));
     pageUrl.searchParams.set('offset', String(offset));
+    pageUrl.searchParams.set('sort', '-first_record_date');
 
     const payload = await fetchJson$5(pageUrl.toString(), 'Failed to load taxon-stats');
     return payload || {};
@@ -3274,9 +3277,6 @@ div[data-tanvis-controls="species-selector"] {
       pagination: true,
       paginationMode: 'remote',
       paginationSize: pageSize,
-      initialSort: [
-        { column: 'frequencyTrendScore', dir: 'desc' }
-      ],
       placeholder: 'No records found',
       ajaxURL: 'custom_handler',
       ajaxURLGenerator: function ajaxURLGenerator(url) {
@@ -3827,6 +3827,7 @@ div[data-tanvis-controls="species-selector"] {
     }
     pageUrl.searchParams.set('limit', String(limit));
     pageUrl.searchParams.set('offset', String(offset));
+    pageUrl.searchParams.set('sort', '-last_record_date');
 
     const payload = await fetchJson$3(pageUrl.toString(), 'Failed to load taxon-stats');
     return payload || {};

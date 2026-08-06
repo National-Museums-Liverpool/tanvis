@@ -260,6 +260,8 @@ async function buildNewSpeciesRecordsPage({ apiBase, startDate, endDate, higherG
     offset
   });
 
+  //console.log('Fetched verified dates:', payload.data.map((row) => row.first_verified_record_date));
+
   const rows = getListData(payload);
   const totalRows = getTotalCount(payload);
   const totalPages = Math.max(1, Math.ceil(totalRows / pageSize));
@@ -303,6 +305,7 @@ async function fetchTaxonStatsInRange({ apiBase, startDate, endDate, higherGeogr
   }
   pageUrl.searchParams.set('limit', String(limit));
   pageUrl.searchParams.set('offset', String(offset));
+  pageUrl.searchParams.set('sort', '-first_record_date');
 
   const payload = await fetchJson(pageUrl.toString(), 'Failed to load taxon-stats');
   return payload || {};
