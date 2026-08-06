@@ -4844,10 +4844,16 @@ div[data-tanvis-controls="species-selector"] {
       // reference and counting the occurrences.
       let recs = [];
       mapData$1.forEach(r => {
+        // Filter out records with no grid reference
         if (!r.grid_ref_2km) {
-          // Filter out records with no grid reference
           return;
         } 
+
+        // Filter out records with invalid tetrad grid reference
+        if (!/^[A-HJ-Z]{2}\d{2}[A-NP-Z]$/.test(r.grid_ref_2km)) {
+          return;
+        }
+
         const existing = recs.find(item => item.gr === r.grid_ref_2km);
         if (existing) {
           existing.val += 1;
