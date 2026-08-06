@@ -122,7 +122,7 @@ describe('renderTemporalYearChart', () => {
     await new Promise((resolve) => setTimeout(resolve, 0));
 
     expect(fetchMock).toHaveBeenCalledTimes(1);
-    expect(String(fetchMock.mock.calls[0][0])).toContain('/api/v1/taxon-year-stats?taxon_identifier%5Beq%5D=NHMSYS0001234567&year%5Bgte%5D=2016&year%5Blte%5D=2017&limit=1000&offset=0');
+    expect(String(fetchMock.mock.calls[0][0])).toContain('/api/v1/taxon-year-stats?taxon_identifier%5Beq%5D=NHMSYS0001234567&year%5Bgte%5D=2016&year%5Blte%5D=2017&higher_geography_identifier%5Beq%5D=null&limit=10000&offset=0');
     expect(temporalCalls).toHaveLength(1);
     expect(temporalCalls[0].periodType).toBe('year');
     expect(temporalCalls[0].chartStyle).toBe('line');
