@@ -219,7 +219,7 @@ function createTableContainer({ Tabulator, pageSize, requestPage, element, loadI
       return;
     }
 
-    const rowSelectedEvent = new CustomEvent('species-row-selected', {
+    const rowSelectedEvent = new CustomEvent('taxon-identified', {
       detail: { speciesId },
       bubbles: true,
       cancelable: true

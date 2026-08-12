@@ -59,7 +59,7 @@ describe('renderSpeciesAbsentSince', () => {
     expect(element.textContent).toContain('on or before 2024');
   });
 
-  it('emits species-row-selected with speciesId on row click', async () => {
+  it('emits taxon-identified with speciesId on row click', async () => {
     const tabulatorCalls = [];
     window.Tabulator = function Tabulator(container, options) {
       const handlers = {};
@@ -89,7 +89,7 @@ describe('renderSpeciesAbsentSince', () => {
 
     const element = document.createElement('div');
     const selectedSpeciesIds = [];
-    element.addEventListener('species-row-selected', (event) => {
+    element.addEventListener('taxon-identified', (event) => {
       selectedSpeciesIds.push(event.detail?.speciesId);
     });
 

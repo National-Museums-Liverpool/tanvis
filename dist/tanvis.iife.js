@@ -2424,7 +2424,7 @@ div[data-tanvis-controls="species-selector"] {
           }
           status.clear();
 
-          const event = new CustomEvent('species-row-selected', {
+          const event = new CustomEvent('taxon-identified', {
             detail: { speciesId },
             bubbles: true,
             cancelable: true
@@ -2867,7 +2867,7 @@ div[data-tanvis-controls="species-selector"] {
         const rowData = row.getData();
         const speciesId = rowData.speciesId;
 
-        const rowSelectedEvent = new CustomEvent('species-row-selected', {
+        const rowSelectedEvent = new CustomEvent('taxon-identified', {
           detail: { speciesId },
           bubbles: true,
           cancelable: true
@@ -3354,7 +3354,7 @@ div[data-tanvis-controls="species-selector"] {
         const rowData = row.getData();
         const speciesId = rowData.speciesId;
 
-        const rowSelectedEvent = new CustomEvent('species-row-selected', {
+        const rowSelectedEvent = new CustomEvent('taxon-identified', {
           detail: { speciesId },
           bubbles: true,
           cancelable: true
@@ -3819,7 +3819,7 @@ div[data-tanvis-controls="species-selector"] {
         return;
       }
 
-      const rowSelectedEvent = new CustomEvent('species-row-selected', {
+      const rowSelectedEvent = new CustomEvent('taxon-identified', {
         detail: { speciesId },
         bubbles: true,
         cancelable: true
@@ -4447,13 +4447,13 @@ div[data-tanvis-controls="species-selector"] {
             };
 
             if (controlElement) {
-              controlElement.addEventListener('species-row-selected', onSpeciesSelection);
+              controlElement.addEventListener('taxon-identified', onSpeciesSelection);
             }
 
             element.__tanvisControlCleanup = () => {
               controlBusCleanup?.();
               if (controlElement) {
-                controlElement.removeEventListener('species-row-selected', onSpeciesSelection);
+                controlElement.removeEventListener('taxon-identified', onSpeciesSelection);
               }
             };
             element.__tanvisControlId = renderConfig.control;
@@ -4721,9 +4721,9 @@ div[data-tanvis-controls="species-selector"] {
       onSpeciesSelected(speciesId.trim());
     };
 
-    linkedTableElement.addEventListener('species-row-selected', onRowSelected);
+    linkedTableElement.addEventListener('taxon-identified', onRowSelected);
     return () => {
-      linkedTableElement.removeEventListener('species-row-selected', onRowSelected);
+      linkedTableElement.removeEventListener('taxon-identified', onRowSelected);
     };
   }
 
@@ -5471,13 +5471,13 @@ div[data-tanvis-controls="species-selector"] {
           };
 
           if (controlElement) {
-            controlElement.addEventListener('species-row-selected', onSpeciesSelection);
+            controlElement.addEventListener('taxon-identified', onSpeciesSelection);
           }
 
           element.__tanvisControlCleanup = () => {
             controlBusCleanup?.();
             if (controlElement) {
-              controlElement.removeEventListener('species-row-selected', onSpeciesSelection);
+              controlElement.removeEventListener('taxon-identified', onSpeciesSelection);
             }
           };
           element.__tanvisControlId = renderConfig.control;
@@ -5544,9 +5544,9 @@ div[data-tanvis-controls="species-selector"] {
       onSpeciesSelected(speciesId.trim());
     };
 
-    linkedTableElement.addEventListener('species-row-selected', onRowSelected);
+    linkedTableElement.addEventListener('taxon-identified', onRowSelected);
     return () => {
-      linkedTableElement.removeEventListener('species-row-selected', onRowSelected);
+      linkedTableElement.removeEventListener('taxon-identified', onRowSelected);
     };
   }
 

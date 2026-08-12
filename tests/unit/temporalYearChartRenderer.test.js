@@ -297,7 +297,7 @@ describe('renderTemporalYearChart', () => {
 
     await new Promise((resolve) => setTimeout(resolve, 0));
 
-    linkedTable.dispatchEvent(new CustomEvent('species-row-selected', {
+    linkedTable.dispatchEvent(new CustomEvent('taxon-identified', {
       detail: {
         speciesId: 'NHMSYS0007654321'
       }
@@ -364,7 +364,7 @@ describe('renderTemporalYearChart', () => {
 
     setChartOptsCalls.length = 0;
 
-    linkedTable.dispatchEvent(new CustomEvent('species-row-selected', {
+    linkedTable.dispatchEvent(new CustomEvent('taxon-identified', {
       detail: {
         speciesId: 'NHMSYS0007654321'
       }
@@ -427,7 +427,7 @@ describe('renderTemporalYearChart', () => {
 
     await new Promise((resolve) => setTimeout(resolve, 10));
 
-    controlElement.dispatchEvent(new CustomEvent('species-row-selected', {
+    controlElement.dispatchEvent(new CustomEvent('taxon-identified', {
       detail: {
         speciesId: 'NHMSYS0007654321'
       }

@@ -149,13 +149,13 @@ export function createSpeciesMapAdapter() {
           };
 
           if (controlElement) {
-            controlElement.addEventListener('species-row-selected', onSpeciesSelection);
+            controlElement.addEventListener('taxon-identified', onSpeciesSelection);
           }
 
           element.__tanvisControlCleanup = () => {
             controlBusCleanup?.();
             if (controlElement) {
-              controlElement.removeEventListener('species-row-selected', onSpeciesSelection);
+              controlElement.removeEventListener('taxon-identified', onSpeciesSelection);
             }
           };
           element.__tanvisControlId = renderConfig.control;
@@ -423,9 +423,9 @@ function subscribeToLinkedTable(linkedTableId, onSpeciesSelected) {
     onSpeciesSelected(speciesId.trim());
   };
 
-  linkedTableElement.addEventListener('species-row-selected', onRowSelected);
+  linkedTableElement.addEventListener('taxon-identified', onRowSelected);
   return () => {
-    linkedTableElement.removeEventListener('species-row-selected', onRowSelected);
+    linkedTableElement.removeEventListener('taxon-identified', onRowSelected);
   };
 }
 

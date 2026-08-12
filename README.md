@@ -137,7 +137,7 @@ Include Tabulator before Tanvis when using these renderers.
 
 Tanvis queries `taxon-stats` with `last_record_date[lte]` and `include=taxon`, renders the returned records in a table, and draws the map using the backend selected by `data-vis-map-type`.
 
-Rows emit `species-row-selected` events with `detail.speciesId` when clicked.
+Rows emit `taxon-identified` events with `detail.speciesId` when clicked.
 
 ### New Species Table Renderer
 
@@ -217,7 +217,7 @@ Include Tabulator before Tanvis when using this renderer.
 
 Tanvis queries `taxon-stats` with `last_record_date[lte]=YYYY-12-31` and `include=taxon`, then renders the returned records as an HTML table.
 
-Rows emit a `species-row-selected` event with `detail.speciesId` when clicked.
+Rows emit a `taxon-identified` event with `detail.speciesId` when clicked.
 
 ### Temporal Year Chart Renderer
 
@@ -229,7 +229,7 @@ Supported attributes:
 - `data-vis-start-year`: optional positive integer year
 - `data-vis-end-year`: optional positive integer year
 - `data-vis-source`: optional API base URL; defaults to `/api/v1`
-- `data-vis-linked-table`: optional id of a linked table element that emits `species-row-selected` events with `detail.speciesId`
+- `data-vis-linked-table`: optional id of a linked table element that emits `taxon-identified` events with `detail.speciesId`
 
 Include D3 and BRC Charts before Tanvis when using this renderer.
 
@@ -248,6 +248,6 @@ Include D3 and BRC Charts before Tanvis when using this renderer.
 
 Tanvis queries `taxon-year-stats` for the selected `taxon_identifier`, reshapes the returned rows for `brccharts.temporal`, and renders a two-line yearly chart for `occurrences_count` and `grid_square_count`.
 
-When `data-vis-linked-table` is set, Tanvis listens for `species-row-selected` events on that element and rerenders the chart using the emitted `detail.speciesId`.
+When `data-vis-linked-table` is set, Tanvis listens for `taxon-identified` events on that element and rerenders the chart using the emitted `detail.speciesId`.
 
 See `examples/static-map.html`, `examples/shared-control-maps.html`, `examples/new-species-table.html`, `examples/increasing-species-table.html`, `examples/species-absent-since.html`, `examples/species-map.html`, `examples/grid-stats-map.html`, and `examples/temporal-year-chart.html` for ready-to-run pages.

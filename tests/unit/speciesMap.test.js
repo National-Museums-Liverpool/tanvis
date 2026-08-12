@@ -376,7 +376,7 @@ describe('species map redraw flow', () => {
 
     await new Promise((resolve) => setTimeout(resolve, 0));
 
-    linkedTable.dispatchEvent(new CustomEvent('species-row-selected', {
+    linkedTable.dispatchEvent(new CustomEvent('taxon-identified', {
       detail: { speciesId: 'XYZ999' }
     }));
 
@@ -423,7 +423,7 @@ describe('species map redraw flow', () => {
 
     await new Promise((resolve) => setTimeout(resolve, 0));
 
-    linkedTable.dispatchEvent(new CustomEvent('species-row-selected', {
+    linkedTable.dispatchEvent(new CustomEvent('taxon-identified', {
       detail: { speciesId: 'XYZ999' }
     }));
 
@@ -502,7 +502,7 @@ describe('species map redraw flow', () => {
 
     await new Promise((resolve) => setTimeout(resolve, 0));
 
-    linkedTable.dispatchEvent(new CustomEvent('species-row-selected', {
+    linkedTable.dispatchEvent(new CustomEvent('taxon-identified', {
       detail: { speciesId: 'XYZ999' }
     }));
 
@@ -549,7 +549,7 @@ describe('species map redraw flow', () => {
 
     await new Promise((resolve) => setTimeout(resolve, 0));
 
-    controlElement.dispatchEvent(new CustomEvent('species-row-selected', {
+    controlElement.dispatchEvent(new CustomEvent('taxon-identified', {
       detail: { speciesId: 'XYZ999' }
     }));
 
@@ -595,7 +595,7 @@ describe('species map redraw flow', () => {
 
     await new Promise((resolve) => setTimeout(resolve, 0));
 
-    controlElement.dispatchEvent(new CustomEvent('species-row-selected', {
+    controlElement.dispatchEvent(new CustomEvent('taxon-identified', {
       detail: { speciesId: 'XYZ999' }
     }));
 
@@ -739,7 +739,7 @@ describe('species map redraw flow', () => {
 
     await new Promise((resolve) => setTimeout(resolve, 0));
 
-    linkedTable.dispatchEvent(new CustomEvent('species-row-selected', {
+    linkedTable.dispatchEvent(new CustomEvent('taxon-identified', {
       detail: { speciesId: 'XYZ999' }
     }));
 

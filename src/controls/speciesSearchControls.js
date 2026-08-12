@@ -141,7 +141,7 @@ export function createSpeciesSearchControls({ rootElement, apiBase, body, loadTo
         }
         status.clear();
 
-        const event = new CustomEvent('species-row-selected', {
+        const event = new CustomEvent('taxon-identified', {
           detail: { speciesId },
           bubbles: true,
           cancelable: true

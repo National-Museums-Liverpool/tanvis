@@ -76,7 +76,7 @@ describe('control block species selector', () => {
     expect(String(requestUrl)).toContain('scientific_name%5Bcontains%5D=bee');
 
     let selectedSpeciesId = null;
-    element.addEventListener('species-row-selected', (event) => {
+    element.addEventListener('taxon-identified', (event) => {
       selectedSpeciesId = event.detail?.speciesId || null;
     });
 
