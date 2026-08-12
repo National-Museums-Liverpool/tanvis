@@ -1,13 +1,13 @@
 # tanvis
 
-Browser-first visualization library scaffold.
+Browser-first visualisation library scaffold.
 
 ## Goals
 
 - Plain JavaScript source code
 - Rollup-built browser bundle
 - Data-attribute driven container discovery
-- Small adapter layer for third-party visualization libraries
+- Small adapter layer for third-party visualisation libraries
 
 ## Scripts
 
@@ -77,7 +77,7 @@ Supported attributes:
 - `data-vis-expand`: `true`/`false` (optional)
 - `data-vis-width`: positive number in pixels (optional)
 
-A separate `control-block` visualization can render radio options (`vc58`, `vc59`, `vc60`, `all`) and any visualization with `data-vis-control` set to that block id responds to selections.
+A separate `control-block` visualisation can render radio options (`vc58`, `vc59`, `vc60`, `all`) and any visualisation with `data-vis-control` set to that block id responds to selections.
 
 ```html
 <script src="https://d3js.org/d3.v7.min.js"></script>
@@ -104,11 +104,11 @@ A separate `control-block` visualization can render radio options (`vc58`, `vc59
 
 The static map renderer calls `brcatlas.svgMap(...)` and then `setIdentfier(...)` and `redrawMap()` when available.
 
-`control-block` elements must have an `id` attribute. Any visualization with `data-vis-control="<id>"` subscribes to that block.
+`control-block` elements must have an `id` attribute. Any visualisation with `data-vis-control="<id>"` subscribes to that block.
 
 The control block currently renders VC selection controls plus a taxon-group dropdown populated from `taxon-groups`, with Scientific/Vernacular radio buttons that switch the dropdown labels between the `title` and `friendly` fields. The first dropdown option is `All groups`, and option values map to `external_key`.
 
-When a visualization is subscribed to a control block, the control block's current `data-vis-area` value takes precedence over the visualization's own `data-vis-area` both on initial render and on later control changes.
+When a visualisation is subscribed to a control block, the control block's current `data-vis-area` value takes precedence over the visualisation's own `data-vis-area` both on initial render and on later control changes.
 
 ### Species Map / Grid Stats Map Renderers
 

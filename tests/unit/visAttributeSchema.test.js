@@ -35,7 +35,7 @@ describe('getVisAttributeSchema', () => {
     expect(schema.rules.map((rule) => rule.key)).toContain('area');
   });
 
-  it('exposes boundaries for map-based visualizations but not temporal-year-chart', () => {
+  it('exposes boundaries for map-based visualisations but not temporal-year-chart', () => {
     const speciesSchema = getVisAttributeSchema('species-map');
     const gridSchema = getVisAttributeSchema('grid-stats-map');
     const temporalSchema = getVisAttributeSchema('temporal-year-chart');

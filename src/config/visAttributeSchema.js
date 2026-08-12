@@ -1,5 +1,6 @@
 const KNOWN_VIS_TYPES = [
   'control-block',
+  'species-identifier',
   'species-map',
   'new-species-table',
   'increasing-species-table',
@@ -217,7 +218,7 @@ const RULES = {
     kind: 'required',
     parseAndValidate: parseAndValidateSet,
     allowedValues: KNOWN_VIS_TYPES,
-    info: `The type of visualization to render. Must be one of: 
+    info: `The type of visualisation to render. Must be one of: 
       ${KNOWN_VIS_TYPES.join(', ')}.`
   }),
   control: createRule({
@@ -225,7 +226,8 @@ const RULES = {
     datasetName: 'visControl',
     parseAndValidate: parseAndValidateString,
     info: `The id of a control block to link to this visualisation. 
-      The visualisation will respond to selections made in that control.`
+      The visualisation will respond to control-bus selections made in that control,
+      such as area and taxon-group changes.`
   }),
   controlElements: createRule({
     key: 'controlElements',
@@ -268,20 +270,21 @@ const RULES = {
     defaultValue: true,
     info: `Whether to show the data options expanded in the control block.` 
   }),
-  linkedTable: createRule({
-    key: 'linkedTable',
-    datasetName: 'visLinkedTable',
+  taxonIdSource: createRule({
+    key: 'taxonIdSource',
+    datasetName: 'visTaxonIdSource',
     parseAndValidate: parseAndValidateString,
-    info: `The id of a linked table to subscribe to for species 
-      selection events. When a species is selected in the linked table, 
-      the visualization will be re-rendered with the selected species.`
+    info: `The id of a tanvis control or visualisation to subscribe to for taxon-identified 
+      events. When a species is selected in the linked visualisation or control-block species selector, 
+      the taxonId of that species will be used to update this visualisation and
+      the visualisation will be re-rendered with the selected species.`
   }),
   taxonId: createRule({
     key: 'taxonId',
     datasetName: 'visTaxonid',
     parseAndValidate: parseAndValidateString,
     info: `The taxon ID of the species to visualize. This is used to 
-      fetch data for the visualization.`
+      fetch data for the visualisation.`
   }),
   groupId: createRule({
     key: 'groupId',
@@ -409,7 +412,7 @@ const RULES = {
     datasetName: 'visBoundaries',
     parseAndValidate: parseAndValidateBoolean,
     defaultValue: true,
-    info: `Whether to show boundaries on the map visualizations - Leaflet maps only,
+    info: `Whether to show boundaries on the map visualisations - Leaflet maps only,
       the boundary is always displayed on the static map. This is a boolean value.`
   }),
   gridStatsType: createRule({
@@ -440,7 +443,7 @@ const RULES = {
     datasetName: 'visHectads',
     parseAndValidate: parseAndValidateBoolean,
     defaultValue: true,
-    info: `Whether to show hectad grid lines on the map visualizations. This is a boolean value.`
+    info: `Whether to show hectad grid lines on the map visualisations. This is a boolean value.`
   }),
   mapType: createRule({
     key: 'mapType',
@@ -458,7 +461,7 @@ const RULES = {
     datasetName: 'visDotColour',
     parseAndValidate: parseAndValidateString,
     defaultValue: 'black',
-    info: `The colour of the dots on the map visualizations. 
+    info: `The colour of the dots on the map visualisations. 
       This can be any valid CSS colour value.`
   }),
   transformation: createRule({
@@ -481,7 +484,7 @@ const RULES = {
     parseAndValidate: parseAndValidateSet,
     allowedValues: ['circle', 'square'],
     defaultValue: 'circle',
-    info: `The shape of the dots on the map visualizations. This can be one of the following values:
+    info: `The shape of the dots on the map visualisations. This can be one of the following values:
       'circle' or 'square'.`
   }),
   taxonGroup: createRule({
@@ -497,19 +500,19 @@ const RULES = {
     datasetName: 'visExpand',
     parseAndValidate: parseAndValidateBoolean,
     defaultValue: false,
-    info: `Whether to expand the visualization to fill its container. Can be 'true' or 'false'`
+    info: `Whether to expand the visualisation to fill its container. Can be 'true' or 'false'`
   }),
   width: createRule({
     key: 'width',
     datasetName: 'visWidth',
     parseAndValidate: parseAndValidatePositiveInteger,
-    info: `The width of the visualization in pixels. Must be a positive integer.`
+    info: `The width of the visualisation in pixels. Must be a positive integer.`
   }),
   height: createRule({
     key: 'height',
     datasetName: 'visHeight',
     parseAndValidate: parseAndValidatePositiveInteger,
-    info: `The height of the visualization in pixels. Must be a positive integer.`
+    info: `The height of the visualisation in pixels. Must be a positive integer.`
   }),
   topN: createRule({
     key: 'topN',
@@ -523,7 +526,7 @@ const RULES = {
     datasetName: 'visPageSize',
     parseAndValidate: parseAndValidatePositiveInteger,
     defaultValue: 15,
-    info: `The number of records to display per page in table visualizations. Must be a positive integer.`
+    info: `The number of records to display per page in table visualisations. Must be a positive integer.`
   }),
   year: createRule({
     key: 'year',
@@ -585,9 +588,10 @@ const RULES = {
 
 const VIS_TYPE_RULE_SETS = {
   'control-block': ['area', 'groupId', 'language','controlElements', 'showDataOptsToggle', 'showDataOptsExpanded'],
-  'species-map': ['taxonId', 'linkedTable', 'control', 'area', 'hectads', 'mapType', 'boundaries', 'dotShape', 'dotColour', 'transformation', 'dotShape', 'expand', 'width', 'height'],
+  'species-identifier': ['taxonId'],
+  'species-map': ['taxonId', 'taxonIdSource', 'control', 'area', 'hectads', 'mapType', 'boundaries', 'dotShape', 'dotColour', 'transformation', 'dotShape', 'expand', 'width', 'height'],
   'grid-stats-map': ['gridStatsType', 'control', 'area', 'hectads', 'mapType', 'boundaries', 'dotShape', 'dotColour', 'transformation', 'expand', 'width', 'height'],
-  'temporal-year-chart': ['taxonId', 'temporalStatsType', 'linkedTable', 'chartType', 'recordsColour', 'squaresColour','startYear', 'endYear', 'area', 'control', 'expand', 'width', 'height'],
+  'temporal-year-chart': ['taxonId', 'temporalStatsType', 'taxonIdSource', 'chartType', 'recordsColour', 'squaresColour','startYear', 'endYear', 'area', 'control', 'expand', 'width', 'height'],
   'new-species-table': ['startDate', 'endDate', 'area', 'groupId', 'language','control', 'pageSize'],
   'increasing-species-table': ['topN', 'area', 'groupId', 'language','control', 'pageSize'],
   'species-absent-since': ['year', 'area', 'groupId', 'language','control', 'pageSize']

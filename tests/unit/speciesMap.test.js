@@ -362,21 +362,21 @@ describe('species map redraw flow', () => {
       };
     });
 
-    const linkedTable = document.createElement('div');
-    linkedTable.id = 'linked-table';
-    document.body.appendChild(linkedTable);
+    const taxonIdSource = document.createElement('div');
+    taxonIdSource.id = 'linked-table';
+    document.body.appendChild(taxonIdSource);
 
     const element = document.createElement('div');
     renderSpeciesMap(element, {
       type: 'species-map',
       area: 'vc-58',
       taxonId: 'ABC123',
-      linkedTable: 'linked-table'
+      taxonIdSource: 'linked-table'
     });
 
     await new Promise((resolve) => setTimeout(resolve, 0));
 
-    linkedTable.dispatchEvent(new CustomEvent('taxon-identified', {
+    taxonIdSource.dispatchEvent(new CustomEvent('taxon-identified', {
       detail: { speciesId: 'XYZ999' }
     }));
 
@@ -387,7 +387,7 @@ describe('species map redraw flow', () => {
     expect(requestedSpecies).toEqual(['ABC123', 'XYZ999']);
     expect(payload.records[0]).toMatchObject({ gr: 'SJ99A', val: 1 });
 
-    linkedTable.remove();
+    taxonIdSource.remove();
   });
 
   it('reuses the existing map instance when a linked table row changes the species', async () => {
@@ -409,21 +409,21 @@ describe('species map redraw flow', () => {
       json: async () => ({ data: [{ grid_ref_2km: 'SJ58D' }] })
     });
 
-    const linkedTable = document.createElement('div');
-    linkedTable.id = 'linked-table';
-    document.body.appendChild(linkedTable);
+    const taxonIdSource = document.createElement('div');
+    taxonIdSource.id = 'linked-table';
+    document.body.appendChild(taxonIdSource);
 
     const element = document.createElement('div');
     renderSpeciesMap(element, {
       type: 'species-map',
       area: 'vc-58',
       taxonId: 'ABC123',
-      linkedTable: 'linked-table'
+      taxonIdSource: 'linked-table'
     });
 
     await new Promise((resolve) => setTimeout(resolve, 0));
 
-    linkedTable.dispatchEvent(new CustomEvent('taxon-identified', {
+    taxonIdSource.dispatchEvent(new CustomEvent('taxon-identified', {
       detail: { speciesId: 'XYZ999' }
     }));
 
@@ -431,7 +431,7 @@ describe('species map redraw flow', () => {
 
     expect(createdMaps).toHaveLength(1);
 
-    linkedTable.remove();
+    taxonIdSource.remove();
   });
 
   it('updates the currently visible map after switching map type and selecting a linked-table species', async () => {
@@ -481,9 +481,9 @@ describe('species map redraw flow', () => {
       };
     });
 
-    const linkedTable = document.createElement('div');
-    linkedTable.id = 'linked-table';
-    document.body.appendChild(linkedTable);
+    const taxonIdSource = document.createElement('div');
+    taxonIdSource.id = 'linked-table';
+    document.body.appendChild(taxonIdSource);
 
     const element = document.createElement('div');
     renderSpeciesMap(element, {
@@ -491,7 +491,7 @@ describe('species map redraw flow', () => {
       mapType: 'switch',
       area: 'vc-58',
       taxonId: 'ABC123',
-      linkedTable: 'linked-table'
+      taxonIdSource: 'linked-table'
     });
 
     await new Promise((resolve) => setTimeout(resolve, 0));
@@ -502,7 +502,7 @@ describe('species map redraw flow', () => {
 
     await new Promise((resolve) => setTimeout(resolve, 0));
 
-    linkedTable.dispatchEvent(new CustomEvent('taxon-identified', {
+    taxonIdSource.dispatchEvent(new CustomEvent('taxon-identified', {
       detail: { speciesId: 'XYZ999' }
     }));
 
@@ -511,10 +511,10 @@ describe('species map redraw flow', () => {
     expect(createdMaps).toHaveLength(2);
     expect(createdMaps[1].redrawCount).toBeGreaterThan(0);
 
-    linkedTable.remove();
+    taxonIdSource.remove();
   });
 
-  it('re-renders the species map after a control-block species selection', async () => {
+  it('re-renders the species map after a taxonIdSource species selection', async () => {
     const requestedSpecies = [];
 
     window.brcatlas = {
@@ -535,21 +535,21 @@ describe('species map redraw flow', () => {
       };
     });
 
-    const controlElement = document.createElement('div');
-    controlElement.id = 'control';
-    document.body.appendChild(controlElement);
+    const taxonIdSource = document.createElement('div');
+    taxonIdSource.id = 'control';
+    document.body.appendChild(taxonIdSource);
 
     const element = document.createElement('div');
     renderSpeciesMap(element, {
       type: 'species-map',
       area: 'vc-58',
       taxonId: 'ABC123',
-      control: 'control'
+      taxonIdSource: 'control'
     });
 
     await new Promise((resolve) => setTimeout(resolve, 0));
 
-    controlElement.dispatchEvent(new CustomEvent('taxon-identified', {
+    taxonIdSource.dispatchEvent(new CustomEvent('taxon-identified', {
       detail: { speciesId: 'XYZ999' }
     }));
 
@@ -557,10 +557,10 @@ describe('species map redraw flow', () => {
 
     expect(requestedSpecies).toEqual(['ABC123', 'XYZ999']);
 
-    controlElement.remove();
+    taxonIdSource.remove();
   });
 
-  it('keeps the latest species selection when a control-block area change re-renders the map', async () => {
+  it('keeps the latest taxonIdSource species selection when a control-block area change re-renders the map', async () => {
     const requestedSpecies = [];
 
     window.brcatlas = {
@@ -585,17 +585,22 @@ describe('species map redraw flow', () => {
     controlElement.id = 'control';
     document.body.appendChild(controlElement);
 
+    const taxonIdSource = document.createElement('div');
+    taxonIdSource.id = 'linked-control';
+    document.body.appendChild(taxonIdSource);
+
     const element = document.createElement('div');
     renderSpeciesMap(element, {
       type: 'species-map',
       area: 'vc-58',
       taxonId: 'ABC123',
-      control: 'control'
+      control: 'control',
+      taxonIdSource: 'linked-control'
     });
 
     await new Promise((resolve) => setTimeout(resolve, 0));
 
-    controlElement.dispatchEvent(new CustomEvent('taxon-identified', {
+    taxonIdSource.dispatchEvent(new CustomEvent('taxon-identified', {
       detail: { speciesId: 'XYZ999' }
     }));
 
@@ -608,6 +613,7 @@ describe('species map redraw flow', () => {
     expect(requestedSpecies.at(-1)).toBe('XYZ999');
 
     controlElement.remove();
+    taxonIdSource.remove();
   });
 
   it('prefers the current control dataset over stale area-change events from the control bus', async () => {
@@ -713,9 +719,9 @@ describe('species map redraw flow', () => {
       };
     });
 
-    const linkedTable = document.createElement('div');
-    linkedTable.id = 'linked-table';
-    document.body.appendChild(linkedTable);
+    const taxonIdSource = document.createElement('div');
+    taxonIdSource.id = 'linked-table';
+    document.body.appendChild(taxonIdSource);
 
     const controlElement = document.createElement('div');
     controlElement.id = 'control';
@@ -729,7 +735,7 @@ describe('species map redraw flow', () => {
       area: 'vc-58',
       taxonId: 'ABC123',
       control: 'control',
-      linkedTable: 'linked-table'
+      taxonIdSource: 'linked-table'
     });
 
     await new Promise((resolve) => setTimeout(resolve, 0));
@@ -739,7 +745,7 @@ describe('species map redraw flow', () => {
 
     await new Promise((resolve) => setTimeout(resolve, 0));
 
-    linkedTable.dispatchEvent(new CustomEvent('taxon-identified', {
+    taxonIdSource.dispatchEvent(new CustomEvent('taxon-identified', {
       detail: { speciesId: 'XYZ999' }
     }));
 
@@ -749,7 +755,7 @@ describe('species map redraw flow', () => {
     expect(requestedSpecies[requestedSpecies.length - 1]).toBe('XYZ999');
     expect(requestedSpecies.length).toBeGreaterThanOrEqual(3);
 
-    linkedTable.remove();
+    taxonIdSource.remove();
     controlElement.remove();
   });
 });

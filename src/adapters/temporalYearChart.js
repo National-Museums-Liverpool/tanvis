@@ -21,12 +21,11 @@ export function createTemporalYearChartAdapter() {
   return {
     name: 'temporal-year-chart',
     render(element, config) {
-      clearLinkedTableSubscription(element);
+      clearTaxonIdSourceSubscription(element);
       clearControlSubscriptions(element);
       const renderConfig = { ...config };
 
       if (renderConfig.control) {
-        const controlElement = document.getElementById(renderConfig.control);
         const controlBusCleanup = subscribeToControl(renderConfig.control, (event) => {
           if (!event || event.type !== 'area-change') {
             return;
@@ -49,40 +48,14 @@ export function createTemporalYearChartAdapter() {
           });
         });
 
-        const onSpeciesSelection = (event) => {
-          const speciesId = event?.detail?.speciesId;
-          if (typeof speciesId !== 'string' || !speciesId.trim()) {
-            return;
-          }
-
-          const trimmedSpeciesId = speciesId.trim();
-          if (trimmedSpeciesId === element.dataset.visTaxonid) {
-            return;
-          }
-
-          element.dataset.visTaxonid = trimmedSpeciesId;
-          updateTemporalYearChartForSpecies(element, {
-            ...renderConfig,
-            area: normalizeAreaContractValue(element.dataset.visArea ?? renderConfig.area),
-            taxonId: trimmedSpeciesId
-          });
-        };
-
-        if (controlElement) {
-          controlElement.addEventListener('taxon-identified', onSpeciesSelection);
-        }
-
         element.__tanvisControlCleanup = () => {
           controlBusCleanup?.();
-          if (controlElement) {
-            controlElement.removeEventListener('taxon-identified', onSpeciesSelection);
-          }
         };
         element.__tanvisControlId = renderConfig.control;
       }
 
-      if (renderConfig.linkedTable) {
-        element.__tanvisLinkedTableCleanup = subscribeToLinkedTable(renderConfig.linkedTable, (speciesId) => {
+      if (renderConfig.taxonIdSource) {
+        element.__tanvisTaxonIdSourceCleanup = subscribeToTaxonIdSource(renderConfig.taxonIdSource, (speciesId) => {
           if (!speciesId || speciesId === element.dataset.visTaxonid) {
             return;
           }
@@ -123,13 +96,13 @@ export function createTemporalYearChartAdapter() {
   };
 }
 
-function subscribeToLinkedTable(linkedTableId, onSpeciesSelected) {
+function subscribeToTaxonIdSource(taxonIdSourceId, onSpeciesSelected) {
   if (typeof document === 'undefined') {
     return undefined;
   }
 
-  const linkedTableElement = document.getElementById(linkedTableId);
-  if (!linkedTableElement) {
+  const taxonIdSourceElement = document.getElementById(taxonIdSourceId);
+  if (!taxonIdSourceElement) {
     return undefined;
   }
 
@@ -142,19 +115,19 @@ function subscribeToLinkedTable(linkedTableId, onSpeciesSelected) {
     onSpeciesSelected(speciesId.trim());
   };
 
-  linkedTableElement.addEventListener('taxon-identified', onRowSelected);
+  taxonIdSourceElement.addEventListener('taxon-identified', onRowSelected);
   return () => {
-    linkedTableElement.removeEventListener('taxon-identified', onRowSelected);
+    taxonIdSourceElement.removeEventListener('taxon-identified', onRowSelected);
   };
 }
 
-function clearLinkedTableSubscription(element) {
-  const cleanup = element?.__tanvisLinkedTableCleanup;
+function clearTaxonIdSourceSubscription(element) {
+  const cleanup = element?.__tanvisTaxonIdSourceCleanup;
   if (typeof cleanup === 'function') {
     cleanup();
   }
 
-  delete element.__tanvisLinkedTableCleanup;
+  delete element.__tanvisTaxonIdSourceCleanup;
 }
 
 function clearControlSubscriptions(element) {

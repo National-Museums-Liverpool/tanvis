@@ -1,6 +1,7 @@
 export { renderStaticMap } from './staticMap.js';
 export { renderLeafletMap } from './leafletMap.js';
 export { renderControlBlock } from './controlBlock.js';
+export { renderSpeciesIdentifier } from './speciesIdentifier.js';
 export { renderNewSpeciesTable } from './newSpeciesTable.js';
 export { renderIncreasingSpeciesTable } from './increasingSpeciesTable.js';
 export { renderSpeciesAbsentSince } from './speciesAbsentSince.js';

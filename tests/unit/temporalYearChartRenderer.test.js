@@ -281,9 +281,9 @@ describe('renderTemporalYearChart', () => {
       })
     });
 
-    const linkedTable = document.createElement('div');
-    linkedTable.id = 'linked-table';
-    document.body.appendChild(linkedTable);
+    const taxonIdSource = document.createElement('div');
+    taxonIdSource.id = 'linked-table';
+    document.body.appendChild(taxonIdSource);
 
     const element = document.createElement('div');
     renderTemporalYearChart(element, {
@@ -292,12 +292,12 @@ describe('renderTemporalYearChart', () => {
       chartType: DEFAULT_CHART_TYPE,
       recordsColour: DEFAULT_RECORDS_COLOUR,
       squaresColour: DEFAULT_SQUARES_COLOUR,
-      linkedTable: 'linked-table'
+      taxonIdSource: 'linked-table'
     });
 
     await new Promise((resolve) => setTimeout(resolve, 0));
 
-    linkedTable.dispatchEvent(new CustomEvent('taxon-identified', {
+    taxonIdSource.dispatchEvent(new CustomEvent('taxon-identified', {
       detail: {
         speciesId: 'NHMSYS0007654321'
       }
@@ -339,9 +339,9 @@ describe('renderTemporalYearChart', () => {
       })
     });
 
-    const linkedTable = document.createElement('div');
-    linkedTable.id = 'linked-table';
-    document.body.appendChild(linkedTable);
+    const taxonIdSource = document.createElement('div');
+    taxonIdSource.id = 'linked-table';
+    document.body.appendChild(taxonIdSource);
 
     const element = document.createElement('div');
     renderTemporalYearChart(element, {
@@ -351,7 +351,7 @@ describe('renderTemporalYearChart', () => {
       recordsColour: DEFAULT_RECORDS_COLOUR,
       squaresColour: DEFAULT_SQUARES_COLOUR,
       temporalStatsType: 'switch',
-      linkedTable: 'linked-table'
+      taxonIdSource: 'linked-table'
     });
 
     await new Promise((resolve) => setTimeout(resolve, 20));
@@ -364,7 +364,7 @@ describe('renderTemporalYearChart', () => {
 
     setChartOptsCalls.length = 0;
 
-    linkedTable.dispatchEvent(new CustomEvent('taxon-identified', {
+    taxonIdSource.dispatchEvent(new CustomEvent('taxon-identified', {
       detail: {
         speciesId: 'NHMSYS0007654321'
       }
@@ -378,7 +378,7 @@ describe('renderTemporalYearChart', () => {
     ]);
   });
 
-  it('reacts to control-block area changes and species selection events', async () => {
+  it('reacts to control-block area changes and taxonIdSource species selection events', async () => {
     const setChartOptsCalls = [];
     window.d3 = {};
     window.brccharts = {
@@ -407,6 +407,10 @@ describe('renderTemporalYearChart', () => {
     controlElement.id = 'control-block';
     document.body.appendChild(controlElement);
 
+    const taxonIdSource = document.createElement('div');
+    taxonIdSource.id = 'linked-table';
+    document.body.appendChild(taxonIdSource);
+
     const element = document.createElement('div');
     renderTemporalYearChart(element, {
       type: 'temporal-year-chart',
@@ -415,6 +419,7 @@ describe('renderTemporalYearChart', () => {
       recordsColour: DEFAULT_RECORDS_COLOUR,
       squaresColour: DEFAULT_SQUARES_COLOUR,
       control: 'control-block',
+      taxonIdSource: 'linked-table',
       area: 'GB-123'
     });
 
@@ -427,7 +432,7 @@ describe('renderTemporalYearChart', () => {
 
     await new Promise((resolve) => setTimeout(resolve, 10));
 
-    controlElement.dispatchEvent(new CustomEvent('taxon-identified', {
+    taxonIdSource.dispatchEvent(new CustomEvent('taxon-identified', {
       detail: {
         speciesId: 'NHMSYS0007654321'
       }
@@ -439,5 +444,8 @@ describe('renderTemporalYearChart', () => {
     expect(String(fetchMock.mock.calls[1][0])).toContain('higher_geography_identifier%5Beq%5D=GB-999');
     expect(String(fetchMock.mock.calls[2][0])).toContain('taxon_identifier%5Beq%5D=NHMSYS0007654321');
     expect(setChartOptsCalls).toHaveLength(2);
+
+    taxonIdSource.remove();
+    controlElement.remove();
   });
 });

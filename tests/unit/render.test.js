@@ -52,4 +52,16 @@ describe('render', () => {
       errors: []
     });
   });
+
+  it('renders species-identifier when registered', () => {
+    registerRenderer('species-identifier', () => {});
+
+    const element = document.createElement('div');
+    element.dataset.visType = 'species-identifier';
+
+    expect(render(element)).toEqual({
+      rendered: true,
+      errors: []
+    });
+  });
 });

@@ -170,22 +170,22 @@ describe('parseOptions', () => {
   it('reads data-vis-linked-table for temporal-year-chart', () => {
     const element = document.createElement('div');
     element.dataset.visType = 'temporal-year-chart';
-    element.dataset.visLinkedTable = 'increasing-table';
+    element.dataset.visTaxonIdSource = 'increasing-table';
 
     expect(parseOptions(element)).toMatchObject({
       type: 'temporal-year-chart',
-      linkedTable: 'increasing-table'
+      taxonIdSource: 'increasing-table'
     });
   });
 
   it('reads data-vis-linked-table for species-map', () => {
     const element = document.createElement('div');
     element.dataset.visType = 'species-map';
-    element.dataset.visLinkedTable = 'my-new-species-table';
+    element.dataset.visTaxonIdSource = 'my-new-species-table';
 
     expect(parseOptions(element)).toMatchObject({
       type: 'species-map',
-      linkedTable: 'my-new-species-table'
+      taxonIdSource: 'my-new-species-table'
     });
   });
 
@@ -242,6 +242,17 @@ describe('parseOptions', () => {
     expect(parseOptions(element)).toMatchObject({
       type: 'grid-stats-map',
       gridStatsType: 'species'
+    });
+  });
+
+  it('reads data-vis-taxonid for species-identifier', () => {
+    const element = document.createElement('div');
+    element.dataset.visType = 'species-identifier';
+    element.dataset.visTaxonid = 'NHMSYS0000001001';
+
+    expect(parseOptions(element)).toMatchObject({
+      type: 'species-identifier',
+      taxonId: 'NHMSYS0000001001'
     });
   });
 

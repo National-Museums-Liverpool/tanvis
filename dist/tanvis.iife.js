@@ -11,6 +11,7 @@ var Tanvis = (function (exports) {
 
   const KNOWN_VIS_TYPES = [
     'control-block',
+    'species-identifier',
     'species-map',
     'new-species-table',
     'increasing-species-table',
@@ -228,7 +229,7 @@ var Tanvis = (function (exports) {
       kind: 'required',
       parseAndValidate: parseAndValidateSet,
       allowedValues: KNOWN_VIS_TYPES,
-      info: `The type of visualization to render. Must be one of: 
+      info: `The type of visualisation to render. Must be one of: 
       ${KNOWN_VIS_TYPES.join(', ')}.`
     }),
     control: createRule({
@@ -236,7 +237,8 @@ var Tanvis = (function (exports) {
       datasetName: 'visControl',
       parseAndValidate: parseAndValidateString,
       info: `The id of a control block to link to this visualisation. 
-      The visualisation will respond to selections made in that control.`
+      The visualisation will respond to control-bus selections made in that control,
+      such as area and taxon-group changes.`
     }),
     controlElements: createRule({
       key: 'controlElements',
@@ -279,20 +281,21 @@ var Tanvis = (function (exports) {
       defaultValue: true,
       info: `Whether to show the data options expanded in the control block.` 
     }),
-    linkedTable: createRule({
-      key: 'linkedTable',
-      datasetName: 'visLinkedTable',
+    taxonIdSource: createRule({
+      key: 'taxonIdSource',
+      datasetName: 'visTaxonIdSource',
       parseAndValidate: parseAndValidateString,
-      info: `The id of a linked table to subscribe to for species 
-      selection events. When a species is selected in the linked table, 
-      the visualization will be re-rendered with the selected species.`
+      info: `The id of a tanvis control or visualisation to subscribe to for taxon-identified 
+      events. When a species is selected in the linked visualisation or control-block species selector, 
+      the taxonId of that species will be used to update this visualisation and
+      the visualisation will be re-rendered with the selected species.`
     }),
     taxonId: createRule({
       key: 'taxonId',
       datasetName: 'visTaxonid',
       parseAndValidate: parseAndValidateString,
       info: `The taxon ID of the species to visualize. This is used to 
-      fetch data for the visualization.`
+      fetch data for the visualisation.`
     }),
     groupId: createRule({
       key: 'groupId',
@@ -419,7 +422,7 @@ var Tanvis = (function (exports) {
       datasetName: 'visBoundaries',
       parseAndValidate: parseAndValidateBoolean,
       defaultValue: true,
-      info: `Whether to show boundaries on the map visualizations - Leaflet maps only,
+      info: `Whether to show boundaries on the map visualisations - Leaflet maps only,
       the boundary is always displayed on the static map. This is a boolean value.`
     }),
     gridStatsType: createRule({
@@ -450,7 +453,7 @@ var Tanvis = (function (exports) {
       datasetName: 'visHectads',
       parseAndValidate: parseAndValidateBoolean,
       defaultValue: true,
-      info: `Whether to show hectad grid lines on the map visualizations. This is a boolean value.`
+      info: `Whether to show hectad grid lines on the map visualisations. This is a boolean value.`
     }),
     mapType: createRule({
       key: 'mapType',
@@ -468,7 +471,7 @@ var Tanvis = (function (exports) {
       datasetName: 'visDotColour',
       parseAndValidate: parseAndValidateString,
       defaultValue: 'black',
-      info: `The colour of the dots on the map visualizations. 
+      info: `The colour of the dots on the map visualisations. 
       This can be any valid CSS colour value.`
     }),
     transformation: createRule({
@@ -491,7 +494,7 @@ var Tanvis = (function (exports) {
       parseAndValidate: parseAndValidateSet,
       allowedValues: ['circle', 'square'],
       defaultValue: 'circle',
-      info: `The shape of the dots on the map visualizations. This can be one of the following values:
+      info: `The shape of the dots on the map visualisations. This can be one of the following values:
       'circle' or 'square'.`
     }),
     taxonGroup: createRule({
@@ -507,19 +510,19 @@ var Tanvis = (function (exports) {
       datasetName: 'visExpand',
       parseAndValidate: parseAndValidateBoolean,
       defaultValue: false,
-      info: `Whether to expand the visualization to fill its container. Can be 'true' or 'false'`
+      info: `Whether to expand the visualisation to fill its container. Can be 'true' or 'false'`
     }),
     width: createRule({
       key: 'width',
       datasetName: 'visWidth',
       parseAndValidate: parseAndValidatePositiveInteger,
-      info: `The width of the visualization in pixels. Must be a positive integer.`
+      info: `The width of the visualisation in pixels. Must be a positive integer.`
     }),
     height: createRule({
       key: 'height',
       datasetName: 'visHeight',
       parseAndValidate: parseAndValidatePositiveInteger,
-      info: `The height of the visualization in pixels. Must be a positive integer.`
+      info: `The height of the visualisation in pixels. Must be a positive integer.`
     }),
     topN: createRule({
       key: 'topN',
@@ -533,7 +536,7 @@ var Tanvis = (function (exports) {
       datasetName: 'visPageSize',
       parseAndValidate: parseAndValidatePositiveInteger,
       defaultValue: 15,
-      info: `The number of records to display per page in table visualizations. Must be a positive integer.`
+      info: `The number of records to display per page in table visualisations. Must be a positive integer.`
     }),
     year: createRule({
       key: 'year',
@@ -595,9 +598,10 @@ var Tanvis = (function (exports) {
 
   const VIS_TYPE_RULE_SETS = {
     'control-block': ['area', 'groupId', 'language','controlElements', 'showDataOptsToggle', 'showDataOptsExpanded'],
-    'species-map': ['taxonId', 'linkedTable', 'control', 'area', 'hectads', 'mapType', 'boundaries', 'dotShape', 'dotColour', 'transformation', 'dotShape', 'expand', 'width', 'height'],
+    'species-identifier': ['taxonId'],
+    'species-map': ['taxonId', 'taxonIdSource', 'control', 'area', 'hectads', 'mapType', 'boundaries', 'dotShape', 'dotColour', 'transformation', 'dotShape', 'expand', 'width', 'height'],
     'grid-stats-map': ['gridStatsType', 'control', 'area', 'hectads', 'mapType', 'boundaries', 'dotShape', 'dotColour', 'transformation', 'expand', 'width', 'height'],
-    'temporal-year-chart': ['taxonId', 'temporalStatsType', 'linkedTable', 'chartType', 'recordsColour', 'squaresColour','startYear', 'endYear', 'area', 'control', 'expand', 'width', 'height'],
+    'temporal-year-chart': ['taxonId', 'temporalStatsType', 'taxonIdSource', 'chartType', 'recordsColour', 'squaresColour','startYear', 'endYear', 'area', 'control', 'expand', 'width', 'height'],
     'new-species-table': ['startDate', 'endDate', 'area', 'groupId', 'language','control', 'pageSize'],
     'increasing-species-table': ['topN', 'area', 'groupId', 'language','control', 'pageSize'],
     'species-absent-since': ['year', 'area', 'groupId', 'language','control', 'pageSize']
@@ -733,7 +737,7 @@ var Tanvis = (function (exports) {
 
     const hasStylesheet = hints.some((hint) => hasStylesheetLink(hint));
     if (!hasStylesheet) {
-      const resolvedMessage = message || `${libraryName} stylesheet is missing. Include ${hints[0]} to ensure the visualization is styled correctly.`;
+      const resolvedMessage = message || `${libraryName} stylesheet is missing. Include ${hints[0]} to ensure the visualisation is styled correctly.`;
       reporter?.showInfo?.(resolvedMessage);
     }
 
@@ -2646,6 +2650,93 @@ div[data-tanvis-controls="species-selector"] {
     controlBlockAdapter.render(element, config);
   }
 
+  function createSpeciesIdentifierAdapter() {
+    return {
+      name: 'species-identifier',
+      render(element, config) {
+        clearElement(element);
+
+        const loadToken = (element.__tanvisSpeciesIdentifierLoadToken || 0) + 1;
+        element.__tanvisSpeciesIdentifierLoadToken = loadToken;
+
+        const cleanup = element.__tanvisSpeciesIdentifierLoadCleanup;
+        if (typeof cleanup === 'function') {
+          cleanup();
+        }
+        delete element.__tanvisSpeciesIdentifierLoadCleanup;
+
+        const speciesId = resolveSelectedSpeciesId(config);
+        if (!speciesId) {
+          return;
+        }
+
+        const emitSelection = () => {
+          if (element.__tanvisSpeciesIdentifierLoadToken !== loadToken) {
+            return;
+          }
+
+          const event = new CustomEvent('taxon-identified', {
+            detail: { speciesId },
+            bubbles: true,
+            cancelable: true
+          });
+
+          element.dispatchEvent(event);
+        };
+
+        if (document.readyState === 'complete') {
+          setTimeout(emitSelection, 0);
+          return;
+        }
+
+        const onWindowLoad = () => {
+          emitSelection();
+        };
+
+        window.addEventListener('load', onWindowLoad, { once: true });
+        element.__tanvisSpeciesIdentifierLoadCleanup = () => {
+          window.removeEventListener('load', onWindowLoad);
+        };
+      }
+    };
+  }
+
+  function resolveSelectedSpeciesId(config) {
+    const queryTaxonId = getTaxonIdFromQuery();
+    if (queryTaxonId !== undefined) {
+      return normalizeSpeciesId(queryTaxonId);
+    }
+
+    return normalizeSpeciesId(config?.taxonId);
+  }
+
+  function getTaxonIdFromQuery() {
+    if (typeof window === 'undefined') {
+      return undefined;
+    }
+
+    const params = new URLSearchParams(window.location.search || '');
+    if (!params.has('taxon-id')) {
+      return undefined;
+    }
+
+    return params.get('taxon-id');
+  }
+
+  function normalizeSpeciesId(value) {
+    if (typeof value !== 'string') {
+      return '';
+    }
+
+    return value.trim();
+  }
+
+  const speciesIdentifierAdapter = createSpeciesIdentifierAdapter();
+
+  function renderSpeciesIdentifier(element, config) {
+    speciesIdentifierAdapter.render(element, config);
+  }
+
   const TAXON_STATS_RESOURCE$2 = 'taxon-stats';
   const DEFAULT_PAGE_SIZE$2 = 10;
   const columns$2 = [
@@ -4350,17 +4441,17 @@ div[data-tanvis-controls="species-selector"] {
           ...config,
           area: normalizedArea
         };
-        const linkedTableId = renderConfig.linkedTable || '';
-        const shouldPreserveLinkedTableSubscription = Boolean(
-          element.__tanvisLinkedTableCleanup &&
-          element.__tanvisLinkedTableId === linkedTableId
+        const taxonIdSourceId = renderConfig.taxonIdSource || '';
+        const shouldPreserveTaxonIdSourceSubscription = Boolean(
+          element.__tanvisTaxonIdSourceCleanup &&
+          element.__tanvisTaxonIdSourceId === taxonIdSourceId
         );
         const shouldPreserveControlSubscription = Boolean(
           element.__tanvisControlCleanup &&
           element.__tanvisControlId === renderConfig.control
         );
-        if (!shouldPreserveLinkedTableSubscription) {
-          clearLinkedTableSubscription$1(element);
+        if (!shouldPreserveTaxonIdSourceSubscription) {
+          clearTaxonIdSourceSubscription$1(element);
         }
         if (!shouldPreserveControlSubscription) {
           clearControlSubscription$1(element);
@@ -4400,7 +4491,6 @@ div[data-tanvis-controls="species-selector"] {
 
         if (renderConfig.control) {
           if (!shouldPreserveControlSubscription) {
-            const controlElement = document.getElementById(renderConfig.control);
             const controlBusCleanup = subscribeToControl(renderConfig.control, (event) => {
               if (!event || (event.type !== 'area-change' && event.type !== 'taxon-group-change')) {
                 return;
@@ -4428,41 +4518,16 @@ div[data-tanvis-controls="species-selector"] {
               });
             });
 
-            const onSpeciesSelection = (event) => {
-              const speciesId = event?.detail?.speciesId;
-              if (typeof speciesId !== 'string' || !speciesId.trim()) {
-                return;
-              }
-
-              if (speciesId.trim() === element.dataset.visTaxonid) {
-                return;
-              }
-
-              element.dataset.visTaxonid = speciesId.trim();
-              createSpeciesMapAdapter().render(element, {
-                ...renderConfig,
-                species: speciesId.trim(),
-                reuseExistingMap: true
-              });
-            };
-
-            if (controlElement) {
-              controlElement.addEventListener('taxon-identified', onSpeciesSelection);
-            }
-
             element.__tanvisControlCleanup = () => {
               controlBusCleanup?.();
-              if (controlElement) {
-                controlElement.removeEventListener('taxon-identified', onSpeciesSelection);
-              }
             };
             element.__tanvisControlId = renderConfig.control;
           }
         }
 
-        if (renderConfig.linkedTable) {
-          if (!shouldPreserveLinkedTableSubscription) {
-            element.__tanvisLinkedTableCleanup = subscribeToLinkedTable$1(linkedTableId, (speciesId) => {
+        if (renderConfig.taxonIdSource) {
+          if (!shouldPreserveTaxonIdSourceSubscription) {
+            element.__tanvisTaxonIdSourceCleanup = subscribeToTaxonIdSource$1(taxonIdSourceId, (speciesId) => {
               if (!speciesId || speciesId === element.dataset.visTaxonid) {
                 return;
               }
@@ -4474,7 +4539,7 @@ div[data-tanvis-controls="species-selector"] {
                 reuseExistingMap: true
               });
             });
-            element.__tanvisLinkedTableId = linkedTableId;
+            element.__tanvisTaxonIdSourceId = taxonIdSourceId;
           }
         }
 
@@ -4645,7 +4710,7 @@ div[data-tanvis-controls="species-selector"] {
           area: hostElement?.dataset?.visArea || config.area,
           species: hostElement?.dataset?.visTaxonid || config.species || config.taxonId,
           mapType: 'switch',
-          linkedTable: config.linkedTable,
+          taxonIdSource: config.taxonIdSource,
           control: config.control,
           forceCreateMap: true
         });
@@ -4692,23 +4757,23 @@ div[data-tanvis-controls="species-selector"] {
     delete element.__tanvisControlId;
   }
 
-  function clearLinkedTableSubscription$1(element) {
-    const cleanup = element?.__tanvisLinkedTableCleanup;
+  function clearTaxonIdSourceSubscription$1(element) {
+    const cleanup = element?.__tanvisTaxonIdSourceCleanup;
     if (typeof cleanup === 'function') {
       cleanup();
     }
 
-    delete element.__tanvisLinkedTableCleanup;
-    delete element.__tanvisLinkedTableId;
+    delete element.__tanvisTaxonIdSourceCleanup;
+    delete element.__tanvisTaxonIdSourceId;
   }
 
-  function subscribeToLinkedTable$1(linkedTableId, onSpeciesSelected) {
+  function subscribeToTaxonIdSource$1(taxonIdSourceId, onSpeciesSelected) {
     if (typeof document === 'undefined') {
       return undefined;
     }
 
-    const linkedTableElement = document.getElementById(linkedTableId);
-    if (!linkedTableElement) {
+    const taxonIdSourceElement = document.getElementById(taxonIdSourceId);
+    if (!taxonIdSourceElement) {
       return undefined;
     }
 
@@ -4721,9 +4786,9 @@ div[data-tanvis-controls="species-selector"] {
       onSpeciesSelected(speciesId.trim());
     };
 
-    linkedTableElement.addEventListener('taxon-identified', onRowSelected);
+    taxonIdSourceElement.addEventListener('taxon-identified', onRowSelected);
     return () => {
-      linkedTableElement.removeEventListener('taxon-identified', onRowSelected);
+      taxonIdSourceElement.removeEventListener('taxon-identified', onRowSelected);
     };
   }
 
@@ -5423,12 +5488,11 @@ div[data-tanvis-controls="species-selector"] {
     return {
       name: 'temporal-year-chart',
       render(element, config) {
-        clearLinkedTableSubscription(element);
+        clearTaxonIdSourceSubscription(element);
         clearControlSubscriptions(element);
         const renderConfig = { ...config };
 
         if (renderConfig.control) {
-          const controlElement = document.getElementById(renderConfig.control);
           const controlBusCleanup = subscribeToControl(renderConfig.control, (event) => {
             if (!event || event.type !== 'area-change') {
               return;
@@ -5451,40 +5515,14 @@ div[data-tanvis-controls="species-selector"] {
             });
           });
 
-          const onSpeciesSelection = (event) => {
-            const speciesId = event?.detail?.speciesId;
-            if (typeof speciesId !== 'string' || !speciesId.trim()) {
-              return;
-            }
-
-            const trimmedSpeciesId = speciesId.trim();
-            if (trimmedSpeciesId === element.dataset.visTaxonid) {
-              return;
-            }
-
-            element.dataset.visTaxonid = trimmedSpeciesId;
-            updateTemporalYearChartForSpecies(element, {
-              ...renderConfig,
-              area: normalizeAreaContractValue(element.dataset.visArea ?? renderConfig.area),
-              taxonId: trimmedSpeciesId
-            });
-          };
-
-          if (controlElement) {
-            controlElement.addEventListener('taxon-identified', onSpeciesSelection);
-          }
-
           element.__tanvisControlCleanup = () => {
             controlBusCleanup?.();
-            if (controlElement) {
-              controlElement.removeEventListener('taxon-identified', onSpeciesSelection);
-            }
           };
           element.__tanvisControlId = renderConfig.control;
         }
 
-        if (renderConfig.linkedTable) {
-          element.__tanvisLinkedTableCleanup = subscribeToLinkedTable(renderConfig.linkedTable, (speciesId) => {
+        if (renderConfig.taxonIdSource) {
+          element.__tanvisTaxonIdSourceCleanup = subscribeToTaxonIdSource(renderConfig.taxonIdSource, (speciesId) => {
             if (!speciesId || speciesId === element.dataset.visTaxonid) {
               return;
             }
@@ -5525,13 +5563,13 @@ div[data-tanvis-controls="species-selector"] {
     };
   }
 
-  function subscribeToLinkedTable(linkedTableId, onSpeciesSelected) {
+  function subscribeToTaxonIdSource(taxonIdSourceId, onSpeciesSelected) {
     if (typeof document === 'undefined') {
       return undefined;
     }
 
-    const linkedTableElement = document.getElementById(linkedTableId);
-    if (!linkedTableElement) {
+    const taxonIdSourceElement = document.getElementById(taxonIdSourceId);
+    if (!taxonIdSourceElement) {
       return undefined;
     }
 
@@ -5544,19 +5582,19 @@ div[data-tanvis-controls="species-selector"] {
       onSpeciesSelected(speciesId.trim());
     };
 
-    linkedTableElement.addEventListener('taxon-identified', onRowSelected);
+    taxonIdSourceElement.addEventListener('taxon-identified', onRowSelected);
     return () => {
-      linkedTableElement.removeEventListener('taxon-identified', onRowSelected);
+      taxonIdSourceElement.removeEventListener('taxon-identified', onRowSelected);
     };
   }
 
-  function clearLinkedTableSubscription(element) {
-    const cleanup = element?.__tanvisLinkedTableCleanup;
+  function clearTaxonIdSourceSubscription(element) {
+    const cleanup = element?.__tanvisTaxonIdSourceCleanup;
     if (typeof cleanup === 'function') {
       cleanup();
     }
 
-    delete element.__tanvisLinkedTableCleanup;
+    delete element.__tanvisTaxonIdSourceCleanup;
   }
 
   function clearControlSubscriptions(element) {
@@ -5966,6 +6004,7 @@ div[data-tanvis-controls="species-selector"] {
     }
 
     registerRenderer('control-block', renderControlBlock);
+    registerRenderer('species-identifier', renderSpeciesIdentifier);
     registerRenderer('new-species-table', renderNewSpeciesTable);
     registerRenderer('increasing-species-table', renderIncreasingSpeciesTable);
     registerRenderer('species-absent-since', renderSpeciesAbsentSince);

@@ -47,7 +47,7 @@ export function ensureStylesheetDependency(reporter, { libraryName, stylesheetHi
 
   const hasStylesheet = hints.some((hint) => hasStylesheetLink(hint));
   if (!hasStylesheet) {
-    const resolvedMessage = message || `${libraryName} stylesheet is missing. Include ${hints[0]} to ensure the visualization is styled correctly.`;
+    const resolvedMessage = message || `${libraryName} stylesheet is missing. Include ${hints[0]} to ensure the visualisation is styled correctly.`;
     reporter?.showInfo?.(resolvedMessage);
   }
 

@@ -52,17 +52,17 @@ export function createSpeciesMapAdapter() {
         ...config,
         area: normalizedArea
       };
-      const linkedTableId = renderConfig.linkedTable || '';
-      const shouldPreserveLinkedTableSubscription = Boolean(
-        element.__tanvisLinkedTableCleanup &&
-        element.__tanvisLinkedTableId === linkedTableId
+      const taxonIdSourceId = renderConfig.taxonIdSource || '';
+      const shouldPreserveTaxonIdSourceSubscription = Boolean(
+        element.__tanvisTaxonIdSourceCleanup &&
+        element.__tanvisTaxonIdSourceId === taxonIdSourceId
       );
       const shouldPreserveControlSubscription = Boolean(
         element.__tanvisControlCleanup &&
         element.__tanvisControlId === renderConfig.control
       );
-      if (!shouldPreserveLinkedTableSubscription) {
-        clearLinkedTableSubscription(element);
+      if (!shouldPreserveTaxonIdSourceSubscription) {
+        clearTaxonIdSourceSubscription(element);
       }
       if (!shouldPreserveControlSubscription) {
         clearControlSubscription(element);
@@ -102,7 +102,6 @@ export function createSpeciesMapAdapter() {
 
       if (renderConfig.control) {
         if (!shouldPreserveControlSubscription) {
-          const controlElement = document.getElementById(renderConfig.control);
           const controlBusCleanup = subscribeToControl(renderConfig.control, (event) => {
             if (!event || (event.type !== 'area-change' && event.type !== 'taxon-group-change')) {
               return;
@@ -130,41 +129,16 @@ export function createSpeciesMapAdapter() {
             });
           });
 
-          const onSpeciesSelection = (event) => {
-            const speciesId = event?.detail?.speciesId;
-            if (typeof speciesId !== 'string' || !speciesId.trim()) {
-              return;
-            }
-
-            if (speciesId.trim() === element.dataset.visTaxonid) {
-              return;
-            }
-
-            element.dataset.visTaxonid = speciesId.trim();
-            createSpeciesMapAdapter().render(element, {
-              ...renderConfig,
-              species: speciesId.trim(),
-              reuseExistingMap: true
-            });
-          };
-
-          if (controlElement) {
-            controlElement.addEventListener('taxon-identified', onSpeciesSelection);
-          }
-
           element.__tanvisControlCleanup = () => {
             controlBusCleanup?.();
-            if (controlElement) {
-              controlElement.removeEventListener('taxon-identified', onSpeciesSelection);
-            }
           };
           element.__tanvisControlId = renderConfig.control;
         }
       }
 
-      if (renderConfig.linkedTable) {
-        if (!shouldPreserveLinkedTableSubscription) {
-          element.__tanvisLinkedTableCleanup = subscribeToLinkedTable(linkedTableId, (speciesId) => {
+      if (renderConfig.taxonIdSource) {
+        if (!shouldPreserveTaxonIdSourceSubscription) {
+          element.__tanvisTaxonIdSourceCleanup = subscribeToTaxonIdSource(taxonIdSourceId, (speciesId) => {
             if (!speciesId || speciesId === element.dataset.visTaxonid) {
               return;
             }
@@ -176,7 +150,7 @@ export function createSpeciesMapAdapter() {
               reuseExistingMap: true
             });
           });
-          element.__tanvisLinkedTableId = linkedTableId;
+          element.__tanvisTaxonIdSourceId = taxonIdSourceId;
         }
       }
 
@@ -347,7 +321,7 @@ function renderMapBackend(element, config, hostElement) {
         area: hostElement?.dataset?.visArea || config.area,
         species: hostElement?.dataset?.visTaxonid || config.species || config.taxonId,
         mapType: 'switch',
-        linkedTable: config.linkedTable,
+        taxonIdSource: config.taxonIdSource,
         control: config.control,
         forceCreateMap: true
       });
@@ -394,23 +368,23 @@ function clearControlSubscription(element) {
   delete element.__tanvisControlId;
 }
 
-function clearLinkedTableSubscription(element) {
-  const cleanup = element?.__tanvisLinkedTableCleanup;
+function clearTaxonIdSourceSubscription(element) {
+  const cleanup = element?.__tanvisTaxonIdSourceCleanup;
   if (typeof cleanup === 'function') {
     cleanup();
   }
 
-  delete element.__tanvisLinkedTableCleanup;
-  delete element.__tanvisLinkedTableId;
+  delete element.__tanvisTaxonIdSourceCleanup;
+  delete element.__tanvisTaxonIdSourceId;
 }
 
-function subscribeToLinkedTable(linkedTableId, onSpeciesSelected) {
+function subscribeToTaxonIdSource(taxonIdSourceId, onSpeciesSelected) {
   if (typeof document === 'undefined') {
     return undefined;
   }
 
-  const linkedTableElement = document.getElementById(linkedTableId);
-  if (!linkedTableElement) {
+  const taxonIdSourceElement = document.getElementById(taxonIdSourceId);
+  if (!taxonIdSourceElement) {
     return undefined;
   }
 
@@ -423,9 +397,9 @@ function subscribeToLinkedTable(linkedTableId, onSpeciesSelected) {
     onSpeciesSelected(speciesId.trim());
   };
 
-  linkedTableElement.addEventListener('taxon-identified', onRowSelected);
+  taxonIdSourceElement.addEventListener('taxon-identified', onRowSelected);
   return () => {
-    linkedTableElement.removeEventListener('taxon-identified', onRowSelected);
+    taxonIdSourceElement.removeEventListener('taxon-identified', onRowSelected);
   };
 }
 
