@@ -271,7 +271,8 @@ async function fetchTaxonStatsAbsentSince({ apiBase, cutoffDate, higherGeography
   const resourceUrl = resolveResourceUrl(apiBase, TAXON_STATS_RESOURCE);
   const pageUrl = new URL(resourceUrl.toString());
   pageUrl.searchParams.set('last_record_date[lte]', cutoffDate);
-  pageUrl.searchParams.set('include', 'taxon,taxon-group');
+  pageUrl.searchParams.set('include', 'taxon,taxon-group,taxon-rank');
+  pageUrl.searchParams.set('taxon_rank__rank[eq]', 'Species');
   const vcId = higherGeographyIdentifier === undefined ? null : higherGeographyIdentifier;
   pageUrl.searchParams.set('higher_geography_identifier[eq]', String(vcId));
   if (taxonGroupExternalKey) {

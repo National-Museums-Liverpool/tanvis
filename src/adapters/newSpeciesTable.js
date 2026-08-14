@@ -298,12 +298,13 @@ async function fetchTaxonStatsInRange({ apiBase, startDate, endDate, higherGeogr
   const pageUrl = new URL(resourceUrl.toString());
   pageUrl.searchParams.set('first_record_date[gte]', startDate);
   pageUrl.searchParams.set('first_record_date[lte]', endDate);
-  pageUrl.searchParams.set('include', 'taxon,taxon-group');
+  pageUrl.searchParams.set('include', 'taxon,taxon-group,taxon-rank');
   const vcId = higherGeographyIdentifier === undefined ? null : higherGeographyIdentifier;
   pageUrl.searchParams.set('higher_geography_identifier[eq]', String(vcId));
   if (taxonGroupExternalKey) {
     pageUrl.searchParams.set('taxon_group__external_key[eq]', taxonGroupExternalKey);
   }
+  pageUrl.searchParams.set('taxon_rank__rank[eq]', 'Species');
   pageUrl.searchParams.set('limit', String(limit));
   pageUrl.searchParams.set('offset', String(offset));
   pageUrl.searchParams.set('sort', '-first_record_date');

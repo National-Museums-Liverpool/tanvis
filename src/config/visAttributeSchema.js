@@ -6,7 +6,8 @@ const KNOWN_VIS_TYPES = [
   'increasing-species-table',
   'species-absent-since',
   'grid-stats-map',
-  'temporal-year-chart'
+  'temporal-year-chart',
+  'species-name-block'
 ];
 
 function validateDate(dateString) {
@@ -581,6 +582,34 @@ const RULES = {
     parseAndValidate: parseAndValidateColour,
     defaultValue: '#c2410c',
     info: `The colour to use for squares in the chart. Must be a valid CSS colour string.`
+  }),
+  primaryName: createRule({
+    key: 'primaryName',
+    datasetName: 'visPrimaryName',
+    allowedValues: ['vernacular', 'scientific'],
+    defaultValue: 'scientific',
+    parseAndValidate: parseAndValidateSet,
+    info: `The first name to display in the species name block.`
+  }),
+  secondaryName: createRule({
+    key: 'secondaryName',
+    datasetName: 'visSecondaryName',
+    allowedValues: ['vernacular', 'scientific', 'none'],
+    defaultValue: 'vernacular',
+    parseAndValidate: parseAndValidateSet,
+    info: `The second name to display in the species name block. This
+      can be 'none', in which case only the primary name will be displayed.
+      The secondary name is always shown in parentheses after the primary 
+      name.`
+  }),
+  authority: createRule({
+    key: 'authority',
+    datasetName: 'visAuthority',
+    parseAndValidate: parseAndValidateBoolean,
+    defaultValue: true,
+    info: `Whether to include the scientific name authority 
+      if the scientific name is shown in the species name block.
+      The value is ignored if the scientific name is not shown.`
   })
 };
 
@@ -594,7 +623,8 @@ const VIS_TYPE_RULE_SETS = {
   'temporal-year-chart': ['taxonId', 'temporalStatsType', 'taxonIdSource', 'chartType', 'recordsColour', 'squaresColour','startYear', 'endYear', 'area', 'control', 'expand', 'width', 'height'],
   'new-species-table': ['startDate', 'endDate', 'area', 'groupId', 'language','control', 'pageSize'],
   'increasing-species-table': ['topN', 'area', 'groupId', 'language','control', 'pageSize'],
-  'species-absent-since': ['year', 'area', 'groupId', 'language','control', 'pageSize']
+  'species-absent-since': ['year', 'area', 'groupId', 'language','control', 'pageSize'],
+  'species-name-block': ['taxonId', 'taxonIdSource', 'primaryName', 'secondaryName', 'authority']
 };
 
 export function getVisAttributeSchema(visType) {

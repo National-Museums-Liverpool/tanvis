@@ -8,3 +8,4 @@ export { renderSpeciesAbsentSince } from './speciesAbsentSince.js';
 export { renderSpeciesMap } from './speciesMap.js';
 export { renderGridStatsMap } from './gridStatsMap.js';
 export { renderTemporalYearChart } from './temporalYearChart.js';
+export { renderSpeciesNameBlock } from './speciesNameBlock.js';

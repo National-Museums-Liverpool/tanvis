@@ -271,6 +271,10 @@ div[data-tanvis-controls="species-selector"] {
   min-width: 20rem;
 }
 
+.tanvis[data-vis-type='species-name-block'] {
+  font-family: system-ui, sans-serif;
+  font-size: 1.5rem;
+}
 
 `;
 
@@ -288,3 +292,4 @@ export function ensureSharedStyles() {
   style.textContent = SHARED_STYLES;
   document.head.appendChild(style);
 }
+

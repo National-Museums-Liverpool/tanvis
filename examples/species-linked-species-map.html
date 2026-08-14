@@ -27,6 +27,12 @@
     <h1>Tanvis Table-linked Species Map Example</h1>
     <p>This renders a species map linked to a species table.</p>
 
+    <div
+        id="my-increasing-species-table"
+        class="tanvis"
+        data-vis-type="increasing-species-table"
+    ></div>
+
     <!-- <div
         id="my-new-species-table"
         class="tanvis"
@@ -35,12 +41,12 @@
         data-vis-language="vernacular"
     ></div> -->
 
-    <div  
+    <!-- <div  
         id="my-species-identifier"
         class="tanvis"
         data-vis-type="species-identifier"
         xdata-vis-taxonid="NBNORG0000052153"
-    ></div>
+    ></div> -->
 
     <!-- <div
       id="absent-since-table"
@@ -51,12 +57,27 @@
       data-vis-control="vc-control"
     ></div> -->
 
+    <!-- <div
+      id="vc-control"
+      class="tanvis"
+      data-vis-type="control-block"
+      data-vis-area="vc-all"
+    ></div> -->
+
+    <div  
+        class="tanvis"
+        data-vis-type="species-name-block"
+        data-vis-taxon-id-source="my-increasing-species-table"
+        data-vis-primary-name="scientific"
+        data-vis-secondary-name="vernacular"
+    ></div>
+
     <div
       class="tanvis"
       data-vis-type="species-map"
-      data-vis-taxon-id-source="my-species-identifier"
       data-vis-map-type="switch"
       data-vis-control="vc-control"
+      data-vis-taxon-id-source="my-increasing-species-table"
       data-vis-width="500"
       data-vis-height="500"
       data-vis-expand="false"

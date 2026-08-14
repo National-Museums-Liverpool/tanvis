@@ -311,12 +311,13 @@ function formatGroupName(group, labelMode = 'scientific') {
 async function fetchTaxonStats({ apiBase, topN, higherGeographyIdentifier, taxonGroupExternalKey, limit, offset }) {
   const resourceUrl = resolveResourceUrl(apiBase, TAXON_STATS_RESOURCE);
   const pageUrl = new URL(resourceUrl.toString());
-  pageUrl.searchParams.set('include', 'taxon, taxon-group');
+  pageUrl.searchParams.set('include', 'taxon, taxon-group, taxon-rank');
   const vcId = higherGeographyIdentifier === undefined ? null : higherGeographyIdentifier;
   pageUrl.searchParams.set('higher_geography_identifier[eq]', String(vcId));
   if (taxonGroupExternalKey) {
     pageUrl.searchParams.set('taxon_group__external_key[eq]', taxonGroupExternalKey);
   }
+  pageUrl.searchParams.set('taxon_rank__rank[eq]', 'Species');
   // Once the API exposes frequency_trend in taxon-stats responses, switch this to sort=frequency_trend.
   pageUrl.searchParams.set('sort', '-occurrences_count');
   pageUrl.searchParams.set('limit', String(limit));
