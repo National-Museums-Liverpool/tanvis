@@ -7,7 +7,8 @@ const KNOWN_VIS_TYPES = [
   'species-absent-since',
   'grid-stats-map',
   'temporal-year-chart',
-  'species-name-block'
+  'species-name-block',
+  'species-remarks-block'
 ];
 
 function validateDate(dateString) {
@@ -624,7 +625,8 @@ const VIS_TYPE_RULE_SETS = {
   'new-species-table': ['startDate', 'endDate', 'area', 'groupId', 'language','control', 'pageSize'],
   'increasing-species-table': ['topN', 'area', 'groupId', 'language','control', 'pageSize'],
   'species-absent-since': ['year', 'area', 'groupId', 'language','control', 'pageSize'],
-  'species-name-block': ['taxonId', 'taxonIdSource', 'primaryName', 'secondaryName', 'authority']
+  'species-name-block': ['taxonId', 'taxonIdSource', 'primaryName', 'secondaryName', 'authority'],
+  'species-remarks-block': ['taxonId', 'taxonIdSource']
 };
 
 export function getVisAttributeSchema(visType) {

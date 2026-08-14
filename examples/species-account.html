@@ -1,0 +1,173 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Tanvis Species Acount Example</title>
+    <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/biologicalrecordscentre/brc-atlas/dist/brcatlas.umd.js"></script>
+    <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/gh/biologicalrecordscentre/brc-atlas/dist/brcatlas.umd.css" />
+    <script src="https://unpkg.com/tabulator-tables@6.3.0/dist/js/tabulator.min.js"></script>
+    <link rel="stylesheet" href="https://unpkg.com/tabulator-tables@6.3.0/dist/css/tabulator.min.css" />
+    <script src="https://cdn.jsdelivr.net/gh/biologicalrecordscentre/brc-charts/dist/brccharts.umd.js"></script>
+    <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/gh/biologicalrecordscentre/brc-charts/dist/brccharts.umd.css" />
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        margin: 20px;
+      }
+
+      .tanvis {
+        margin-top: 1rem;
+      }
+
+      /* The parent flex container */
+      .flex-container {
+        display: flex;
+        flex-wrap: wrap;
+        width: 100%;
+      }
+
+      /* Desktop styles: Size to content */
+      .div-1, .div-3 {
+        flex: 0 0 auto; /* Sizes strictly to content */
+      }
+
+      /* Desktop styles: Fill remaining space */
+      .div-2, .div-4 {
+        flex: 1; /* Grows to fill the rest of the row */
+      }
+
+      /* Forces Div 3 to start on a new row */
+      .break {
+        width: 100%;
+        height: 0;
+      }
+
+      /* Styling each box with a different color */
+      /* .div-1 { background-color: #3498db; }
+      .div-2 { background-color: #e74c3c; }
+      .div-3 { background-color: #2ecc71; }
+      .div-4 { background-color: #f1c40f; } */
+
+      #species-map-div {
+        width: 500px;
+      }
+      @media (max-width: 500px) {
+        #species-map-div {
+          width: 100%;
+        }
+      }
+
+      .charts {
+        width: 500px;
+        margin-left: 1rem;
+      }
+      @media (max-width: 500px) {
+        .charts {
+          width: 100%;
+          margin-left: 0;
+        }
+      }
+
+      /* Responsive break point for mobile screens */
+      @media (max-width: 500px) {
+        .flex-item {
+          width: 100%; /* Forces full width */
+          flex: none !important; /* Overrides desktop flex sizing */
+        }
+        .break {
+          display: none; /* Hides the extra break element */
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Tanvis Species Acount Example</h1>
+
+
+    <div  
+      id="species-identifier"
+      class="tanvis"
+      data-vis-type="species-identifier"
+      xdata-vis-taxonid="NBNORG0000011061"
+      data-vis-taxonid="NBNORG0000010518"
+    ></div>
+
+    <div  
+      class="tanvis"
+      data-vis-type="species-name-block"
+      data-vis-taxon-id-source="species-identifier"
+    ></div>
+
+    <div  
+      class="tanvis"
+      data-vis-type="species-remarks-block"
+      data-vis-taxon-id-source="species-identifier"
+    ></div>
+
+    <div
+      id="vc-control"
+      class="tanvis"
+      data-vis-type="control-block"
+      data-vis-control-elements="area"
+      data-vis-area="vc-all"
+    ></div>
+
+    <div class="flex-container">
+      <div class="flex-item div-1">
+        <div
+          id="species-map-div"
+          class="tanvis"
+          data-vis-type="species-map"
+          data-vis-map-type="switch"
+          data-vis-control="vc-control"
+          data-vis-taxon-id-source="species-identifier"
+          data-vis-width="500"
+          data-vis-expand="true"
+          data-vis-boundaries="true"
+          data-vis-dot-colour="cividis"
+          data-vis-transformation="deciles"
+          data-vis-dot-shape="square"
+        ></div>
+      </div>
+      <div class="flex-item div-2">
+        <div
+          class="tanvis charts"
+          data-vis-type="temporal-year-chart"
+          data-vis-taxon-id-source="species-identifier"
+          data-vis-control="vc-control"
+          data-vis-start-year="2000"
+          data-vis-end-year="2026"
+          data-vis-width="430"
+          data-vis-height="250"
+          data-vis-expand="true"
+          data-vis-temporal-stats-type="records"
+        ></div>
+        <div
+          class="tanvis charts"
+          data-vis-type="temporal-year-chart"
+          data-vis-taxon-id-source="species-identifier"
+          data-vis-control="vc-control"
+          data-vis-start-year="2000"
+          data-vis-end-year="2026"
+          data-vis-width="430"
+          data-vis-height="250"
+          data-vis-expand="true"
+          data-vis-temporal-stats-type="squares"
+        ></div>
+      </div>
+    </div>
+
+    <script src="../dist/tanvis.iife.js"></script>
+    <script type="module">
+
+      // import { installSpeciesStatsMockApi } from './mock/speciesStatsMockApi.js';
+      // installSpeciesStatsMockApi({ baseUrl: '/api', latencyMs: 150 });
+
+      window.Tanvis.init();
+    </script>
+  </body>
+</html>
