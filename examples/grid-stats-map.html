@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Tanvis Grid Stats Mock Example</title>
+    <title>Tanvis Grid Stats Example</title>
     <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
     <script src="https://d3js.org/d3.v7.min.js"></script>
@@ -29,14 +29,13 @@
   </head>
   <body>
     <h1>Tanvis Grid Stats Example</h1>
-    <p>This fetches <code>grid-square-stats</code> and displays on a map.</p>
 
     <div
         id="vc-control"
         class="tanvis"
         data-vis-control-elements="area"
         data-vis-show-data-opts-expanded="true"
-        data-vis-show-data-opts-toggle="true"
+        data-vis-show-data-opts-toggle="false"
         data-vis-type="control-block"
         data-vis-area="vc-all"
     ></div>
@@ -49,10 +48,10 @@
       data-vis-control="vc-control"
       data-vis-grid-stats-type="switch"
       data-vis-dot-colour="viridis"
-      data-vis-transformation="deciles"
+      data-vis-transformation="log10"
       data-vis-dot-shape="square"
       data-vis-area="vc-60"
-      data-vis-width="800"
+      data-vis-width="650"
       data-vis-height="500"
       data-vis-expand="false"
       data-vis-boundaries="false"

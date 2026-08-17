@@ -19,8 +19,7 @@
   </head>
   <body>
     <h1>Tanvis Species Absent Since Example</h1>
-    <p>This renders species whose last record date is on or before the selected year.</p>
-
+    
     <div
       id="vc-control"
       class="tanvis"
@@ -42,15 +41,7 @@
 
     <script src="../dist/tanvis.iife.js"></script>
     <script type="module">
-      // import { installTaxonGroupsMockApi } from './mock/taxonGroupsMockApi.js';
-      // import { installSpeciesAbsentSinceMockApi } from './mock/speciesAbsentSinceMockApi.js';
-      // installTaxonGroupsMockApi({ baseUrl: '/api', latencyMs: 150 });
-      // installSpeciesAbsentSinceMockApi({ baseUrl: '/api', latencyMs: 150 });
       window.Tanvis.init();
-
-      // document.addEventListener('taxon-identified', (event) => {
-      //   console.log('Row clicked:', event.detail);
-      // });
     </script>
   </body>
 </html>

@@ -15,12 +15,12 @@
       .tanvis {
         margin-top: 1rem;
       }
+
     </style>
   </head>
   <body>
     <h1>Tanvis New Species Table Example</h1>
-    <p>This renders a table of species whose first record date falls within the requested date range.</p>
-
+   
     <div
       id="vc-control"
       class="tanvis"
@@ -43,15 +43,7 @@
 
     <script src="../dist/tanvis.iife.js"></script>
     <script type="module">
-      //import { installTaxonGroupsMockApi } from './mock/taxonGroupsMockApi.js';
-      //import { installNewSpeciesMockApi } from './mock/newSpeciesMockApi.js';
-      //installTaxonGroupsMockApi({ baseUrl: '/api', latencyMs: 150 });
-      //installNewSpeciesMockApi({ baseUrl: '/api', latencyMs: 150 });
       window.Tanvis.init();
-
-      document.addEventListener("taxon-identified", function(e) {
-        console.log(`Row clicked:`, e.detail);
-      });
     </script>
   </body>
 </html>

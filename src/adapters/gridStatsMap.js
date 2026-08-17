@@ -75,10 +75,10 @@ export function createGridStatsMapAdapter() {
           }
 
           clearElement(element);
-          const summary = createSummary(records.length, renderConfig.area);
+          //const summary = createSummary(records.length, renderConfig.area);
           const mapContainer = document.createElement('div');
 
-          element.appendChild(summary);
+          //element.appendChild(summary);
           element.appendChild(mapContainer);
           status.clear();
 

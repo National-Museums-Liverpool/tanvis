@@ -1216,8 +1216,12 @@ div[data-tanvis-controls="species-selector"] {
 }
 
 .tanvis[data-vis-type='species-name-block'] {
-  font-family: system-ui, sans-serif;
   font-size: 1.5rem;
+}
+
+.tanvis-table-header-text {
+  font-size: 1.2rem;
+  margin-bottom: 0.5rem;
 }
 
 `;
@@ -2866,7 +2870,7 @@ div[data-tanvis-controls="species-selector"] {
         }
 
         clearElement(element);
-        const summary = createSummary$3(startDate, endDate, 0);
+        const summary = createSummary$2(startDate, endDate, 0, renderConfig.area);
         element.appendChild(summary);
 
         createTableContainer$2({
@@ -2892,7 +2896,7 @@ div[data-tanvis-controls="species-selector"] {
               };
             }
 
-            updateSummary$2(summary, startDate, endDate, pageResult.totalRows);
+            updateSummary$2(summary, startDate, endDate, pageResult.totalRows, renderConfig.area);
             element.__tanvisLatestRows = pageResult.records;
             return {
               data: pageResult.records,
@@ -2948,16 +2952,39 @@ div[data-tanvis-controls="species-selector"] {
     element.__tanvisLatestRows = remappedRows;
   }
 
-  function createSummary$3(startDate, endDate, count) {
-    const summary = document.createElement('p');
-    summary.textContent = `${count} new species between ${startDate} and ${endDate}`;
+  function createSummary$2(startDate, endDate, count, area) {
+    const summary = document.createElement('div');
+    summary.classList.add('tanvis-table-header-text');
+    summary.textContent = `${count} new species between ${startDate} and ${endDate} for ${formatTableAreaLabel$2(area)}`;
     return summary;
   }
 
-  function updateSummary$2(summary, startDate, endDate, count) {
+  function updateSummary$2(summary, startDate, endDate, count, area) {
     if (summary) {
-      summary.textContent = `${count} new species between ${startDate} and ${endDate}`;
+      summary.textContent = `${count} new species between ${startDate} and ${endDate} for ${formatTableAreaLabel$2(area)}`;
     }
+  }
+
+  function formatTableAreaLabel$2(area) {
+    const normalizedArea = normalizeAreaContractValue(area);
+    if (normalizedArea === undefined || normalizedArea === null || normalizedArea === '' || normalizedArea === 'all' || normalizedArea === 'vc-all' || normalizedArea === 'all VCs') {
+      return 'all VCs';
+    }
+
+    if (typeof normalizedArea === 'number') {
+      return `vc${normalizedArea}`;
+    }
+
+    const candidate = String(normalizedArea).trim().toLowerCase();
+    if (/^vc\d+$/.test(candidate)) {
+      return candidate;
+    }
+
+    if (/^\d+$/.test(candidate)) {
+      return `vc${candidate}`;
+    }
+
+    return candidate;
   }
 
   function createTableContainer$2({ Tabulator, pageSize, requestPage, element, loadId, status }) {
@@ -3355,7 +3382,7 @@ div[data-tanvis-controls="species-selector"] {
         }
 
         clearElement(element);
-        const summary = createSummary$2(topN);
+        const summary = createSummary$1(topN, 0, renderConfig.area);
         element.appendChild(summary);
 
         createTableContainer$1({
@@ -3380,7 +3407,7 @@ div[data-tanvis-controls="species-selector"] {
               };
             }
 
-            updateSummary$1(summary, topN, pageResult.totalRows);
+            updateSummary$1(summary, topN, pageResult.totalRows, renderConfig.area);
             element.__tanvisLatestRows = pageResult.records;
             return {
               data: pageResult.records,
@@ -3436,16 +3463,39 @@ div[data-tanvis-controls="species-selector"] {
     element.__tanvisLatestRows = remappedRows;
   }
 
-  function createSummary$2(topN, count) {
-    const summary = document.createElement('p');
-    summary.textContent = `Top ${topN} species by frequency trend`;
+  function createSummary$1(topN, count, area) {
+    const summary = document.createElement('div');
+    summary.classList.add('tanvis-table-header-text');
+    summary.textContent = `Top ${topN} species by frequency trend for ${formatTableAreaLabel$1(area)}`;
     return summary;
   }
 
-  function updateSummary$1(summary, topN, count) {
+  function updateSummary$1(summary, topN, count, area) {
     if (summary) {
-      summary.textContent = `Top ${topN} species by frequency trend`;
+      summary.textContent = `Top ${topN} species by frequency trend for ${formatTableAreaLabel$1(area)}`;
     }
+  }
+
+  function formatTableAreaLabel$1(area) {
+    const normalizedArea = normalizeAreaContractValue(area);
+    if (normalizedArea === undefined || normalizedArea === null || normalizedArea === '' || normalizedArea === 'all' || normalizedArea === 'vc-all' || normalizedArea === 'all VCs') {
+      return 'all VCs';
+    }
+
+    if (typeof normalizedArea === 'number') {
+      return `vc${normalizedArea}`;
+    }
+
+    const candidate = String(normalizedArea).trim().toLowerCase();
+    if (/^vc\d+$/.test(candidate)) {
+      return candidate;
+    }
+
+    if (/^\d+$/.test(candidate)) {
+      return `vc${candidate}`;
+    }
+
+    return candidate;
   }
 
   function createTableContainer$1({ Tabulator, pageSize, requestPage, element, loadId, status }) {
@@ -3822,7 +3872,7 @@ div[data-tanvis-controls="species-selector"] {
         }
 
         clearElement(element);
-        const summary = createSummary$1(year, 0);
+        const summary = createSummary(year, 0, renderConfig.area);
         element.appendChild(summary);
 
         createTableContainer({
@@ -3847,7 +3897,7 @@ div[data-tanvis-controls="species-selector"] {
               };
             }
 
-            updateSummary(summary, year, pageResult.totalRows);
+            updateSummary(summary, year, pageResult.totalRows, renderConfig.area);
             element.__tanvisLatestRows = pageResult.records;
             return {
               data: pageResult.records,
@@ -3901,16 +3951,39 @@ div[data-tanvis-controls="species-selector"] {
     element.__tanvisLatestRows = remappedRows;
   }
 
-  function createSummary$1(year, count) {
-    const summary = document.createElement('p');
-    summary.textContent = `${count} species with last record date on or before ${year}`;
+  function createSummary(year, count, area) {
+    const summary = document.createElement('div');
+    summary.classList.add('tanvis-table-header-text');
+    summary.textContent = `${count} species with last record date on or before ${year} for ${formatTableAreaLabel(area)}`;
     return summary;
   }
 
-  function updateSummary(summary, year, count) {
+  function updateSummary(summary, year, count, area) {
     if (summary) {
-      summary.textContent = `${count} species with last record date on or before ${year}`;
+      summary.textContent = `${count} species with last record date on or before ${year} for ${formatTableAreaLabel(area)}`;
     }
+  }
+
+  function formatTableAreaLabel(area) {
+    const normalizedArea = normalizeAreaContractValue(area);
+    if (normalizedArea === undefined || normalizedArea === null || normalizedArea === '' || normalizedArea === 'all' || normalizedArea === 'vc-all' || normalizedArea === 'all VCs') {
+      return 'all VCs';
+    }
+
+    if (typeof normalizedArea === 'number') {
+      return `vc${normalizedArea}`;
+    }
+
+    const candidate = String(normalizedArea).trim().toLowerCase();
+    if (/^vc\d+$/.test(candidate)) {
+      return candidate;
+    }
+
+    if (/^\d+$/.test(candidate)) {
+      return `vc${candidate}`;
+    }
+
+    return candidate;
   }
 
   function createTableContainer({ Tabulator, pageSize, requestPage, element, loadId, status }) {
@@ -5100,10 +5173,10 @@ div[data-tanvis-controls="species-selector"] {
             }
 
             clearElement(element);
-            const summary = createSummary(records.length, renderConfig.area);
+            //const summary = createSummary(records.length, renderConfig.area);
             const mapContainer = document.createElement('div');
 
-            element.appendChild(summary);
+            //element.appendChild(summary);
             element.appendChild(mapContainer);
             status.clear();
 
@@ -5129,12 +5202,6 @@ div[data-tanvis-controls="species-selector"] {
           });
       }
     };
-  }
-
-  function createSummary(count, area) {
-    const summary = document.createElement('p');
-    summary.textContent = `${count} grid-square-stats records loaded${area ? ` for ${area}` : ''}. See the console for the raw payload.`;
-    return summary;
   }
 
   function renderMapBackend(mapElement, config, hostElement) {

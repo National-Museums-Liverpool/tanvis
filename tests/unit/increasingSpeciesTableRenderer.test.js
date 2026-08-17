@@ -58,6 +58,35 @@ describe('renderIncreasingSpeciesTable', () => {
     expect(element.textContent).toContain('Top 25 species by frequency trend');
   });
 
+  it('includes the selected area in the header text', async () => {
+    window.Tabulator = function Tabulator(container, options) {
+      container.dataset.tabulatorMounted = 'true';
+      void options.ajaxRequestFunc('custom_handler', {}, { page: 1, size: 10 });
+      return {
+        on() {}
+      };
+    };
+
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue({
+      ok: true,
+      json: async () => ({ data: [] })
+    });
+
+    const element = document.createElement('div');
+    renderIncreasingSpeciesTable(element, {
+      type: 'increasing-species-table',
+      topN: 10,
+      area: 'vc59'
+    });
+
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    const header = element.querySelector('.tanvis-table-header-text');
+    expect(header).not.toBeNull();
+    expect(header?.tagName).toBe('DIV');
+    expect(header?.textContent).toContain('for vc59');
+  });
+
   it('uses default topN=50 when value is not supplied', async () => {
     window.Tabulator = function Tabulator(container, options) {
       container.dataset.tabulatorMounted = 'true';

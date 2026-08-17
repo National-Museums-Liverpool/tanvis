@@ -96,7 +96,7 @@ export function createIncreasingSpeciesTableAdapter() {
       }
 
       clearElement(element);
-      const summary = createSummary(topN, 0);
+      const summary = createSummary(topN, 0, renderConfig.area);
       element.appendChild(summary);
 
       const { container } = createTableContainer({
@@ -121,7 +121,7 @@ export function createIncreasingSpeciesTableAdapter() {
             };
           }
 
-          updateSummary(summary, topN, pageResult.totalRows);
+          updateSummary(summary, topN, pageResult.totalRows, renderConfig.area);
           element.__tanvisLatestRows = pageResult.records;
           return {
             data: pageResult.records,
@@ -177,16 +177,39 @@ function rerenderTableRows(element, { labelMode }) {
   element.__tanvisLatestRows = remappedRows;
 }
 
-function createSummary(topN, count) {
-  const summary = document.createElement('p');
-  summary.textContent = `Top ${topN} species by frequency trend`;
+function createSummary(topN, count, area) {
+  const summary = document.createElement('div');
+  summary.classList.add('tanvis-table-header-text');
+  summary.textContent = `Top ${topN} species by frequency trend for ${formatTableAreaLabel(area)}`;
   return summary;
 }
 
-function updateSummary(summary, topN, count) {
+function updateSummary(summary, topN, count, area) {
   if (summary) {
-    summary.textContent = `Top ${topN} species by frequency trend`;
+    summary.textContent = `Top ${topN} species by frequency trend for ${formatTableAreaLabel(area)}`;
   }
+}
+
+function formatTableAreaLabel(area) {
+  const normalizedArea = normalizeAreaContractValue(area);
+  if (normalizedArea === undefined || normalizedArea === null || normalizedArea === '' || normalizedArea === 'all' || normalizedArea === 'vc-all' || normalizedArea === 'all VCs') {
+    return 'all VCs';
+  }
+
+  if (typeof normalizedArea === 'number') {
+    return `vc${normalizedArea}`;
+  }
+
+  const candidate = String(normalizedArea).trim().toLowerCase();
+  if (/^vc\d+$/.test(candidate)) {
+    return candidate;
+  }
+
+  if (/^\d+$/.test(candidate)) {
+    return `vc${candidate}`;
+  }
+
+  return candidate;
 }
 
 function createTableContainer({ Tabulator, pageSize, requestPage, element, loadId, status }) {

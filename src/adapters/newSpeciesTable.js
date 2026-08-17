@@ -99,7 +99,7 @@ export function createNewSpeciesTableAdapter() {
       }
 
       clearElement(element);
-      const summary = createSummary(startDate, endDate, 0);
+      const summary = createSummary(startDate, endDate, 0, renderConfig.area);
       element.appendChild(summary);
 
       const { container } = createTableContainer({
@@ -125,7 +125,7 @@ export function createNewSpeciesTableAdapter() {
             };
           }
 
-          updateSummary(summary, startDate, endDate, pageResult.totalRows);
+          updateSummary(summary, startDate, endDate, pageResult.totalRows, renderConfig.area);
           element.__tanvisLatestRows = pageResult.records;
           return {
             data: pageResult.records,
@@ -181,16 +181,39 @@ function rerenderTableRows(element, { labelMode }) {
   element.__tanvisLatestRows = remappedRows;
 }
 
-function createSummary(startDate, endDate, count) {
-  const summary = document.createElement('p');
-  summary.textContent = `${count} new species between ${startDate} and ${endDate}`;
+function createSummary(startDate, endDate, count, area) {
+  const summary = document.createElement('div');
+  summary.classList.add('tanvis-table-header-text');
+  summary.textContent = `${count} new species between ${startDate} and ${endDate} for ${formatTableAreaLabel(area)}`;
   return summary;
 }
 
-function updateSummary(summary, startDate, endDate, count) {
+function updateSummary(summary, startDate, endDate, count, area) {
   if (summary) {
-    summary.textContent = `${count} new species between ${startDate} and ${endDate}`;
+    summary.textContent = `${count} new species between ${startDate} and ${endDate} for ${formatTableAreaLabel(area)}`;
   }
+}
+
+function formatTableAreaLabel(area) {
+  const normalizedArea = normalizeAreaContractValue(area);
+  if (normalizedArea === undefined || normalizedArea === null || normalizedArea === '' || normalizedArea === 'all' || normalizedArea === 'vc-all' || normalizedArea === 'all VCs') {
+    return 'all VCs';
+  }
+
+  if (typeof normalizedArea === 'number') {
+    return `vc${normalizedArea}`;
+  }
+
+  const candidate = String(normalizedArea).trim().toLowerCase();
+  if (/^vc\d+$/.test(candidate)) {
+    return candidate;
+  }
+
+  if (/^\d+$/.test(candidate)) {
+    return `vc${candidate}`;
+  }
+
+  return candidate;
 }
 
 function createTableContainer({ Tabulator, pageSize, requestPage, element, loadId, status }) {

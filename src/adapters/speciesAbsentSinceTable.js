@@ -91,7 +91,7 @@ export function createSpeciesAbsentSinceAdapter() {
       }
 
       clearElement(element);
-      const summary = createSummary(year, 0);
+      const summary = createSummary(year, 0, renderConfig.area);
       element.appendChild(summary);
 
       const { container } = createTableContainer({
@@ -116,7 +116,7 @@ export function createSpeciesAbsentSinceAdapter() {
             };
           }
 
-          updateSummary(summary, year, pageResult.totalRows);
+          updateSummary(summary, year, pageResult.totalRows, renderConfig.area);
           element.__tanvisLatestRows = pageResult.records;
           return {
             data: pageResult.records,
@@ -170,16 +170,39 @@ function rerenderTableRows(element, { labelMode }) {
   element.__tanvisLatestRows = remappedRows;
 }
 
-function createSummary(year, count) {
-  const summary = document.createElement('p');
-  summary.textContent = `${count} species with last record date on or before ${year}`;
+function createSummary(year, count, area) {
+  const summary = document.createElement('div');
+  summary.classList.add('tanvis-table-header-text');
+  summary.textContent = `${count} species with last record date on or before ${year} for ${formatTableAreaLabel(area)}`;
   return summary;
 }
 
-function updateSummary(summary, year, count) {
+function updateSummary(summary, year, count, area) {
   if (summary) {
-    summary.textContent = `${count} species with last record date on or before ${year}`;
+    summary.textContent = `${count} species with last record date on or before ${year} for ${formatTableAreaLabel(area)}`;
   }
+}
+
+function formatTableAreaLabel(area) {
+  const normalizedArea = normalizeAreaContractValue(area);
+  if (normalizedArea === undefined || normalizedArea === null || normalizedArea === '' || normalizedArea === 'all' || normalizedArea === 'vc-all' || normalizedArea === 'all VCs') {
+    return 'all VCs';
+  }
+
+  if (typeof normalizedArea === 'number') {
+    return `vc${normalizedArea}`;
+  }
+
+  const candidate = String(normalizedArea).trim().toLowerCase();
+  if (/^vc\d+$/.test(candidate)) {
+    return candidate;
+  }
+
+  if (/^\d+$/.test(candidate)) {
+    return `vc${candidate}`;
+  }
+
+  return candidate;
 }
 
 function createTableContainer({ Tabulator, pageSize, requestPage, element, loadId, status }) {

@@ -272,8 +272,12 @@ div[data-tanvis-controls="species-selector"] {
 }
 
 .tanvis[data-vis-type='species-name-block'] {
-  font-family: system-ui, sans-serif;
   font-size: 1.5rem;
+}
+
+.tanvis-table-header-text {
+  font-size: 1.2rem;
+  margin-bottom: 0.5rem;
 }
 
 `;

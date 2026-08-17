@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Tanvis Species Map Example</title>
+    <title>Tanvis Table-linked Species Map Example</title>
     <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
     <script src="https://d3js.org/d3.v7.min.js"></script>
@@ -25,7 +25,6 @@
   </head>
   <body>
     <h1>Tanvis Table-linked Species Map Example</h1>
-    <p>This renders a species map linked to a species table.</p>
 
     <div
         id="my-increasing-species-table"
@@ -41,7 +40,6 @@
         data-vis-language="vernacular"
     ></div> -->
 
-
     <!-- <div
       id="absent-since-table"
       class="tanvis"
@@ -49,13 +47,6 @@
       data-vis-year="2021"
       data-vis-area="vc-59"
       data-vis-control="vc-control"
-    ></div> -->
-
-    <!-- <div
-      id="vc-control"
-      class="tanvis"
-      data-vis-type="control-block"
-      data-vis-area="vc-all"
     ></div> -->
 
     <div
@@ -75,10 +66,6 @@
 
     <script src="../dist/tanvis.iife.js"></script>
     <script type="module">
-
-      // import { installSpeciesStatsMockApi } from './mock/speciesStatsMockApi.js';
-      // installSpeciesStatsMockApi({ baseUrl: '/api', latencyMs: 150 });
-
       window.Tanvis.init();
     </script>
   </body>

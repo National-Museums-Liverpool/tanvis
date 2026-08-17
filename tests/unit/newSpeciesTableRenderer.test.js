@@ -82,6 +82,30 @@ describe('renderNewSpeciesTable', () => {
     expect(element.textContent).toContain('1 new species between 2025-01-01 and 2025-12-31');
   });
 
+  it('includes the selected area in the header text', async () => {
+    window.Tabulator = createMockTabulator();
+
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue({
+      ok: true,
+      json: async () => ({ data: [] })
+    });
+
+    const element = document.createElement('div');
+    renderNewSpeciesTable(element, {
+      type: 'new-species-table',
+      startDate: '2025-01-01',
+      endDate: '2025-12-31',
+      area: '59'
+    });
+
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    const header = element.querySelector('.tanvis-table-header-text');
+    expect(header).not.toBeNull();
+    expect(header?.tagName).toBe('DIV');
+    expect(header?.textContent).toContain('for vc59');
+  });
+
   it('uses the current date when endDate is omitted', async () => {
     window.Tabulator = createMockTabulator();
 

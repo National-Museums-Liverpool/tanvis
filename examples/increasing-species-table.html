@@ -19,8 +19,7 @@
   </head>
   <body>
     <h1>Tanvis Increasing Species Table Example</h1>
-    <p>This renders the top increasing species ranked by frequency trend score.</p>
-
+    
     <div
       id="vc-control"
       class="tanvis"
@@ -40,16 +39,7 @@
 
     <script src="../dist/tanvis.iife.js"></script>
     <script type="module">
-      // import { installTaxonGroupsMockApi } from './mock/taxonGroupsMockApi.js';
-      // import { installSpeciesStatsMockApi } from './mock/speciesStatsMockApi.js';
-      // installTaxonGroupsMockApi({ baseUrl: '/api', latencyMs: 150 });
-      // installSpeciesStatsMockApi({ baseUrl: '/api', latencyMs: 150 });
-      
       window.Tanvis.init();
-
-      // document.addEventListener("taxon-identified", function(e) {
-      //   console.log(`Row clicked:`, e.detail);
-      // });
     </script>
   </body>
 </html>
