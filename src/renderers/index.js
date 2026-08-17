@@ -10,3 +10,4 @@ export { renderGridStatsMap } from './gridStatsMap.js';
 export { renderTemporalYearChart } from './temporalYearChart.js';
 export { renderSpeciesNameBlock } from './speciesNameBlock.js';
 export { renderSpeciesRemarksBlock } from './speciesRemarksBlock.js';
+export { renderSpeciesInfoBlock } from './speciesInfoBlock.js';

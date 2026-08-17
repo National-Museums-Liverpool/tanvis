@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Tanvis Species Info Example</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        margin: 20px;
+      }
+
+      .tanvis {
+        margin-top: 1rem;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Tanvis Species Info Example</h1>
+
+
+    <div  
+      id="species-identifier"
+      class="tanvis"
+      data-vis-type="species-identifier"
+      xdata-vis-taxonid="NBNORG0000011061"
+      data-vis-taxonid="NBNORG0000010518"
+    ></div>
+
+    <div  
+      class="tanvis"
+      data-vis-type="species-name-block"
+      data-vis-taxon-id-source="species-identifier"
+    ></div>
+
+    <div  
+      class="tanvis"
+      data-vis-type="species-info-block"
+      data-vis-control="vc-control"
+      data-vis-taxon-id-source="species-identifier"
+    ></div>
+
+    <div  
+      class="tanvis"
+      data-vis-type="species-remarks-block"
+      data-vis-taxon-id-source="species-identifier"
+    ></div>
+
+    <div
+      id="vc-control"
+      class="tanvis"
+      data-vis-type="control-block"
+      data-vis-control-elements="area"
+      data-vis-area="vc-all"
+    ></div>
+
+    <script src="../dist/tanvis.iife.js"></script>
+    <script type="module">
+
+      // import { installSpeciesStatsMockApi } from './mock/speciesStatsMockApi.js';
+      // installSpeciesStatsMockApi({ baseUrl: '/api', latencyMs: 150 });
+
+      window.Tanvis.init();
+    </script>
+  </body>
+</html>

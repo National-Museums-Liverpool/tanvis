@@ -8,7 +8,8 @@ const KNOWN_VIS_TYPES = [
   'grid-stats-map',
   'temporal-year-chart',
   'species-name-block',
-  'species-remarks-block'
+  'species-remarks-block',
+  'species-info-block'
 ];
 
 function validateDate(dateString) {
@@ -626,7 +627,8 @@ const VIS_TYPE_RULE_SETS = {
   'increasing-species-table': ['topN', 'area', 'groupId', 'language','control', 'pageSize'],
   'species-absent-since': ['year', 'area', 'groupId', 'language','control', 'pageSize'],
   'species-name-block': ['taxonId', 'taxonIdSource', 'primaryName', 'secondaryName', 'authority'],
-  'species-remarks-block': ['taxonId', 'taxonIdSource']
+  'species-remarks-block': ['taxonId', 'taxonIdSource'],
+  'species-info-block': ['taxonId', 'taxonIdSource', 'control', 'area']
 };
 
 export function getVisAttributeSchema(visType) {

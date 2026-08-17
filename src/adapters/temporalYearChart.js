@@ -440,11 +440,25 @@ function setTemporalStatsTypeState(element, temporalStatsType) {
 }
 
 function resolveTemporalMetric(temporalStatsType, config) {
+  const areaLabel = formatTemporalAreaLabel(config?.area);
   if (temporalStatsType === 'squares') {
-    return { prop: 'count', label: 'Grid squares', colour: config.squaresColour };
+    return { prop: 'count', label: `Grid squares (${areaLabel})`, colour: config.squaresColour };
   }
 
-  return { prop: 'count', label: 'Records', colour: config.recordsColour };
+  return { prop: 'count', label: `Records (${areaLabel})`, colour: config.recordsColour };
+}
+
+function formatTemporalAreaLabel(area) {
+  if (area === undefined || area === null || area === '') {
+    return 'all VCs';
+  }
+
+  const normalized = String(area).trim();
+  if (/^vc\d+$/i.test(normalized)) {
+    return normalized.toLowerCase();
+  }
+
+  return `vc${normalized}`;
 }
 
 function transformTemporalYearChartData(chartRecords, temporalStatsType = 'records') {

@@ -129,7 +129,7 @@ describe('renderTemporalYearChart', () => {
     expect(temporalCalls[0].chartStyle).toBe('line');
     expect(temporalCalls[0]).not.toHaveProperty('taxa');
     expect(temporalCalls[0].metrics).toEqual([
-      { prop: 'count', label: 'Records', colour: DEFAULT_RECORDS_COLOUR }
+      { prop: 'count', label: 'Records (all VCs)', colour: DEFAULT_RECORDS_COLOUR }
     ]);
     expect(temporalCalls[0].data).toEqual([
       {
@@ -237,7 +237,7 @@ describe('renderTemporalYearChart', () => {
     await new Promise((resolve) => setTimeout(resolve, 0));
 
     expect(temporalCalls[0].metrics).toEqual([
-      { prop: 'count', label: 'Records', colour: DEFAULT_RECORDS_COLOUR }
+      { prop: 'count', label: 'Records (all VCs)', colour: DEFAULT_RECORDS_COLOUR }
     ]);
 
     const squaresInput = element.querySelector('.tanvis-temporal-year-chart-switch input[value="squares"]');
@@ -248,7 +248,7 @@ describe('renderTemporalYearChart', () => {
 
     expect(setChartOptsCalls).toHaveLength(1);
     expect(setChartOptsCalls[0].metrics).toEqual([
-      { prop: 'count', label: 'Grid squares', colour: DEFAULT_SQUARES_COLOUR }
+      { prop: 'count', label: 'Grid squares (all VCs)', colour: DEFAULT_SQUARES_COLOUR }
     ]);
   });
 
@@ -310,7 +310,7 @@ describe('renderTemporalYearChart', () => {
     expect(temporalCalls).toHaveLength(1);
     expect(setChartOptsCalls).toHaveLength(1);
     expect(setChartOptsCalls[0].metrics).toEqual([
-      { prop: 'count', label: 'Records', colour: DEFAULT_RECORDS_COLOUR }
+      { prop: 'count', label: 'Records (all VCs)', colour: DEFAULT_RECORDS_COLOUR }
     ]);
   });
 
@@ -374,7 +374,7 @@ describe('renderTemporalYearChart', () => {
 
     expect(setChartOptsCalls).toHaveLength(1);
     expect(setChartOptsCalls[0].metrics).toEqual([
-      { prop: 'count', label: 'Grid squares', colour: DEFAULT_SQUARES_COLOUR }
+      { prop: 'count', label: 'Grid squares (all VCs)', colour: DEFAULT_SQUARES_COLOUR }
     ]);
   });
 

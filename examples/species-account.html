@@ -23,6 +23,10 @@
         margin-top: 1rem;
       }
 
+      .tanvis[data-vis-type="species-info-block"] {
+        background-color: #eeeaea;
+      }
+
       /* The parent flex container */
       .flex-container {
         display: flex;
@@ -99,6 +103,13 @@
     <div  
       class="tanvis"
       data-vis-type="species-name-block"
+      data-vis-taxon-id-source="species-identifier"
+    ></div>
+
+    <div  
+      class="tanvis"
+      data-vis-type="species-info-block"
+      data-vis-control="vc-control"
       data-vis-taxon-id-source="species-identifier"
     ></div>
 
