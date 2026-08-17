@@ -32,8 +32,13 @@
 
     <div
       class="tanvis"
+      data-vis-type="species-name-block"
+      data-vis-taxon-id-source="vc-control"
+    ></div>
+
+    <div
+      class="tanvis"
       data-vis-type="species-map"
-      xdata-vis-taxonid="NBNORG0000052153"
       data-vis-map-type="switch"
       data-vis-control="vc-control"
       data-vis-taxon-id-source="vc-control"
@@ -49,10 +54,6 @@
 
     <script src="../dist/tanvis.iife.js"></script>
     <script type="module">
-      // import { installSpeciesOccurrencesMockApi } from './mock/speciesOccurrencesMockApi.js';
-      // import { installTaxonGroupsMockApi } from './mock/taxonGroupsMockApi.js';
-      // installTaxonGroupsMockApi({ baseUrl: '/api', latencyMs: 150 });
-      // installSpeciesOccurrencesMockApi({ baseUrl: '/api', latencyMs: 150 });
       window.Tanvis.init();
     </script>
   </body>

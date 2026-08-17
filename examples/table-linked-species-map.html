@@ -26,35 +26,41 @@
   <body>
     <h1>Tanvis Table-linked Species Map Example</h1>
 
-    <div
-        id="my-increasing-species-table"
+    <!-- <div
+        id="my-species-table"
         class="tanvis"
         data-vis-type="increasing-species-table"
-    ></div>
+    ></div> -->
 
     <!-- <div
-        id="my-new-species-table"
+        id="my-species-table"
         class="tanvis"
         data-vis-type="new-species-table"
         data-vis-start-date="2025-01-01"
         data-vis-language="vernacular"
     ></div> -->
 
-    <!-- <div
-      id="absent-since-table"
+    <div
+      id="my-species-table"
       class="tanvis"
       data-vis-type="species-absent-since"
-      data-vis-year="2021"
-      data-vis-area="vc-59"
+      data-vis-year="2000"
+      data-vis-area="vc-all"
       data-vis-control="vc-control"
-    ></div> -->
+    ></div>
+
+    <div
+      class="tanvis"
+      data-vis-type="species-name-block"
+      data-vis-taxon-id-source="my-species-table"
+    ></div>
 
     <div
       class="tanvis"
       data-vis-type="species-map"
       data-vis-map-type="switch"
       data-vis-control="vc-control"
-      data-vis-taxon-id-source="my-increasing-species-table"
+      data-vis-taxon-id-source="my-species-table"
       data-vis-width="500"
       data-vis-height="500"
       data-vis-expand="false"
