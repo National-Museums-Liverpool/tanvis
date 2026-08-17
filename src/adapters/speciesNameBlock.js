@@ -233,7 +233,9 @@ function renderPlaceholder(content) {
   const nodes = content.__tanvisSpeciesNameBlockNodes;
   resetNameContent(nodes);
   nodes.placeholder.textContent = DEFAULT_PLACEHOLDER_TEXT;
+  // Keep the placeholder text in the DOM (visibility hidden) so the block retains its layout space.
   nodes.placeholder.hidden = false;
+  nodes.placeholder.style.visibility = 'hidden';
   nodes.primary.hidden = true;
   nodes.secondaryWrapper.hidden = true;
 }
@@ -279,6 +281,7 @@ function resetNameContent(nodes) {
   nodes.secondaryScientific.textContent = '';
   nodes.secondaryAuthority.textContent = '';
   nodes.placeholder.hidden = true;
+  nodes.placeholder.style.visibility = '';
   nodes.secondaryOpen.textContent = '';
   nodes.secondaryClose.textContent = '';
 }
