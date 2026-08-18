@@ -78,6 +78,7 @@ export function createSpeciesAbsentSinceAdapter() {
 
             element.dataset.visTaxonGroupLabelMode = nextLabelMode;
             rerenderTableRows(element, { labelMode: nextLabelMode });
+            refreshSummary(element, nextLabelMode);
           }
         });
       }
@@ -93,11 +94,25 @@ export function createSpeciesAbsentSinceAdapter() {
       clearElement(element);
       const summary = createSummary(year, 0, renderConfig.area);
       element.appendChild(summary);
+      element.__tanvisSummaryElement = summary;
+      element.__tanvisSummaryState = { year, area: renderConfig.area, count: 0, taxonGroupInfo: null };
+
+      if (taxonGroupExternalKey) {
+        resolveTaxonGroupInfo(apiBase, taxonGroupExternalKey).then((taxonGroupInfo) => {
+          if (element.__tanvisSpeciesAbsentLoadId !== loadId || !element.__tanvisSummaryState) {
+            return;
+          }
+
+          element.__tanvisSummaryState.taxonGroupInfo = taxonGroupInfo;
+          refreshSummary(element, getEffectiveLabelModeForElement(element, renderConfig));
+        });
+      }
 
       const { container } = createTableContainer({
         Tabulator,
         pageSize,
         requestPage: async ({ pageNumber, pageSize: requestedPageSize }) => {
+          const labelModeForRequest = getEffectiveLabelModeForElement(element, renderConfig);
           const pageResult = await buildSpeciesAbsentSinceRecordsPage({
             apiBase,
             year,
@@ -105,7 +120,7 @@ export function createSpeciesAbsentSinceAdapter() {
             taxonGroupExternalKey,
             pageNumber,
             pageSize: requestedPageSize,
-            labelMode: getEffectiveLabelModeForElement(element, renderConfig)
+            labelMode: labelModeForRequest
           });
 
           if (element.__tanvisSpeciesAbsentLoadId !== loadId) {
@@ -116,7 +131,10 @@ export function createSpeciesAbsentSinceAdapter() {
             };
           }
 
-          updateSummary(summary, year, pageResult.totalRows, renderConfig.area);
+          element.__tanvisSummaryState.year = year;
+          element.__tanvisSummaryState.area = renderConfig.area;
+          element.__tanvisSummaryState.count = pageResult.totalRows;
+          refreshSummary(element, labelModeForRequest);
           element.__tanvisLatestRows = pageResult.records;
           return {
             data: pageResult.records,
@@ -170,17 +188,27 @@ function rerenderTableRows(element, { labelMode }) {
   element.__tanvisLatestRows = remappedRows;
 }
 
-function createSummary(year, count, area) {
+function createSummary(year, count, area, taxonGroupName) {
   const summary = document.createElement('div');
   summary.classList.add('tanvis-table-header-text');
-  summary.textContent = `${count} species with last record date on or before ${year} for ${formatTableAreaLabel(area)}`;
+  summary.textContent = buildSummaryText(year, count, area, taxonGroupName);
   return summary;
 }
 
-function updateSummary(summary, year, count, area) {
-  if (summary) {
-    summary.textContent = `${count} species with last record date on or before ${year} for ${formatTableAreaLabel(area)}`;
+function buildSummaryText(year, count, area, taxonGroupName) {
+  const suffix = taxonGroupName ? ` for taxon group ${taxonGroupName}` : '';
+  return `${count} species with last record date on or before ${year} for ${formatTableAreaLabel(area)}${suffix}`;
+}
+
+function refreshSummary(element, labelMode) {
+  const state = element.__tanvisSummaryState;
+  const summary = element.__tanvisSummaryElement;
+  if (!state || !summary) {
+    return;
   }
+
+  const taxonGroupName = state.taxonGroupInfo ? formatGroupName(state.taxonGroupInfo, labelMode) : '';
+  summary.textContent = buildSummaryText(state.year, state.count, state.area, taxonGroupName);
 }
 
 function formatTableAreaLabel(area) {
@@ -384,6 +412,39 @@ function formatGroupName(group, labelMode = 'scientific') {
     ? (parsedNames.vernacularName || parsedNames.scientificName)
     : (parsedNames.scientificName || parsedNames.vernacularName);
   return displayName;
+}
+
+const taxonGroupsByApiBase = new Map();
+
+// Resolved independently of table rows so the name is available even when a query returns no records.
+async function resolveTaxonGroupInfo(apiBase, taxonGroupExternalKey) {
+  if (!taxonGroupExternalKey) {
+    return null;
+  }
+
+  if (!taxonGroupsByApiBase.has(apiBase)) {
+    taxonGroupsByApiBase.set(apiBase, fetchTaxonGroupsMap(apiBase));
+  }
+
+  const groupsMap = await taxonGroupsByApiBase.get(apiBase);
+  return groupsMap.get(taxonGroupExternalKey) || null;
+}
+
+async function fetchTaxonGroupsMap(apiBase) {
+  try {
+    const resourceUrl = resolveResourceUrl(apiBase, 'taxon-groups');
+    const payload = await fetchJson(resourceUrl.toString(), 'Failed to load taxon groups');
+    const groups = getListData(payload);
+    const map = new Map();
+    for (const group of groups) {
+      if (group?.external_key) {
+        map.set(group.external_key, { title: group.title, friendly: group.friendly });
+      }
+    }
+    return map;
+  } catch {
+    return new Map();
+  }
 }
 
 function areaToHigherGeographyIdentifier(area) {
