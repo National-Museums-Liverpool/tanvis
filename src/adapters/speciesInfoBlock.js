@@ -291,7 +291,7 @@ function ensureContentStructure(element) {
 
   const conservationValueCell = appendInfoRow(doc, body, 'Status');
   const occurrencesValueCell = appendInfoRow(doc, body, 'Occurrences');
-  const gridSquaresValueCell = appendInfoRow(doc, body, 'Grid squares');
+  const gridSquaresValueCell = appendInfoRow(doc, body, 'Tetrads');
 
   content.appendChild(body);
   element.appendChild(content);

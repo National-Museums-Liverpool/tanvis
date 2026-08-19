@@ -40,7 +40,7 @@ describe('species info block', () => {
     expect(rows).toHaveLength(3);
     expect(rows[0].children[0]?.textContent).toBe('Status:');
     expect(rows[1].children[0]?.textContent).toBe('Occurrences:');
-    expect(rows[2].children[0]?.textContent).toBe('Grid squares:');
+    expect(rows[2].children[0]?.textContent).toBe('Tetrads:');
     expect(rows[0].children[0]?.style.textAlign).toBe('right');
     expect(rows[1].children[0]?.style.textAlign).toBe('right');
     expect(rows[2].children[0]?.style.textAlign).toBe('right');
