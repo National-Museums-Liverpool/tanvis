@@ -20,7 +20,8 @@ var Tanvis = (function (exports) {
     'temporal-year-chart',
     'species-name-block',
     'species-remarks-block',
-    'species-info-block'
+    'species-info-block',
+    'help-block',
   ];
 
   function validateDate(dateString) {
@@ -481,7 +482,12 @@ var Tanvis = (function (exports) {
       parseAndValidate: parseAndValidateString,
       defaultValue: 'black',
       info: `The colour of the dots on the map visualisations. 
-      This can be any valid CSS colour value.`
+      This can be any valid CSS colour value, or one of either 'viridis'
+      or 'cividis' - two colour-blind safe colour palettes. 
+      If one of the latter palettes is used, the colours will be determined
+      by the value of a for each dot. For species maps, that is the number
+      of records and for grid stats maps either the number of species, 
+      number of records or rarity score.`
     }),
     transformation: createRule({
       key: 'transformation',
@@ -552,7 +558,8 @@ var Tanvis = (function (exports) {
       datasetName: 'visYear',
       parseAndValidate: parseAndValidateYear,
       defaultValue: '2000',
-      info: `The year for which to draw data. This can be a specific year string of 
+      info: `The year after (and including) which taxa are not recorded. 
+      This can be a specific year string of 
       the format 'yyyy' or one of these relative year values: 'year-n', where n is
       any integer, which resolves to the current year minus n years (e.g. year-0 is 
       the current year, year-1 is the previous year, etc.).`
@@ -644,7 +651,49 @@ var Tanvis = (function (exports) {
     'species-absent-since': ['year', 'area', 'groupId', 'language','control', 'pageSize'],
     'species-name-block': ['taxonId', 'taxonIdSource', 'primaryName', 'secondaryName', 'authority'],
     'species-remarks-block': ['taxonId', 'taxonIdSource'],
-    'species-info-block': ['taxonId', 'taxonIdSource', 'control', 'area']
+    'species-info-block': ['taxonId', 'taxonIdSource', 'control', 'area'],
+    'help-block': []
+  };
+
+  const VIS_TYPE_DESCRIPTIONS = {
+    'control-block': `A control block for selecting area, taxon group, language and taxon.
+    Any visualisations on the page can subscribe to it to control their data and rendering.
+    The four elements of the control block can be shown or hidden individually.`,
+    'species-identifier': `This is not a visualisation itself but a hidden element that can be 
+    used to identify a taxon and provide its taxonId to other visualisations. It provides
+    a way to specify a taxonId once and have several visualisations on the page respond to it. 
+    When included on a page, it also examines the URL for a 'taxon-id' query parameter 
+    and uses that to set the taxonId if present. Any visualisation on the page subscribed to 
+    this element will receive taxonId updates when the taxonId changes.`,
+    'species-map': `A map showing the distribution of a species. It can be configured
+    to display a classic atlas map ('static') or an interactive Leaflet map ('leaflet'). Alternatively,
+    a control can be provided to switch between the two map types.
+    The map can show dots for records, grid squares, or both. The map can also show VC boundaries 
+    and (for static only) hectad grid lines.`,
+    'grid-stats-map': `A map showing grid-based statistics. It can be configured
+    to display a classic atlas map ('static') or an interactive Leaflet map ('leaflet'). Alternatively,
+    a control can be provided to switch between the two map types.
+    The map can show dots for records, grid squares, or both. The map can also show VC boundaries 
+    and (for static only) hectad grid lines.`,
+    'temporal-year-chart': `A chart showing temporal trends for a species. It can be
+    configured to show either a line chart or a bar chart. The chart can show either the number 
+    of records or the number of grid squares for each year. Alternatively, it can be configured
+    to display a control to switch between the two chart types.`,
+    'new-species-table': `A table showing newly recorded species between a given start and end date. 
+    The table can be filtered by area and taxon group, either directly or via a linked control block.`,
+    'increasing-species-table': `A table showing the top 'N' (configurable) increasing 
+    species based on a trend statistic. The table can be filtered by area and taxon group, either 
+    directly or via a linked control block.`,
+    'species-absent-since': `A table showing species not recorded since a given year. The table can 
+    be filtered by area and taxon group, either directly or via a linked control block.`,
+    'species-name-block': `A block visualisation showing the name of a species. Some default
+    styling is applied to the name, but it can be overridden with CSS. The block can show either
+    the scientific name or the vernacular name first, and can optionally show the other name in parentheses.
+    If the scientific name is shown, the authority can also be shown.`,
+    'species-remarks-block': `A block visualisation showing remarks for a species.`,
+    'species-info-block': `A block visualisation showing information for a species, including 
+    its conservation status, a summary of the number of records and number of grid squares.`,
+    'help-block': `A block visualisation showing help information.`
   };
 
   function getVisAttributeSchema(visType) {
@@ -659,6 +708,18 @@ var Tanvis = (function (exports) {
       visType,
       rules
     };
+  }
+
+  function getKnownVisTypes() {
+    return [...KNOWN_VIS_TYPES];
+  }
+
+  function getDataAttributeName(rule) {
+    return toDataAttributeName(rule.datasetName);
+  }
+
+  function getVisTypeDescription(visType) {
+    return VIS_TYPE_DESCRIPTIONS[visType] || '';
   }
 
   function parseOptions(element) {
@@ -693,9 +754,9 @@ var Tanvis = (function (exports) {
       }
     }
 
-    if (config?.type === 'control-block' && !element?.id) {
-      return ['Missing id attribute for control-block'];
-    }
+    // if (config?.type === 'control-block' && !element?.id) {
+    //   return ['Missing id attribute for control-block'];
+    // }
 
     return [];
   }
@@ -1228,6 +1289,35 @@ div[data-tanvis-controls="species-selector"] {
 .tanvis-table-header-text {
   font-size: 1.2rem;
   margin-bottom: 0.5rem;
+}
+
+.tanvis-help-block-section {
+  margin-bottom: 0.75rem;
+}
+
+.tanvis-help-block-description {
+  margin-bottom: 0.75rem;
+  color: #1f2937;
+}
+
+.tanvis-help-block-attribute {
+  padding: 0.5rem 0;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.tanvis-help-block-attribute:last-child {
+  border-bottom: none;
+}
+
+.tanvis-help-block-attribute-name {
+  font-weight: 600;
+  font-family: monospace;
+}
+
+.tanvis-help-block-attribute-allowed-values,
+.tanvis-help-block-attribute-default-value {
+  color: #4b5563;
+  font-size: 0.9rem;
 }
 
 `;
@@ -7335,6 +7425,87 @@ div[data-tanvis-controls="species-selector"] {
     speciesInfoBlockAdapter.render(element, config);
   }
 
+  // Adapter for the help-block visualisation, which documents the data
+  // attributes supported by every known Tanvis visualisation type.
+
+  function createHelpBlockAdapter() {
+    return {
+      name: 'help-block',
+      render(element, config) {
+        ensureSharedStyles();
+        clearElement(element);
+
+        getKnownVisTypes().forEach((visType) => {
+          element.appendChild(createVisTypeSection(visType));
+        });
+      }
+    };
+  }
+
+  function createVisTypeSection(visType) {
+    const { panel, body } = createControlsPanel({
+      label: visType,
+      ariaLabel: `Toggle help for ${visType}`,
+      expanded: false
+    });
+
+    panel.classList.add('tanvis-help-block-section');
+
+    const description = getVisTypeDescription(visType);
+    if (description) {
+      const descriptionElement = document.createElement('div');
+      descriptionElement.className = 'tanvis-help-block-description';
+      descriptionElement.textContent = description;
+      body.appendChild(descriptionElement);
+    }
+
+    const { rules } = getVisAttributeSchema(visType);
+    rules
+      .filter((rule) => rule.key !== 'type')
+      .forEach((rule) => {
+        body.appendChild(createRuleEntry(rule));
+      });
+
+    return panel;
+  }
+
+  function createRuleEntry(rule) {
+    const entry = document.createElement('div');
+    entry.className = 'tanvis-help-block-attribute';
+
+    const name = document.createElement('div');
+    name.className = 'tanvis-help-block-attribute-name';
+    name.textContent = getDataAttributeName(rule);
+    entry.appendChild(name);
+
+    const info = document.createElement('div');
+    info.className = 'tanvis-help-block-attribute-info';
+    info.textContent = rule.info;
+    entry.appendChild(info);
+
+    if (rule.allowedValues) {
+      const allowedValues = document.createElement('div');
+      allowedValues.className = 'tanvis-help-block-attribute-allowed-values';
+      allowedValues.textContent = `Allowed values: ${rule.allowedValues.join(', ')}`;
+      entry.appendChild(allowedValues);
+    }
+
+    if (rule.defaultValue !== undefined && rule.defaultValue !== '') {
+      const defaultValue = document.createElement('div');
+      defaultValue.className = 'tanvis-help-block-attribute-default-value';
+      defaultValue.textContent = `Default value: ${rule.defaultValue}`;
+      entry.appendChild(defaultValue);
+    }
+
+    return entry;
+  }
+
+  const helpBlockAdapter = createHelpBlockAdapter();
+
+  function renderHelpBlock(element, config) {
+    helpBlockAdapter.render(element, config);
+  }
+
   // Makes initialization idempotent so calling init() repeatedly 
   // does not keep re-registering the same renderers.
 
@@ -7357,6 +7528,7 @@ div[data-tanvis-controls="species-selector"] {
     registerRenderer('species-name-block', renderSpeciesNameBlock);
     registerRenderer('species-remarks-block', renderSpeciesRemarksBlock);
     registerRenderer('species-info-block', renderSpeciesInfoBlock);
+    registerRenderer('help-block', renderHelpBlock);
     defaultsRegistered = true;
   }
 

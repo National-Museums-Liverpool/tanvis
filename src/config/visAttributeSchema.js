@@ -9,7 +9,8 @@ const KNOWN_VIS_TYPES = [
   'temporal-year-chart',
   'species-name-block',
   'species-remarks-block',
-  'species-info-block'
+  'species-info-block',
+  'help-block',
 ];
 
 function validateDate(dateString) {
@@ -471,7 +472,12 @@ const RULES = {
     parseAndValidate: parseAndValidateString,
     defaultValue: 'black',
     info: `The colour of the dots on the map visualisations. 
-      This can be any valid CSS colour value.`
+      This can be any valid CSS colour value, or one of either 'viridis'
+      or 'cividis' - two colour-blind safe colour palettes. 
+      If one of the latter palettes is used, the colours will be determined
+      by the value of a for each dot. For species maps, that is the number
+      of records and for grid stats maps either the number of species, 
+      number of records or rarity score.`
   }),
   transformation: createRule({
     key: 'transformation',
@@ -542,7 +548,8 @@ const RULES = {
     datasetName: 'visYear',
     parseAndValidate: parseAndValidateYear,
     defaultValue: '2000',
-    info: `The year for which to draw data. This can be a specific year string of 
+    info: `The year after (and including) which taxa are not recorded. 
+      This can be a specific year string of 
       the format 'yyyy' or one of these relative year values: 'year-n', where n is
       any integer, which resolves to the current year minus n years (e.g. year-0 is 
       the current year, year-1 is the previous year, etc.).`
@@ -634,7 +641,49 @@ const VIS_TYPE_RULE_SETS = {
   'species-absent-since': ['year', 'area', 'groupId', 'language','control', 'pageSize'],
   'species-name-block': ['taxonId', 'taxonIdSource', 'primaryName', 'secondaryName', 'authority'],
   'species-remarks-block': ['taxonId', 'taxonIdSource'],
-  'species-info-block': ['taxonId', 'taxonIdSource', 'control', 'area']
+  'species-info-block': ['taxonId', 'taxonIdSource', 'control', 'area'],
+  'help-block': []
+};
+
+const VIS_TYPE_DESCRIPTIONS = {
+  'control-block': `A control block for selecting area, taxon group, language and taxon.
+    Any visualisations on the page can subscribe to it to control their data and rendering.
+    The four elements of the control block can be shown or hidden individually.`,
+  'species-identifier': `This is not a visualisation itself but a hidden element that can be 
+    used to identify a taxon and provide its taxonId to other visualisations. It provides
+    a way to specify a taxonId once and have several visualisations on the page respond to it. 
+    When included on a page, it also examines the URL for a 'taxon-id' query parameter 
+    and uses that to set the taxonId if present. Any visualisation on the page subscribed to 
+    this element will receive taxonId updates when the taxonId changes.`,
+  'species-map': `A map showing the distribution of a species. It can be configured
+    to display a classic atlas map ('static') or an interactive Leaflet map ('leaflet'). Alternatively,
+    a control can be provided to switch between the two map types.
+    The map can show dots for records, grid squares, or both. The map can also show VC boundaries 
+    and (for static only) hectad grid lines.`,
+  'grid-stats-map': `A map showing grid-based statistics. It can be configured
+    to display a classic atlas map ('static') or an interactive Leaflet map ('leaflet'). Alternatively,
+    a control can be provided to switch between the two map types.
+    The map can show dots for records, grid squares, or both. The map can also show VC boundaries 
+    and (for static only) hectad grid lines.`,
+  'temporal-year-chart': `A chart showing temporal trends for a species. It can be
+    configured to show either a line chart or a bar chart. The chart can show either the number 
+    of records or the number of grid squares for each year. Alternatively, it can be configured
+    to display a control to switch between the two chart types.`,
+  'new-species-table': `A table showing newly recorded species between a given start and end date. 
+    The table can be filtered by area and taxon group, either directly or via a linked control block.`,
+  'increasing-species-table': `A table showing the top 'N' (configurable) increasing 
+    species based on a trend statistic. The table can be filtered by area and taxon group, either 
+    directly or via a linked control block.`,
+  'species-absent-since': `A table showing species not recorded since a given year. The table can 
+    be filtered by area and taxon group, either directly or via a linked control block.`,
+  'species-name-block': `A block visualisation showing the name of a species. Some default
+    styling is applied to the name, but it can be overridden with CSS. The block can show either
+    the scientific name or the vernacular name first, and can optionally show the other name in parentheses.
+    If the scientific name is shown, the authority can also be shown.`,
+  'species-remarks-block': `A block visualisation showing remarks for a species.`,
+  'species-info-block': `A block visualisation showing information for a species, including 
+    its conservation status, a summary of the number of records and number of grid squares.`,
+  'help-block': `A block visualisation showing help information.`
 };
 
 export function getVisAttributeSchema(visType) {
@@ -653,4 +702,12 @@ export function getVisAttributeSchema(visType) {
 
 export function getKnownVisTypes() {
   return [...KNOWN_VIS_TYPES];
+}
+
+export function getDataAttributeName(rule) {
+  return toDataAttributeName(rule.datasetName);
+}
+
+export function getVisTypeDescription(visType) {
+  return VIS_TYPE_DESCRIPTIONS[visType] || '';
 }

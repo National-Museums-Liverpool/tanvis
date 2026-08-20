@@ -280,6 +280,35 @@ div[data-tanvis-controls="species-selector"] {
   margin-bottom: 0.5rem;
 }
 
+.tanvis-help-block-section {
+  margin-bottom: 0.75rem;
+}
+
+.tanvis-help-block-description {
+  margin-bottom: 0.75rem;
+  color: #1f2937;
+}
+
+.tanvis-help-block-attribute {
+  padding: 0.5rem 0;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.tanvis-help-block-attribute:last-child {
+  border-bottom: none;
+}
+
+.tanvis-help-block-attribute-name {
+  font-weight: 600;
+  font-family: monospace;
+}
+
+.tanvis-help-block-attribute-allowed-values,
+.tanvis-help-block-attribute-default-value {
+  color: #4b5563;
+  font-size: 0.9rem;
+}
+
 `;
 
 export function ensureSharedStyles() {

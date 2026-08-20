@@ -16,10 +16,6 @@ export function validateAttributes(config, element) {
     }
   }
 
-  if (config?.type === 'control-block' && !element?.id) {
-    return ['Missing id attribute for control-block'];
-  }
-
   return [];
 }
 
