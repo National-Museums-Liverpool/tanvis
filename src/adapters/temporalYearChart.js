@@ -198,10 +198,6 @@ async function loadTemporalYearChart(element, config, status) {
 
   console.log('Loading temporal year chart');
 
-  // If not taxonId is provided, we cannot load any data, 
-  // so we just return early without rendering anything.
-  if (!config.taxonId) return;
-
   const brcCharts = getBrcChartsGlobal();
 
   if (!brcCharts) {
@@ -365,6 +361,9 @@ function createTemporalYearChartOptions({ config, chartContainer, chartRecords, 
   return {
     selector: `#${chartContainer.id}`,
     data: transformTemporalYearChartData(chartRecords, temporalStatsType),
+    // BRC Charts derives taxa from data when omitted, which yields an empty
+    // array (and then errors) when there is no data yet, so it must be set explicitly.
+    taxa: [''],
     metrics: [metric],
     periodType: 'year',
     chartStyle: config.chartType,

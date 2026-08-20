@@ -6061,10 +6061,6 @@ div[data-tanvis-controls="species-selector"] {
 
     console.log('Loading temporal year chart');
 
-    // If not taxonId is provided, we cannot load any data, 
-    // so we just return early without rendering anything.
-    if (!config.taxonId) return;
-
     const brcCharts = getBrcChartsGlobal();
 
     if (!brcCharts) {
@@ -6228,6 +6224,9 @@ div[data-tanvis-controls="species-selector"] {
     return {
       selector: `#${chartContainer.id}`,
       data: transformTemporalYearChartData(chartRecords, temporalStatsType),
+      // BRC Charts derives taxa from data when omitted, which yields an empty
+      // array (and then errors) when there is no data yet, so it must be set explicitly.
+      taxa: [''],
       metrics: [metric],
       periodType: 'year',
       chartStyle: config.chartType,
@@ -6649,7 +6648,7 @@ div[data-tanvis-controls="species-selector"] {
     // Keep the placeholder text in the DOM (visibility hidden) so the block retains its layout space.
     nodes.placeholder.hidden = false;
     //nodes.placeholder.style.visibility = 'hidden';
-    nodes.placeholder.style.opacity = '0.5';
+    nodes.placeholder.style.opacity = '0.3';
     nodes.primary.hidden = true;
     nodes.secondaryWrapper.hidden = true;
   }

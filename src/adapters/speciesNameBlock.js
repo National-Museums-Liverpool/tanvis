@@ -236,7 +236,7 @@ function renderPlaceholder(content) {
   // Keep the placeholder text in the DOM (visibility hidden) so the block retains its layout space.
   nodes.placeholder.hidden = false;
   //nodes.placeholder.style.visibility = 'hidden';
-  nodes.placeholder.style.opacity = '0.5';
+  nodes.placeholder.style.opacity = '0.3';
   nodes.primary.hidden = true;
   nodes.secondaryWrapper.hidden = true;
 }
