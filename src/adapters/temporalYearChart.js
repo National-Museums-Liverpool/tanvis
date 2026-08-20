@@ -25,6 +25,11 @@ export function createTemporalYearChartAdapter() {
       clearControlSubscriptions(element);
       const renderConfig = { ...config };
 
+      // Remember the currently selected area across taxon changes and
+      // stats-type toggles, since renderConfig itself is captured once
+      // at render time and would otherwise go stale.
+      element.__tanvisTemporalYearActiveArea = renderConfig.area;
+
       if (renderConfig.control) {
         const controlBusCleanup = subscribeToControl(renderConfig.control, (event) => {
           if (!event || event.type !== 'area-change') {
@@ -34,7 +39,7 @@ export function createTemporalYearChartAdapter() {
           const nextArea = event.area === undefined || event.area === null
             ? renderConfig.area
             : event.area;
-          const currentArea = normalizeAreaContractValue(element.dataset.visArea ?? renderConfig.area);
+          const currentArea = normalizeAreaContractValue(element.__tanvisTemporalYearActiveArea ?? renderConfig.area);
 
           if (nextArea === currentArea) {
             return;
@@ -62,6 +67,7 @@ export function createTemporalYearChartAdapter() {
 
           updateTemporalYearChartForSpecies(element, {
             ...renderConfig,
+            area: element.__tanvisTemporalYearActiveArea ?? renderConfig.area,
             taxonId: speciesId
           });
         });
@@ -144,6 +150,8 @@ async function updateTemporalYearChartForSpecies(element, config) {
   const brcCharts = getBrcChartsGlobal();
   const chartInstance = element.__tanvisTemporalYearChartInstance;
 
+  element.__tanvisTemporalYearActiveArea = config.area;
+
   if (!chartInstance || typeof chartInstance.setChartOpts !== 'function') {
     return createTemporalYearChartAdapter().render(element, config);
   }
@@ -173,6 +181,7 @@ async function updateTemporalYearChartForSpecies(element, config) {
   element.dataset.visTaxonid = config.taxonId || '';
   setTemporalStatsTypeState(element, temporalStatsType);
   element.__tanvisTemporalYearLoadId = (element.__tanvisTemporalYearLoadId || 0) + 1;
+  element.__tanvisTemporalYearLatest = { config, chartRecords };
 
   const transformedData = transformTemporalYearChartData(chartRecords);
 
@@ -250,6 +259,7 @@ async function loadTemporalYearChart(element, config, status) {
 
   const chartInstance = brcCharts.temporal(chartOptions);
   element.__tanvisTemporalYearChartInstance = chartInstance;
+  element.__tanvisTemporalYearLatest = { config, chartRecords };
 
   if (config.temporalStatsType === 'switch') {
     element.appendChild(createTemporalStatsTypeSwitchControl({
@@ -327,14 +337,18 @@ function createTemporalStatsTypeSwitchControl({ chartElement, selectedValue = 'r
         return;
       }
 
+      // Pull the latest config/data instead of the values captured when the
+      // control was created, since the selected area or taxon may have
+      // changed since then.
+      const latest = chartElement.__tanvisTemporalYearLatest || { config, chartRecords };
       const temporalStatsType = resolveTemporalStatsType(value);
-      const metric = resolveTemporalMetric(temporalStatsType, config);
+      const metric = resolveTemporalMetric(temporalStatsType, latest.config);
 
       console.log('Switch control', metric);
 
       chartInstance.setChartOpts({
         metrics: [metric],
-        data: transformTemporalYearChartData(chartRecords, temporalStatsType)
+        data: transformTemporalYearChartData(latest.chartRecords, temporalStatsType)
       });
 
       setTemporalStatsTypeState(chartElement, temporalStatsType);
