@@ -22,12 +22,36 @@ export function createHelpBlockAdapter() {
 
 function createVisTypeSection(visType) {
   const { panel, body } = createControlsPanel({
+    symbol: 'ℹ',
     label: visType,
     ariaLabel: `Toggle help for ${visType}`,
     expanded: false
   });
 
   panel.classList.add('tanvis-help-block-section');
+
+  const { rules } = getVisAttributeSchema(visType);
+
+  let exampleHtml = `<div class="tanvis" data-vis-type="${visType}"`;
+  rules
+    .filter((rule) => rule.key !== 'type')
+    .forEach((rule) => {
+        exampleHtml = `${exampleHtml} ${getDataAttributeName(rule)}="${rule.defaultValue || ''}"`;
+      });
+  exampleHtml = `${exampleHtml}></div>`;
+
+  const exampleButton = document.createElement('button');
+  exampleButton.type = 'button';
+  exampleButton.className = 'tanvis-help-block-example-button';
+  exampleButton.textContent = 'Show example';
+    exampleButton.addEventListener('click', () => {
+        // Raise a custom even with the example HTML as the detail
+        console.log('Dispatching tanvis-example event');
+        const event = new CustomEvent('tanvis-example', { detail: exampleHtml });
+        document.dispatchEvent(event);
+    });
+  body.appendChild(exampleButton);
+
 
   const description = getVisTypeDescription(visType);
   if (description) {
@@ -37,7 +61,6 @@ function createVisTypeSection(visType) {
     body.appendChild(descriptionElement);
   }
 
-  const { rules } = getVisAttributeSchema(visType);
   rules
     .filter((rule) => rule.key !== 'type')
     .forEach((rule) => {

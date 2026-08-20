@@ -25,7 +25,7 @@ export function createControlsPanel(options = {}) {
   const toggleIcon = document.createElement('span');
   toggleIcon.className = 'tanvis-controls-toggle-icon';
   toggleIcon.setAttribute('aria-hidden', 'true');
-  toggleIcon.textContent = '⚙';
+  toggleIcon.textContent = options.symbol ? options.symbol : '⚙';
 
   const toggleLabel = document.createElement('span');
   toggleLabel.className = 'tanvis-controls-toggle-label';

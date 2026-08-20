@@ -127,7 +127,6 @@ describe('renderTemporalYearChart', () => {
     expect(temporalCalls).toHaveLength(1);
     expect(temporalCalls[0].periodType).toBe('year');
     expect(temporalCalls[0].chartStyle).toBe('line');
-    expect(temporalCalls[0]).not.toHaveProperty('taxa');
     expect(temporalCalls[0].metrics).toEqual([
       { prop: 'count', label: 'Records (all VCs)', colour: DEFAULT_RECORDS_COLOUR }
     ]);

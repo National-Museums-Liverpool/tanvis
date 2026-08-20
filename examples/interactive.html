@@ -31,6 +31,8 @@
     /* Container for the panels */
     .container {
       display: flex;
+    }
+    .container, .container2 {
       width: 100%;
       border: 1px solid #cbd5e1;
       border-radius: 8px;
@@ -133,11 +135,17 @@
     </div>
   </div>
 
-  <div class="container" style="margin-top: 10px; padding: 10px;">
+  <div class="container2" style="margin-top: 10px; padding: 10px;">
+    <h3 style="margin-bottom: 10px;">Help for data-vis-type values</h3>
     <div  
       class="tanvis"
       data-vis-type="help-block"
     ></div>
+  </div>
+
+  <div class="container2" style="margin-top: 10px; padding: 10px;">
+    <h3 style="margin-bottom: 10px;">Example taxon and group IDs</h3>
+    
   </div>
   
   <script>
@@ -204,6 +212,30 @@
         window.Tanvis.init();
       }
     }
+
+    // Listen for tanvis-example events and log them to the console
+    document.addEventListener('tanvis-example', function(event) {
+      const divString = event.detail;
+
+      // 1. Clean the string and extract the attributes part
+      const cleanString = divString.trim();
+      const attrSection = cleanString.replace(/^<div\s*/, '').replace(/\s*\/?>$/, '');
+
+      // 2. Match individual attributes using Regex
+      // This matches word="..." or word='...' or word=value
+      const attrRegex = /[a-zA-Z0-9-]+=(?:"[^"]*"|'[^']*'|[^\s>]+)/g;
+      const attributes = attrSection.match(attrRegex) || [];
+
+      // 3. Insert at the cursor position in the textarea
+      const textarea = document.getElementById('source');
+      const cursorPos = textarea.selectionStart;
+      const beforeCursor = textarea.value.substring(0, cursorPos);
+      const afterCursor = textarea.value.substring(cursorPos);
+      const newContent = `${beforeCursor}<div\n  ${attributes.join('\n  ')}\n></div>${afterCursor}`;
+      textarea.value = newContent;
+      // Move the cursor to the end of the inserted content
+      textarea.selectionStart = textarea.selectionEnd = cursorPos + newContent.length;  
+    });
   </script>
 
 </body>
