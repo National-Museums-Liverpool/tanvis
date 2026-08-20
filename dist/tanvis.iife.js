@@ -49,8 +49,14 @@ var Tanvis = (function (exports) {
     return day > 0 && day <= monthLengths[month];
   }
 
+  // Converts a dataset property name (e.g. 'visType') to the HTML data
+  // attribute name authors actually write in markup (e.g. 'data-vis-type').
+  function toDataAttributeName(datasetName) {
+    return `data-${datasetName.replace(/([A-Z])/g, '-$1').toLowerCase()}`;
+  }
+
   function infoString(value, rule) {
-    let ret =  `Invalid value for data attribute ${rule.datasetName}: ${value}. ${rule.info}`;
+    let ret =  `Invalid value for data attribute ${toDataAttributeName(rule.datasetName)}: ${value}. ${rule.info}`;
     if (rule.defaultValue) {
       ret = `${ret} Default value is ${rule.defaultValue}.`;
     }
@@ -62,7 +68,7 @@ var Tanvis = (function (exports) {
       return {  
         value: undefined,
         error: true,
-        message: `Missing required data attribute ${rule.datasetName}. ${rule.info}`
+        message: `Missing required data attribute ${toDataAttributeName(rule.datasetName)}. ${rule.info}`
       };
     } else {
       return null;
