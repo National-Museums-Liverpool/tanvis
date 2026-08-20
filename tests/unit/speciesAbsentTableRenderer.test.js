@@ -1,8 +1,8 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
-import { renderSpeciesAbsentSince } from '../../src/renderers/speciesAbsentSince.js';
+import { renderSpeciesAbsentTable } from '../../src/renderers/speciesAbsentTable.js';
 import { publishControlEvent } from '../../src/controls/controlBus.js';
 
-describe('renderSpeciesAbsentSince', () => {
+describe('renderSpeciesAbsentTable', () => {
   afterEach(() => {
     vi.restoreAllMocks();
     delete window.Tabulator;
@@ -40,8 +40,8 @@ describe('renderSpeciesAbsentSince', () => {
     });
 
     const element = document.createElement('div');
-    renderSpeciesAbsentSince(element, {
-      type: 'species-absent-since',
+    renderSpeciesAbsentTable(element, {
+      type: 'species-absent-table',
       year: 2024
     });
 
@@ -74,8 +74,8 @@ describe('renderSpeciesAbsentSince', () => {
     });
 
     const element = document.createElement('div');
-    renderSpeciesAbsentSince(element, {
-      type: 'species-absent-since',
+    renderSpeciesAbsentTable(element, {
+      type: 'species-absent-table',
       year: 2024,
       area: 'vc59'
     });
@@ -122,8 +122,8 @@ describe('renderSpeciesAbsentSince', () => {
       selectedSpeciesIds.push(event.detail?.speciesId);
     });
 
-    renderSpeciesAbsentSince(element, {
-      type: 'species-absent-since',
+    renderSpeciesAbsentTable(element, {
+      type: 'species-absent-table',
       year: 2024
     });
 
@@ -146,8 +146,8 @@ describe('renderSpeciesAbsentSince', () => {
     });
 
     const element = document.createElement('div');
-    renderSpeciesAbsentSince(element, {
-      type: 'species-absent-since',
+    renderSpeciesAbsentTable(element, {
+      type: 'species-absent-table',
       year: 2024
     });
 
@@ -199,8 +199,8 @@ describe('renderSpeciesAbsentSince', () => {
     document.body.appendChild(controlElement);
 
     const element = document.createElement('div');
-    renderSpeciesAbsentSince(element, {
-      type: 'species-absent-since',
+    renderSpeciesAbsentTable(element, {
+      type: 'species-absent-table',
       year: 2024,
       control: 'vc-control-species-absent-label'
     });
@@ -239,15 +239,18 @@ describe('renderSpeciesAbsentSince', () => {
     });
 
     const element = document.createElement('div');
-    renderSpeciesAbsentSince(element, {
-      type: 'species-absent-since',
+    renderSpeciesAbsentTable(element, {
+      type: 'species-absent-table',
       year: 2024,
       groupId: 'diptera'
     });
 
     await new Promise((resolve) => setTimeout(resolve, 0));
 
-    expect(String(fetchMock.mock.calls[0][0])).toContain('taxon_group__external_key%5Beq%5D=diptera');
+    // A taxon-groups lookup (for the summary's friendly name) may be fetched
+    // ahead of the data request, so search all calls rather than assuming index 0.
+    const requestedUrls = fetchMock.mock.calls.map((call) => String(call[0]));
+    expect(requestedUrls.some((url) => url.includes('taxon_group__external_key%5Beq%5D=diptera'))).toBe(true);
   });
 
   it('includes control-block taxon-group and refetches when the group changes', async () => {
@@ -271,8 +274,8 @@ describe('renderSpeciesAbsentSince', () => {
     document.body.appendChild(controlElement);
 
     const element = document.createElement('div');
-    renderSpeciesAbsentSince(element, {
-      type: 'species-absent-since',
+    renderSpeciesAbsentTable(element, {
+      type: 'species-absent-table',
       year: 2024,
       control: 'vc-control-species-absent'
     });
@@ -313,8 +316,8 @@ describe('renderSpeciesAbsentSince', () => {
     document.body.appendChild(controlElement);
 
     const element = document.createElement('div');
-    renderSpeciesAbsentSince(element, {
-      type: 'species-absent-since',
+    renderSpeciesAbsentTable(element, {
+      type: 'species-absent-table',
       year: 2024,
       control: 'vc-control-species-absent-all-groups',
       groupId: 'diptera'
@@ -347,8 +350,8 @@ describe('renderSpeciesAbsentSince', () => {
     document.body.appendChild(controlElement);
 
     const element = document.createElement('div');
-    renderSpeciesAbsentSince(element, {
-      type: 'species-absent-since',
+    renderSpeciesAbsentTable(element, {
+      type: 'species-absent-table',
       year: 2024,
       control: 'vc-control-species-absent-language',
       language: 'scientific'
@@ -380,8 +383,8 @@ describe('renderSpeciesAbsentSince', () => {
     document.body.appendChild(controlElement);
 
     const element = document.createElement('div');
-    renderSpeciesAbsentSince(element, {
-      type: 'species-absent-since',
+    renderSpeciesAbsentTable(element, {
+      type: 'species-absent-table',
       year: 2024,
       control: 'vc-control-species-absent-area'
     });

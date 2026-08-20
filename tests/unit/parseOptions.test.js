@@ -189,13 +189,13 @@ describe('parseOptions', () => {
     });
   });
 
-  it('reads data-vis-year for species-absent-since', () => {
+  it('reads data-vis-year for species-absent-table', () => {
     const element = document.createElement('div');
-    element.dataset.visType = 'species-absent-since';
+    element.dataset.visType = 'species-absent-table';
     element.dataset.visYear = '2024';
 
     expect(parseOptions(element)).toMatchObject({
-      type: 'species-absent-since',
+      type: 'species-absent-table',
       year: 2024
     });
   });

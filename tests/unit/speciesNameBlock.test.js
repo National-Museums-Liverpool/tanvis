@@ -17,7 +17,7 @@ describe('species name block', () => {
       authority: false
     });
 
-    expect(element.textContent).toBe('Species name');
+    expect(element.textContent).toBe('No taxon selected');
   });
 
   it('does not show loading text while fetching taxon details', () => {

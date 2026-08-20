@@ -5,7 +5,7 @@ import { logApiRequest } from '../utils/apiRequest.js';
 import { resolveApiBase } from '../config/apiBase.js';
 
 const TAXA_RESOURCE = 'taxa';
-const DEFAULT_PLACEHOLDER_TEXT = 'Species name';
+const DEFAULT_PLACEHOLDER_TEXT = 'No taxon selected';
 
 export function createSpeciesNameBlockAdapter() {
   return {
@@ -235,7 +235,8 @@ function renderPlaceholder(content) {
   nodes.placeholder.textContent = DEFAULT_PLACEHOLDER_TEXT;
   // Keep the placeholder text in the DOM (visibility hidden) so the block retains its layout space.
   nodes.placeholder.hidden = false;
-  nodes.placeholder.style.visibility = 'hidden';
+  //nodes.placeholder.style.visibility = 'hidden';
+  nodes.placeholder.style.opacity = '0.5';
   nodes.primary.hidden = true;
   nodes.secondaryWrapper.hidden = true;
 }
@@ -281,7 +282,8 @@ function resetNameContent(nodes) {
   nodes.secondaryScientific.textContent = '';
   nodes.secondaryAuthority.textContent = '';
   nodes.placeholder.hidden = true;
-  nodes.placeholder.style.visibility = '';
+  //nodes.placeholder.style.visibility = '';
+  nodes.placeholder.style.opacity = '';
   nodes.secondaryOpen.textContent = '';
   nodes.secondaryClose.textContent = '';
 }

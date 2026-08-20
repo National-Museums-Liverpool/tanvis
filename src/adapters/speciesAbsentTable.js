@@ -18,9 +18,9 @@ const columns = [
   { title: 'TVK', field: 'speciesId', headerSort: false }
 ];
 
-export function createSpeciesAbsentSinceAdapter() {
+export function createSpeciesAbsentTableAdapter() {
   return {
-    name: 'species-absent-since',
+    name: 'species-absent-table',
     render(element, config) {
       clearControlSubscription(element);
       const status = createVisStatusReporter(element);
@@ -63,7 +63,7 @@ export function createSpeciesAbsentSinceAdapter() {
 
             element.dataset.visArea = nextArea === '' ? '' : String(nextArea);
             element.dataset.visTaxonGroup = nextTaxonGroupExternalKey;
-            createSpeciesAbsentSinceAdapter().render(element, {
+            createSpeciesAbsentTableAdapter().render(element, {
               ...renderConfig,
               area: nextArea
             });
@@ -113,7 +113,7 @@ export function createSpeciesAbsentSinceAdapter() {
         pageSize,
         requestPage: async ({ pageNumber, pageSize: requestedPageSize }) => {
           const labelModeForRequest = getEffectiveLabelModeForElement(element, renderConfig);
-          const pageResult = await buildSpeciesAbsentSinceRecordsPage({
+          const pageResult = await buildSpeciesAbsentTableRecordsPage({
             apiBase,
             year,
             higherGeographyIdentifier,
@@ -284,7 +284,7 @@ function createTableContainer({ Tabulator, pageSize, requestPage, element, loadI
   return { container, table };
 }
 
-async function buildSpeciesAbsentSinceRecordsPage({ apiBase, year, higherGeographyIdentifier, taxonGroupExternalKey, pageNumber, pageSize, labelMode = 'scientific' }) {
+async function buildSpeciesAbsentTableRecordsPage({ apiBase, year, higherGeographyIdentifier, taxonGroupExternalKey, pageNumber, pageSize, labelMode = 'scientific' }) {
   const cutoffDate = `${year}-12-31`;
   const offset = (pageNumber - 1) * pageSize;
   const payload = await fetchTaxonStatsAbsentSince({

@@ -137,7 +137,10 @@ describe('renderIncreasingSpeciesTable', () => {
 
     await new Promise((resolve) => setTimeout(resolve, 0));
 
-    expect(String(fetchMock.mock.calls[0][0])).toContain('taxon_group__external_key%5Beq%5D=diptera');
+    // A taxon-groups lookup (for the summary's friendly name) may be fetched
+    // ahead of the data request, so search all calls rather than assuming index 0.
+    const requestedUrls = fetchMock.mock.calls.map((call) => String(call[0]));
+    expect(requestedUrls.some((url) => url.includes('taxon_group__external_key%5Beq%5D=diptera'))).toBe(true);
   });
 
   it('refetches with a taxon-group filter when the subscribed control changes group', async () => {

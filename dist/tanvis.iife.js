@@ -15,7 +15,7 @@ var Tanvis = (function (exports) {
     'species-map',
     'new-species-table',
     'increasing-species-table',
-    'species-absent-since',
+    'species-absent-table',
     'grid-stats-map',
     'temporal-year-chart',
     'species-name-block',
@@ -648,7 +648,7 @@ var Tanvis = (function (exports) {
     'temporal-year-chart': ['taxonId', 'temporalStatsType', 'taxonIdSource', 'chartType', 'recordsColour', 'squaresColour','startYear', 'endYear', 'area', 'control', 'expand', 'width', 'height'],
     'new-species-table': ['startDate', 'endDate', 'area', 'groupId', 'language','control', 'pageSize'],
     'increasing-species-table': ['topN', 'area', 'groupId', 'language','control', 'pageSize'],
-    'species-absent-since': ['year', 'area', 'groupId', 'language','control', 'pageSize'],
+    'species-absent-table': ['year', 'area', 'groupId', 'language','control', 'pageSize'],
     'species-name-block': ['taxonId', 'taxonIdSource', 'primaryName', 'secondaryName', 'authority'],
     'species-remarks-block': ['taxonId', 'taxonIdSource'],
     'species-info-block': ['taxonId', 'taxonIdSource', 'control', 'area'],
@@ -684,7 +684,7 @@ var Tanvis = (function (exports) {
     'increasing-species-table': `A table showing the top 'N' (configurable) increasing 
     species based on a trend statistic. The table can be filtered by area and taxon group, either 
     directly or via a linked control block.`,
-    'species-absent-since': `A table showing species not recorded since a given year. The table can 
+    'species-absent-table': `A table showing species not recorded since a given year. The table can 
     be filtered by area and taxon group, either directly or via a linked control block.`,
     'species-name-block': `A block visualisation showing the name of a species. Some default
     styling is applied to the name, but it can be overridden with CSS. The block can show either
@@ -753,10 +753,6 @@ var Tanvis = (function (exports) {
         return [`Missing required data attribute ${rule.datasetName}`];
       }
     }
-
-    // if (config?.type === 'control-block' && !element?.id) {
-    //   return ['Missing id attribute for control-block'];
-    // }
 
     return [];
   }
@@ -4017,9 +4013,9 @@ div[data-tanvis-controls="species-selector"] {
     { title: 'TVK', field: 'speciesId', headerSort: false }
   ];
 
-  function createSpeciesAbsentSinceAdapter() {
+  function createSpeciesAbsentTableAdapter() {
     return {
-      name: 'species-absent-since',
+      name: 'species-absent-table',
       render(element, config) {
         clearControlSubscription$3(element);
         const status = createVisStatusReporter(element);
@@ -4062,7 +4058,7 @@ div[data-tanvis-controls="species-selector"] {
 
               element.dataset.visArea = nextArea === '' ? '' : String(nextArea);
               element.dataset.visTaxonGroup = nextTaxonGroupExternalKey;
-              createSpeciesAbsentSinceAdapter().render(element, {
+              createSpeciesAbsentTableAdapter().render(element, {
                 ...renderConfig,
                 area: nextArea
               });
@@ -4112,7 +4108,7 @@ div[data-tanvis-controls="species-selector"] {
           pageSize,
           requestPage: async ({ pageNumber, pageSize: requestedPageSize }) => {
             const labelModeForRequest = getEffectiveLabelModeForElement(element, renderConfig);
-            const pageResult = await buildSpeciesAbsentSinceRecordsPage({
+            const pageResult = await buildSpeciesAbsentTableRecordsPage({
               apiBase,
               year,
               higherGeographyIdentifier,
@@ -4283,7 +4279,7 @@ div[data-tanvis-controls="species-selector"] {
     return { container, table };
   }
 
-  async function buildSpeciesAbsentSinceRecordsPage({ apiBase, year, higherGeographyIdentifier, taxonGroupExternalKey, pageNumber, pageSize, labelMode = 'scientific' }) {
+  async function buildSpeciesAbsentTableRecordsPage({ apiBase, year, higherGeographyIdentifier, taxonGroupExternalKey, pageNumber, pageSize, labelMode = 'scientific' }) {
     const cutoffDate = `${year}-12-31`;
     const offset = (pageNumber - 1) * pageSize;
     const payload = await fetchTaxonStatsAbsentSince({
@@ -4565,10 +4561,10 @@ div[data-tanvis-controls="species-selector"] {
     return window.Tabulator || null;
   }
 
-  const speciesAbsentSinceAdapter = createSpeciesAbsentSinceAdapter();
+  const speciesAbsentTableAdapter = createSpeciesAbsentTableAdapter();
 
-  function renderSpeciesAbsentSince(element, config) {
-    speciesAbsentSinceAdapter.render(element, config);
+  function renderSpeciesAbsentTable(element, config) {
+    speciesAbsentTableAdapter.render(element, config);
   }
 
   function normalizeMapTypeMode(value) {
@@ -4801,7 +4797,6 @@ div[data-tanvis-controls="species-selector"] {
   const OCCURRENCES_RESOURCE = 'occurrences';
   const OCCURRENCES_MAP_TYPE_KEY = 'occurrences';
   const DEFAULT_PAGE_LIMIT$3 = 10000;
-  let mapData$1 = [];
 
   function shouldLogSpeciesMapDebug() {
     if (typeof window === 'undefined') {
@@ -4955,7 +4950,7 @@ div[data-tanvis-controls="species-selector"] {
 
         try {
           if (!map || !shouldReuseExistingMap) {
-            map = renderMapBackend$1(mapContainer, renderConfig, element);
+            map = renderMapBackend$1(mapContainer, renderConfig, element, element.__tanvisSpeciesMapOccurrenceRows || []);
             element.__tanvisSpeciesMapInstance = map;
           }
 
@@ -4998,6 +4993,7 @@ div[data-tanvis-controls="species-selector"] {
             }
 
             const occurrenceRows = Array.isArray(rows) ? rows : [];
+            element.__tanvisSpeciesMapOccurrenceRows = occurrenceRows;
 
             logSpeciesMapDebug('fetch:resolved', {
               loadId,
@@ -5046,7 +5042,7 @@ div[data-tanvis-controls="species-selector"] {
     return typeof globalThis.d3 !== 'undefined' || typeof globalThis.window?.d3 !== 'undefined';
   }
 
-  function renderMapBackend$1(element, config, hostElement) {
+  function renderMapBackend$1(element, config, hostElement, previousRows = []) {
     const mapTypeMode = normalizeMapTypeMode(config.mapType);
     const shouldShowMapTypeSwitch = mapTypeMode === 'switch'
       || hostElement?.dataset?.tanvisSpeciesMapControlMode === 'switch'
@@ -5054,8 +5050,13 @@ div[data-tanvis-controls="species-selector"] {
     const activeMapType = resolveActiveMapType(element, mapTypeMode, 'tanvisSpeciesMapActiveMapType');
     const pointOpacity = activeMapType === 'leaflet' ? 0.7 : 1;
     const dotStyleOptions = getDotStyleOptions$1(config, hostElement);
+    // Rows for this specific map instance - kept off the module scope so
+    // concurrent maps (and tests) never clobber each other's occurrence data.
+    // Seeded with the host element's last-known rows so the map keeps showing
+    // previous data while a new fetch (e.g. after an area/taxon change) is pending.
+    const occurrenceState = { rows: previousRows };
     const mapTypesSel = {
-      [OCCURRENCES_MAP_TYPE_KEY]: () => createOccurrenceData(pointOpacity, dotStyleOptions),
+      [OCCURRENCES_MAP_TYPE_KEY]: () => createOccurrenceData(occurrenceState.rows, pointOpacity, dotStyleOptions),
     };
 
     let map;
@@ -5075,6 +5076,10 @@ div[data-tanvis-controls="species-selector"] {
         mapTypesKey: OCCURRENCES_MAP_TYPE_KEY,
         subscribeToAreaControl: false
       });
+    }
+
+    if (map) {
+      map.__tanvisOccurrenceState = occurrenceState;
     }
 
     if (shouldShowMapTypeSwitch) {
@@ -5202,21 +5207,26 @@ div[data-tanvis-controls="species-selector"] {
   }
 
   function applyOccurrenceDataToMap(map, occurrenceRows = [], context = {}) {
-    mapData$1 = Array.isArray(occurrenceRows) ? occurrenceRows : [];
+    const rows = Array.isArray(occurrenceRows) ? occurrenceRows : [];
+
+    if (map) {
+      map.__tanvisOccurrenceState = map.__tanvisOccurrenceState || { rows: [] };
+      map.__tanvisOccurrenceState.rows = rows;
+    }
 
     logSpeciesMapDebug('map:apply-data', {
       ...context,
-      rowCount: mapData$1.length
+      rowCount: rows.length
     });
 
     if (!map || typeof map.setMapType !== 'function' || typeof map.redrawMap !== 'function') {
-      logSpeciesMapDebug('map:skipped', { ...context, rowCount: mapData$1.length });
+      logSpeciesMapDebug('map:skipped', { ...context, rowCount: rows.length });
       return;
     }
 
     logSpeciesMapDebug('map:redraw', {
       ...context,
-      rowCount: mapData$1.length,
+      rowCount: rows.length,
       mapInstanceId: map?.__tanvisMapInstanceId,
       mapArea: map?.__tanvisMapArea,
       elementId: map?.__tanvisMapElementId
@@ -5339,7 +5349,7 @@ div[data-tanvis-controls="species-selector"] {
     return [];
   }
 
-  function createOccurrenceData(opacity = 1, options = {}) {
+  function createOccurrenceData(rows = [], opacity = 1, options = {}) {
     return new Promise(function (resolve) {
       const { dotColour = '', transformation = '', shape = 'circle' } = options || {};
 
@@ -5347,13 +5357,13 @@ div[data-tanvis-controls="species-selector"] {
         throw new Error(D3_DEPENDENCY_MESSAGE);
       }
 
-      // mapData contains occurrence data which obviously can include many
+      // rows contains occurrence data which obviously can include many
       // records for a single grid reference. So we need to convert this to
       // have one record per grid reference, with the number of occurrences 
       // for each grid reference. This is done by grouping the data by grid 
       // reference and counting the occurrences.
       let recs = [];
-      mapData$1.forEach(r => {
+      (Array.isArray(rows) ? rows : []).forEach(r => {
         // Filter out records with no grid reference
         if (!r.grid_ref_2km) {
           return;
@@ -6408,7 +6418,7 @@ div[data-tanvis-controls="species-selector"] {
   }
 
   const TAXA_RESOURCE$1 = 'taxa';
-  const DEFAULT_PLACEHOLDER_TEXT$1 = 'Species name';
+  const DEFAULT_PLACEHOLDER_TEXT$1 = 'No taxon selected';
 
   function createSpeciesNameBlockAdapter() {
     return {
@@ -6638,7 +6648,8 @@ div[data-tanvis-controls="species-selector"] {
     nodes.placeholder.textContent = DEFAULT_PLACEHOLDER_TEXT$1;
     // Keep the placeholder text in the DOM (visibility hidden) so the block retains its layout space.
     nodes.placeholder.hidden = false;
-    nodes.placeholder.style.visibility = 'hidden';
+    //nodes.placeholder.style.visibility = 'hidden';
+    nodes.placeholder.style.opacity = '0.5';
     nodes.primary.hidden = true;
     nodes.secondaryWrapper.hidden = true;
   }
@@ -6684,7 +6695,8 @@ div[data-tanvis-controls="species-selector"] {
     nodes.secondaryScientific.textContent = '';
     nodes.secondaryAuthority.textContent = '';
     nodes.placeholder.hidden = true;
-    nodes.placeholder.style.visibility = '';
+    //nodes.placeholder.style.visibility = '';
+    nodes.placeholder.style.opacity = '';
     nodes.secondaryOpen.textContent = '';
     nodes.secondaryClose.textContent = '';
   }
@@ -7521,7 +7533,7 @@ div[data-tanvis-controls="species-selector"] {
     registerRenderer('species-identifier', renderSpeciesIdentifier);
     registerRenderer('new-species-table', renderNewSpeciesTable);
     registerRenderer('increasing-species-table', renderIncreasingSpeciesTable);
-    registerRenderer('species-absent-since', renderSpeciesAbsentSince);
+    registerRenderer('species-absent-table', renderSpeciesAbsentTable);
     registerRenderer('species-map', renderSpeciesMap);
     registerRenderer('grid-stats-map', renderGridStatsMap);
     registerRenderer('temporal-year-chart', renderTemporalYearChart);

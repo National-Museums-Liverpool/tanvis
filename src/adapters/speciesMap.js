@@ -19,7 +19,6 @@ import { resolveApiBase } from '../config/apiBase.js';
 const OCCURRENCES_RESOURCE = 'occurrences';
 const OCCURRENCES_MAP_TYPE_KEY = 'occurrences';
 const DEFAULT_PAGE_LIMIT = 10000;
-let mapData = [];
 
 function shouldLogSpeciesMapDebug() {
   if (typeof window === 'undefined') {
@@ -173,7 +172,7 @@ export function createSpeciesMapAdapter() {
 
       try {
         if (!map || !shouldReuseExistingMap) {
-          map = renderMapBackend(mapContainer, renderConfig, element);
+          map = renderMapBackend(mapContainer, renderConfig, element, element.__tanvisSpeciesMapOccurrenceRows || []);
           element.__tanvisSpeciesMapInstance = map;
         }
 
@@ -216,6 +215,7 @@ export function createSpeciesMapAdapter() {
           }
 
           const occurrenceRows = Array.isArray(rows) ? rows : [];
+          element.__tanvisSpeciesMapOccurrenceRows = occurrenceRows;
 
           logSpeciesMapDebug('fetch:resolved', {
             loadId,
@@ -264,7 +264,7 @@ function hasD3Dependency() {
   return typeof globalThis.d3 !== 'undefined' || typeof globalThis.window?.d3 !== 'undefined';
 }
 
-function renderMapBackend(element, config, hostElement) {
+function renderMapBackend(element, config, hostElement, previousRows = []) {
   const mapTypeMode = normalizeMapTypeMode(config.mapType);
   const shouldShowMapTypeSwitch = mapTypeMode === 'switch'
     || hostElement?.dataset?.tanvisSpeciesMapControlMode === 'switch'
@@ -272,8 +272,13 @@ function renderMapBackend(element, config, hostElement) {
   const activeMapType = resolveActiveMapType(element, mapTypeMode, 'tanvisSpeciesMapActiveMapType');
   const pointOpacity = activeMapType === 'leaflet' ? 0.7 : 1;
   const dotStyleOptions = getDotStyleOptions(config, hostElement);
+  // Rows for this specific map instance - kept off the module scope so
+  // concurrent maps (and tests) never clobber each other's occurrence data.
+  // Seeded with the host element's last-known rows so the map keeps showing
+  // previous data while a new fetch (e.g. after an area/taxon change) is pending.
+  const occurrenceState = { rows: previousRows };
   const mapTypesSel = {
-    [OCCURRENCES_MAP_TYPE_KEY]: () => createOccurrenceData(pointOpacity, dotStyleOptions),
+    [OCCURRENCES_MAP_TYPE_KEY]: () => createOccurrenceData(occurrenceState.rows, pointOpacity, dotStyleOptions),
   };
 
   let map;
@@ -293,6 +298,10 @@ function renderMapBackend(element, config, hostElement) {
       mapTypesKey: OCCURRENCES_MAP_TYPE_KEY,
       subscribeToAreaControl: false
     });
+  }
+
+  if (map) {
+    map.__tanvisOccurrenceState = occurrenceState;
   }
 
   if (shouldShowMapTypeSwitch) {
@@ -420,21 +429,26 @@ function getDotStyleOptions(config = {}, hostElement) {
 }
 
 export function applyOccurrenceDataToMap(map, occurrenceRows = [], context = {}) {
-  mapData = Array.isArray(occurrenceRows) ? occurrenceRows : [];
+  const rows = Array.isArray(occurrenceRows) ? occurrenceRows : [];
+
+  if (map) {
+    map.__tanvisOccurrenceState = map.__tanvisOccurrenceState || { rows: [] };
+    map.__tanvisOccurrenceState.rows = rows;
+  }
 
   logSpeciesMapDebug('map:apply-data', {
     ...context,
-    rowCount: mapData.length
+    rowCount: rows.length
   });
 
   if (!map || typeof map.setMapType !== 'function' || typeof map.redrawMap !== 'function') {
-    logSpeciesMapDebug('map:skipped', { ...context, rowCount: mapData.length });
+    logSpeciesMapDebug('map:skipped', { ...context, rowCount: rows.length });
     return;
   }
 
   logSpeciesMapDebug('map:redraw', {
     ...context,
-    rowCount: mapData.length,
+    rowCount: rows.length,
     mapInstanceId: map?.__tanvisMapInstanceId,
     mapArea: map?.__tanvisMapArea,
     elementId: map?.__tanvisMapElementId
@@ -557,7 +571,7 @@ function getListData(payload) {
   return [];
 }
 
-export function createOccurrenceData(opacity = 1, options = {}) {
+export function createOccurrenceData(rows = [], opacity = 1, options = {}) {
   return new Promise(function (resolve) {
     const { dotColour = '', transformation = '', shape = 'circle' } = options || {};
 
@@ -565,13 +579,13 @@ export function createOccurrenceData(opacity = 1, options = {}) {
       throw new Error(D3_DEPENDENCY_MESSAGE);
     }
 
-    // mapData contains occurrence data which obviously can include many
+    // rows contains occurrence data which obviously can include many
     // records for a single grid reference. So we need to convert this to
     // have one record per grid reference, with the number of occurrences 
     // for each grid reference. This is done by grouping the data by grid 
     // reference and counting the occurrences.
     let recs = [];
-    mapData.forEach(r => {
+    (Array.isArray(rows) ? rows : []).forEach(r => {
       // Filter out records with no grid reference
       if (!r.grid_ref_2km) {
         return;

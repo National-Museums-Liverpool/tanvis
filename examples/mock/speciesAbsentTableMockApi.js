@@ -354,7 +354,7 @@ function handleTaxonStatsRequest(url) {
   return jsonResponse(200, buildListResponse(url, page, filtered.length, limit, offset));
 }
 
-export function installSpeciesAbsentSinceMockApi(options = {}) {
+export function installSpeciesAbsentTableMockApi(options = {}) {
   const baseUrl = options.baseUrl || DEFAULT_BASE_URL;
   const latencyMs = Number.isFinite(options.latencyMs) ? options.latencyMs : 120;
   const originalFetch = window.fetch.bind(window);
@@ -370,11 +370,11 @@ export function installSpeciesAbsentSinceMockApi(options = {}) {
       await new Promise((resolve) => setTimeout(resolve, latencyMs));
     }
 
-    console.log('[species-absent-since-mock] API request:', `${requestUrl.pathname}${requestUrl.search}`);
+    console.log('[species-absent-table-mock] API request:', `${requestUrl.pathname}${requestUrl.search}`);
     return handleTaxonStatsRequest(requestUrl);
   };
 
-  return function uninstallSpeciesAbsentSinceMockApi() {
+  return function uninstallSpeciesAbsentTableMockApi() {
     window.fetch = originalFetch;
   };
 }

@@ -2,7 +2,7 @@
 // does not keep re-registering the same renderers.
 
 import { registerRenderer } from './registry.js';
-import { renderControlBlock, renderSpeciesIdentifier, renderNewSpeciesTable, renderIncreasingSpeciesTable, renderSpeciesAbsentSince, renderSpeciesMap, renderGridStatsMap, renderTemporalYearChart, renderSpeciesNameBlock, renderSpeciesRemarksBlock, renderSpeciesInfoBlock, renderHelpBlock } from '../renderers/index.js';
+import { renderControlBlock, renderSpeciesIdentifier, renderNewSpeciesTable, renderIncreasingSpeciesTable, renderSpeciesAbsentTable, renderSpeciesMap, renderGridStatsMap, renderTemporalYearChart, renderSpeciesNameBlock, renderSpeciesRemarksBlock, renderSpeciesInfoBlock, renderHelpBlock } from '../renderers/index.js';
 
 let defaultsRegistered = false;
 
@@ -15,7 +15,7 @@ export function registerDefaults() {
   registerRenderer('species-identifier', renderSpeciesIdentifier);
   registerRenderer('new-species-table', renderNewSpeciesTable);
   registerRenderer('increasing-species-table', renderIncreasingSpeciesTable);
-  registerRenderer('species-absent-since', renderSpeciesAbsentSince);
+  registerRenderer('species-absent-table', renderSpeciesAbsentTable);
   registerRenderer('species-map', renderSpeciesMap);
   registerRenderer('grid-stats-map', renderGridStatsMap);
   registerRenderer('temporal-year-chart', renderTemporalYearChart);

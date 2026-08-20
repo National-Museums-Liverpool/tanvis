@@ -48,7 +48,7 @@ console.log(window.Tanvis.version);
 </script>
 ```
 
-This snippet demonstrates the wiring pattern (`.tanvis` + `data-*` attributes + `init()`); for working end-to-end examples, use `control-block`, `new-species-table`, `increasing-species-table`, `species-absent-since`, `species-map`, `grid-stats-map`, or `temporal-year-chart` (see `examples/new-species-table.html`, `examples/increasing-species-table.html`, `examples/species-absent-since.html`, `examples/species-map.html`, `examples/grid-stats-map.html`, and `examples/temporal-year-chart.html`).
+This snippet demonstrates the wiring pattern (`.tanvis` + `data-*` attributes + `init()`); for working end-to-end examples, use `control-block`, `new-species-table`, `increasing-species-table`, `species-absent-table`, `species-map`, `grid-stats-map`, or `temporal-year-chart` (see `examples/new-species-table.html`, `examples/increasing-species-table.html`, `examples/species-absent-table.html`, `examples/species-map.html`, `examples/grid-stats-map.html`, and `examples/temporal-year-chart.html`).
 
 To see a shared control block driving two map outputs together, open `examples/shared-control-maps.html`.
 
@@ -59,7 +59,7 @@ Tanvis currently registers these renderer types:
 - `control-block`
 - `new-species-table`
 - `increasing-species-table`
-- `species-absent-since`
+- `species-absent-table`
 - `species-map`
 - `grid-stats-map`
 - `temporal-year-chart`
@@ -194,7 +194,7 @@ When a subscribed control block selects `vc-58`, `vc-59`, or `vc-60`, Tanvis add
 
 ### Species Absent Since Table Renderer
 
-Use `data-vis-type="species-absent-since"`.
+Use `data-vis-type="species-absent-table"`.
 
 Supported attributes:
 
@@ -210,7 +210,7 @@ Include Tabulator before Tanvis when using this renderer.
 
 <div
   class="tanvis"
-  data-vis-type="species-absent-since"
+  data-vis-type="species-absent-table"
   data-vis-year="2024"
 ></div>
 ```
@@ -250,4 +250,4 @@ Tanvis queries `taxon-year-stats` for the selected `taxon_identifier`, reshapes 
 
 When `data-vis-linked-table` is set, Tanvis listens for `taxon-identified` events on that element and rerenders the chart using the emitted `detail.speciesId`.
 
-See `examples/static-map.html`, `examples/shared-control-maps.html`, `examples/new-species-table.html`, `examples/increasing-species-table.html`, `examples/species-absent-since.html`, `examples/species-map.html`, `examples/grid-stats-map.html`, and `examples/temporal-year-chart.html` for ready-to-run pages.
+See `examples/static-map.html`, `examples/shared-control-maps.html`, `examples/new-species-table.html`, `examples/increasing-species-table.html`, `examples/species-absent-table.html`, `examples/species-map.html`, `examples/grid-stats-map.html`, and `examples/temporal-year-chart.html` for ready-to-run pages.

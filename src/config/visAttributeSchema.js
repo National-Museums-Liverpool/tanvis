@@ -4,7 +4,7 @@ const KNOWN_VIS_TYPES = [
   'species-map',
   'new-species-table',
   'increasing-species-table',
-  'species-absent-since',
+  'species-absent-table',
   'grid-stats-map',
   'temporal-year-chart',
   'species-name-block',
@@ -638,7 +638,7 @@ const VIS_TYPE_RULE_SETS = {
   'temporal-year-chart': ['taxonId', 'temporalStatsType', 'taxonIdSource', 'chartType', 'recordsColour', 'squaresColour','startYear', 'endYear', 'area', 'control', 'expand', 'width', 'height'],
   'new-species-table': ['startDate', 'endDate', 'area', 'groupId', 'language','control', 'pageSize'],
   'increasing-species-table': ['topN', 'area', 'groupId', 'language','control', 'pageSize'],
-  'species-absent-since': ['year', 'area', 'groupId', 'language','control', 'pageSize'],
+  'species-absent-table': ['year', 'area', 'groupId', 'language','control', 'pageSize'],
   'species-name-block': ['taxonId', 'taxonIdSource', 'primaryName', 'secondaryName', 'authority'],
   'species-remarks-block': ['taxonId', 'taxonIdSource'],
   'species-info-block': ['taxonId', 'taxonIdSource', 'control', 'area'],
@@ -674,7 +674,7 @@ const VIS_TYPE_DESCRIPTIONS = {
   'increasing-species-table': `A table showing the top 'N' (configurable) increasing 
     species based on a trend statistic. The table can be filtered by area and taxon group, either 
     directly or via a linked control block.`,
-  'species-absent-since': `A table showing species not recorded since a given year. The table can 
+  'species-absent-table': `A table showing species not recorded since a given year. The table can 
     be filtered by area and taxon group, either directly or via a linked control block.`,
   'species-name-block': `A block visualisation showing the name of a species. Some default
     styling is applied to the name, but it can be overridden with CSS. The block can show either
