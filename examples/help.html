@@ -22,10 +22,29 @@
       class="tanvis"
       data-vis-type="help-block"
     ></div>
+    <div id="example"></div>
 
     <script src="../dist/tanvis.iife.js"></script>
     <script type="module">
       window.Tanvis.init();
+
+      // Listen for tanvis-example events and log them to the console
+      document.addEventListener('tanvis-example', function(event) {
+        console.log('Received tanvis-example event:', event.detail);
+        const divString = event.detail;
+
+        // 1. Clean the string and extract the attributes part
+        const cleanString = divString.trim();
+        const attrSection = cleanString.replace(/^<div\s*/, '').replace(/\s*\/?>$/, '');
+
+        // 2. Match individual attributes using Regex
+        // This matches word="..." or word='...' or word=value
+        const attrRegex = /[a-zA-Z0-9-]+=(?:"[^"]*"|'[^']*'|[^\s>]+)/g;
+        const attributes = attrSection.match(attrRegex) || [];
+
+        // 3. Display in example div
+        document.getElementById("example").innerHTML = `<pre><code>&lt;div\n  ${attributes.join('\n  ')}\n&gt;&lt;/div&gt;</code></pre>`;
+      });
     </script>
   </body>
 </html>

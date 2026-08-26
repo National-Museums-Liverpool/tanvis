@@ -145,9 +145,11 @@
 
   <div class="container2" style="margin-top: 10px; padding: 10px;">
     <h3 style="margin-bottom: 10px;">Example taxon and group IDs</h3>
-    
+    <h4>Example Taxon IDs</h4>
+    <div id="exampleTaxonIds" style="display: flex; flex-wrap: wrap; gap: 10px;"></div>
+    <h4>Example Group IDs</h4>
+    <div id="exampleGroupIds" style="display: flex; flex-wrap: wrap; gap: 10px;"></div>
   </div>
-  
   <script>
     
     window.Tanvis.init();
@@ -236,6 +238,34 @@
       // Move the cursor to the end of the inserted content
       textarea.selectionStart = textarea.selectionEnd = cursorPos + newContent.length;  
     });
+
+    // Add example taxon IDs as buttons that copy the ID to the clipboard when clicked
+    [
+      { name: "Wasp Spider", id: "NBNORG0000011061" },
+      { name: "Common Blue Damselfly", id: "NBNORG0000008963" },
+      { name: "Northern Dune Tiger Beetle", id: "NBNORG0000009900" },
+    ].forEach(taxon => {
+      const button = document.createElement('button');
+      button.textContent = `${taxon.name}`;
+      button.style.margin = '5px 0';
+      button.style.padding = '3px';
+      button.addEventListener('click', () => navigator.clipboard.writeText(taxon.id));
+      document.getElementById('exampleTaxonIds').appendChild(button);
+    });
+
+    // Add example group IDs as buttons that copy the ID to the clipboard when clicked
+    [
+      { name: "Beetles", id: "NHMSYS0000080066" },
+      { name: "Dragonflies", id: "NHMSYS0000080071" },
+    ].forEach(taxon => {
+      const button = document.createElement('button');
+      button.textContent = `${taxon.name}`;
+      button.style.margin = '5px 0';
+      button.style.padding = '3px';
+      button.addEventListener('click', () => navigator.clipboard.writeText(taxon.id));
+      document.getElementById('exampleGroupIds').appendChild(button);
+    });
+
   </script>
 
 </body>

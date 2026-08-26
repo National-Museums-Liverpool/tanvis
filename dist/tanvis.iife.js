@@ -218,6 +218,7 @@ var Tanvis = (function (exports) {
     kind = 'optional',
     parseAndValidate,
     allowedValues,
+    exampleValue,
     defaultValue,
     info=''
   }) {
@@ -227,6 +228,7 @@ var Tanvis = (function (exports) {
       kind,
       parseAndValidate,
       allowedValues,
+      exampleValue,
       defaultValue,
       info
     };
@@ -246,6 +248,7 @@ var Tanvis = (function (exports) {
       key: 'control',
       datasetName: 'visControl',
       parseAndValidate: parseAndValidateString,
+      exampleValue: 'my-control-block',
       info: `The id of a control block to link to this visualisation. 
       The visualisation will respond to control-bus selections made in that control,
       such as area and taxon-group changes.`
@@ -295,6 +298,7 @@ var Tanvis = (function (exports) {
       key: 'taxonIdSource',
       datasetName: 'visTaxonIdSource',
       parseAndValidate: parseAndValidateString,
+      exampleValue: 'my-species-selector',
       info: `The id of a tanvis control or visualisation to subscribe to for taxon-identified 
       events. When a species is selected in the linked visualisation or control-block species selector, 
       the taxonId of that species will be used to update this visualisation and
@@ -304,6 +308,7 @@ var Tanvis = (function (exports) {
       key: 'taxonId',
       datasetName: 'visTaxonid',
       parseAndValidate: parseAndValidateString,
+      exampleValue: 'NBNORG0000008963',
       info: `The taxon ID of the species to visualize. This is used to 
       fetch data for the visualisation.`
     }),
@@ -311,6 +316,7 @@ var Tanvis = (function (exports) {
       key: 'groupId',
       datasetName: 'visGroupid',
       parseAndValidate: parseAndValidateString,
+      exampleValue: 'NHMSYS0000080071',
       info: `The taxon group ID to filter the data by or initialise the control block.`
     }),
     language: createRule({
@@ -516,6 +522,7 @@ var Tanvis = (function (exports) {
       key: 'taxonGroup',
       datasetName: 'visTaxonGroup',
       parseAndValidate: parseAndValidateString,
+      exampleValue: 'NHMSYS0000080071',
       info: `The taxon group to filter the data by. This can be any valid taxon group identifier.
       If not specified, data will not be filtered by taxon group. Note that if a control block is 
       linked to this visualisation, the taxon group will be determined by the control block selection.`
@@ -531,12 +538,14 @@ var Tanvis = (function (exports) {
       key: 'width',
       datasetName: 'visWidth',
       parseAndValidate: parseAndValidatePositiveInteger,
+      exampleValue: 800,
       info: `The width of the visualisation in pixels. Must be a positive integer.`
     }),
     height: createRule({
       key: 'height',
       datasetName: 'visHeight',
       parseAndValidate: parseAndValidatePositiveInteger,
+      exampleValue: 600,
       info: `The height of the visualisation in pixels. Must be a positive integer.`
     }),
     topN: createRule({
@@ -578,7 +587,7 @@ var Tanvis = (function (exports) {
       key: 'endYear',
       datasetName: 'visEndYear',
       parseAndValidate: parseAndValidateYear,
-      defaultValue: 'year-3',
+      defaultValue: 'year-1',
       info: `The end year for the data. This can be a specific year string of 
       the format 'yyyy' or one of these relative year values: 'year-n', where n is
       any integer, which resolves to the current year minus n years (e.g. year-0 is 
@@ -1316,6 +1325,16 @@ div[data-tanvis-controls="species-selector"] {
   font-size: 0.9rem;
 }
 
+.tanvis-help-block-example-button {
+  height: 1.75rem;
+  padding: 0 0.5rem;
+  border: 1px solid #9ca3af;
+  background: #f8fafc;
+  color: #1f2937;
+  font: 600 0.95rem/1 system-ui, sans-serif;
+  cursor: pointer;
+  margin-bottom: 0.5rem;
+}
 `;
 
   function ensureSharedStyles() {
@@ -7465,18 +7484,20 @@ div[data-tanvis-controls="species-selector"] {
 
     const { rules } = getVisAttributeSchema(visType);
 
+    console.log(`Creating help block for ${visType} with rules:`, rules);
+
     let exampleHtml = `<div class="tanvis" data-vis-type="${visType}"`;
     rules
       .filter((rule) => rule.key !== 'type')
       .forEach((rule) => {
-          exampleHtml = `${exampleHtml} ${getDataAttributeName(rule)}="${rule.defaultValue || ''}"`;
+          exampleHtml = `${exampleHtml} ${getDataAttributeName(rule)}="${rule.defaultValue || rule.exampleValue || ''}"`;
         });
     exampleHtml = `${exampleHtml}></div>`;
 
     const exampleButton = document.createElement('button');
     exampleButton.type = 'button';
     exampleButton.className = 'tanvis-help-block-example-button';
-    exampleButton.textContent = 'Show example';
+    exampleButton.textContent = 'Example';
       exampleButton.addEventListener('click', () => {
           // Raise a custom even with the example HTML as the detail
           console.log('Dispatching tanvis-example event');

@@ -309,6 +309,16 @@ div[data-tanvis-controls="species-selector"] {
   font-size: 0.9rem;
 }
 
+.tanvis-help-block-example-button {
+  height: 1.75rem;
+  padding: 0 0.5rem;
+  border: 1px solid #9ca3af;
+  background: #f8fafc;
+  color: #1f2937;
+  font: 600 0.95rem/1 system-ui, sans-serif;
+  cursor: pointer;
+  margin-bottom: 0.5rem;
+}
 `;
 
 export function ensureSharedStyles() {

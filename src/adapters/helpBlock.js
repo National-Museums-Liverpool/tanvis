@@ -32,18 +32,20 @@ function createVisTypeSection(visType) {
 
   const { rules } = getVisAttributeSchema(visType);
 
+  console.log(`Creating help block for ${visType} with rules:`, rules);
+
   let exampleHtml = `<div class="tanvis" data-vis-type="${visType}"`;
   rules
     .filter((rule) => rule.key !== 'type')
     .forEach((rule) => {
-        exampleHtml = `${exampleHtml} ${getDataAttributeName(rule)}="${rule.defaultValue || ''}"`;
+        exampleHtml = `${exampleHtml} ${getDataAttributeName(rule)}="${rule.defaultValue || rule.exampleValue || ''}"`;
       });
   exampleHtml = `${exampleHtml}></div>`;
 
   const exampleButton = document.createElement('button');
   exampleButton.type = 'button';
   exampleButton.className = 'tanvis-help-block-example-button';
-  exampleButton.textContent = 'Show example';
+  exampleButton.textContent = 'Example';
     exampleButton.addEventListener('click', () => {
         // Raise a custom even with the example HTML as the detail
         console.log('Dispatching tanvis-example event');

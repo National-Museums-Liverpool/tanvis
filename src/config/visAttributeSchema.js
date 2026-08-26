@@ -207,6 +207,7 @@ function createRule({
   kind = 'optional',
   parseAndValidate,
   allowedValues,
+  exampleValue,
   defaultValue,
   info=''
 }) {
@@ -216,6 +217,7 @@ function createRule({
     kind,
     parseAndValidate,
     allowedValues,
+    exampleValue,
     defaultValue,
     info
   };
@@ -235,6 +237,7 @@ const RULES = {
     key: 'control',
     datasetName: 'visControl',
     parseAndValidate: parseAndValidateString,
+    exampleValue: 'my-control-block',
     info: `The id of a control block to link to this visualisation. 
       The visualisation will respond to control-bus selections made in that control,
       such as area and taxon-group changes.`
@@ -284,6 +287,7 @@ const RULES = {
     key: 'taxonIdSource',
     datasetName: 'visTaxonIdSource',
     parseAndValidate: parseAndValidateString,
+    exampleValue: 'my-species-selector',
     info: `The id of a tanvis control or visualisation to subscribe to for taxon-identified 
       events. When a species is selected in the linked visualisation or control-block species selector, 
       the taxonId of that species will be used to update this visualisation and
@@ -293,6 +297,7 @@ const RULES = {
     key: 'taxonId',
     datasetName: 'visTaxonid',
     parseAndValidate: parseAndValidateString,
+    exampleValue: 'NBNORG0000008963',
     info: `The taxon ID of the species to visualize. This is used to 
       fetch data for the visualisation.`
   }),
@@ -300,6 +305,7 @@ const RULES = {
     key: 'groupId',
     datasetName: 'visGroupid',
     parseAndValidate: parseAndValidateString,
+    exampleValue: 'NHMSYS0000080071',
     info: `The taxon group ID to filter the data by or initialise the control block.`
   }),
   language: createRule({
@@ -506,6 +512,7 @@ const RULES = {
     key: 'taxonGroup',
     datasetName: 'visTaxonGroup',
     parseAndValidate: parseAndValidateString,
+    exampleValue: 'NHMSYS0000080071',
     info: `The taxon group to filter the data by. This can be any valid taxon group identifier.
       If not specified, data will not be filtered by taxon group. Note that if a control block is 
       linked to this visualisation, the taxon group will be determined by the control block selection.`
@@ -521,12 +528,14 @@ const RULES = {
     key: 'width',
     datasetName: 'visWidth',
     parseAndValidate: parseAndValidatePositiveInteger,
+    exampleValue: 800,
     info: `The width of the visualisation in pixels. Must be a positive integer.`
   }),
   height: createRule({
     key: 'height',
     datasetName: 'visHeight',
     parseAndValidate: parseAndValidatePositiveInteger,
+    exampleValue: 600,
     info: `The height of the visualisation in pixels. Must be a positive integer.`
   }),
   topN: createRule({
@@ -568,7 +577,7 @@ const RULES = {
     key: 'endYear',
     datasetName: 'visEndYear',
     parseAndValidate: parseAndValidateYear,
-    defaultValue: 'year-3',
+    defaultValue: 'year-1',
     info: `The end year for the data. This can be a specific year string of 
       the format 'yyyy' or one of these relative year values: 'year-n', where n is
       any integer, which resolves to the current year minus n years (e.g. year-0 is 
