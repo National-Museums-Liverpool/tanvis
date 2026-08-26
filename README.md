@@ -251,3 +251,57 @@ Tanvis queries `taxon-year-stats` for the selected `taxon_identifier`, reshapes 
 When `data-vis-linked-table` is set, Tanvis listens for `taxon-identified` events on that element and rerenders the chart using the emitted `detail.speciesId`.
 
 See `examples/static-map.html`, `examples/shared-control-maps.html`, `examples/new-species-table.html`, `examples/increasing-species-table.html`, `examples/species-absent-table.html`, `examples/species-map.html`, `examples/grid-stats-map.html`, and `examples/temporal-year-chart.html` for ready-to-run pages.
+
+## Styling options
+### Styling under the control of data attributes
+Many of the visualisations have elements whose style is under the control of the third pary libraries used, e.g. tabulator and brcAtlas. Some of these styles are under the control of tanvis data attributes including:
+- The shape of map dots for the species-map and grid-stats-map visualisations.
+- The colour of map dots for the species-map and grid-stats-map visualisations.
+- The graphic style of the temporal-year-chart visualisation (either bar or line).
+- The colour of the lines or bars.
+For all of these options, see the relevant documentation for the visualisation type.
+### CSS styling
+Textual elements in many visualisations can be overridden using CSS as described below.
+
+The captions which appear above tables (visualistion types increasing-species-table, new-species-table and species-absent-table) can be tagetted with the following CSS selector:
+```css
+.tanvis .tanvis-table-header-text {
+  /* Your styles here */
+}
+```
+
+All the text in the species-name-block visualisation can be targetted with the following CSS selector:
+```css
+.tanvis span[data-tanvis-species-name-block="content"] {
+  /* Your styles here */
+}
+```
+
+The primary name in the species-name-block visualisation (either scientific or vernacular depending on your data attribute choices) can be targetting with the following CSS selector:
+```css
+.tanvis span[data-tanvis-species-name-block="primary"] {
+  /* Your styles here */
+}
+```
+The secondary name in the species-name-block visualisation (either scientific or vernacular depending on your data attribute choices) can be targetting with the following CSS selector:
+```css
+.tanvis span[data-tanvis-species-name-block="secondary"] {
+  /* Your styles here */
+}
+```
+
+The text in the species-remarks-block visualisation can be targetted with the following CSS selector:
+```css
+.tanvis span[data-tanvis-species-remarks-block="content"] {
+  /* Your styles here */
+}
+```
+
+The table containing the text in the species-info-table can be targetted with the following CSS selector:
+```css
+.tanvis table[data-tanvis-species-info-block="content"] {
+  /* Your styles here */
+}
+```
+
+
