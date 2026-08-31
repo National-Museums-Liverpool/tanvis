@@ -401,8 +401,7 @@ async function fetchTaxonStats({ apiBase, topN, higherGeographyIdentifier, taxon
     pageUrl.searchParams.set('taxon_group__external_key[eq]', taxonGroupExternalKey);
   }
   pageUrl.searchParams.set('taxon_rank__rank[eq]', 'Species');
-  // Once the API exposes frequency_trend in taxon-stats responses, switch this to sort=frequency_trend.
-  pageUrl.searchParams.set('sort', '-occurrences_count');
+  pageUrl.searchParams.set('sort', '-frequency_trend');
   pageUrl.searchParams.set('limit', String(limit));
   pageUrl.searchParams.set('offset', String(offset));
 
