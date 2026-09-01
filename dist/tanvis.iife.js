@@ -1917,11 +1917,11 @@ div[data-tanvis-controls="species-selector"] {
       transOptsControl: false,
       transOptsSel,
       transOptsKey: areaSelectionKey,
-      boundaryGjson: `/data/vcs/simp-100/${areaSelectionKey}-100.geojson`,
+      boundaryGjson: `data/vcs/simp-100/${areaSelectionKey}-100.geojson`,
       ...(height !== undefined ? { height } : {}),
       ...(shouldExpand ? { expand: true } : {}),
       ...(includeHectads
-        ? { gridGjson: `/data/vcs/hectad-grids/${areaSelectionKey}-hectads.geojson` }
+        ? { gridGjson: `data/vcs/hectad-grids/${areaSelectionKey}-hectads.geojson` }
         : { gridLineStyle: 'none' }),
       mapTypesSel: options.mapTypesSel,
       mapTypesKey: options.mapTypesKey,
@@ -3860,8 +3860,6 @@ div[data-tanvis-controls="species-selector"] {
       pageUrl.searchParams.set('taxon_group__external_key[eq]', taxonGroupExternalKey);
     }
     pageUrl.searchParams.set('taxon_rank__rank[eq]', 'Species');
-    // Once the API exposes frequency_trend in taxon-stats responses, switch this to sort=frequency_trend.
-    //pageUrl.searchParams.set('sort', '-occurrences_count');
     pageUrl.searchParams.set('sort', '-frequency_trend');
     pageUrl.searchParams.set('limit', String(limit));
     pageUrl.searchParams.set('offset', String(offset));
