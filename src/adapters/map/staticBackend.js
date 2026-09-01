@@ -117,11 +117,11 @@ function createStaticMapOptions(element, config, options) {
     transOptsControl: false,
     transOptsSel,
     transOptsKey: areaSelectionKey,
-    boundaryGjson: `/data/vcs/simp-100/${areaSelectionKey}-100.geojson`,
+    boundaryGjson: `data/vcs/simp-100/${areaSelectionKey}-100.geojson`,
     ...(height !== undefined ? { height } : {}),
     ...(shouldExpand ? { expand: true } : {}),
     ...(includeHectads
-      ? { gridGjson: `/data/vcs/hectad-grids/${areaSelectionKey}-hectads.geojson` }
+      ? { gridGjson: `data/vcs/hectad-grids/${areaSelectionKey}-hectads.geojson` }
       : { gridLineStyle: 'none' }),
     mapTypesSel: options.mapTypesSel,
     mapTypesKey: options.mapTypesKey,
