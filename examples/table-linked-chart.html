@@ -3,10 +3,10 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Tanvis Linked Table and Temporal Year Chart Example</title>
+    <title>Tanvis Table linked To Chart Example</title>
     <script src="https://d3js.org/d3.v5.min.js"></script>
-    <link rel="stylesheet" href="https://unpkg.com/tabulator-tables@6.3.0/dist/css/tabulator.min.css" />
     <script src="https://unpkg.com/tabulator-tables@6.3.0/dist/js/tabulator.min.js"></script>
+    <link rel="stylesheet" href="https://unpkg.com/tabulator-tables@6.3.0/dist/css/tabulator.min.css" />
     <script src="https://cdn.jsdelivr.net/gh/biologicalrecordscentre/brc-charts/dist/brccharts.umd.js"></script>
     <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/gh/biologicalrecordscentre/brc-charts/dist/brccharts.umd.css" />
     <style>
@@ -21,36 +21,36 @@
     </style>
   </head>
   <body>
-    <h1>Tanvis Linked Table and Temporal Year Chart Example</h1>
-
+    <h1>Tanvis Table linked To Chart Example</h1>
+    
     <div
       id="vc-control"
       class="tanvis"
       data-vis-type="control-block"
+      data-vis-control-elements="area groups language"
       data-vis-area="vc-all"
       data-vis-language="vernacular"
     ></div>
 
-    <!-- <div
+    <div
       id="my-increasing-species-table"
       class="tanvis"
       data-vis-type="increasing-species-table"
       data-vis-top-n="25"
-      xdata-vis-control="vc-control"
-    ></div> -->
+      data-vis-control="vc-control"
+    ></div>
 
     <div
       class="tanvis"
       data-vis-type="species-name-block"
-      data-vis-taxon-id-source="vc-control"
+      data-vis-taxon-id-source="my-increasing-species-table"
     ></div>
 
     <div
       class="tanvis"
       data-vis-type="temporal-year-chart"
       data-vis-control="vc-control"
-      data-vis-taxon-id-source="vc-control"
-      xdata-vis-taxonid="NBNORG0000052153"
+      data-vis-taxon-id-source="my-increasing-species-table"
       data-vis-start-year="2000"
       data-vis-end-year="2026"
       data-vis-width="600"
@@ -59,7 +59,6 @@
       data-vis-records-colour="green"
       data-vis-squares-colour="rgb(255, 165, 0)"
       data-vis-chart-type="bar"
-      data-vis-area="vc-all"
     ></div>
 
     <script src="../dist/tanvis.iife.js"></script>

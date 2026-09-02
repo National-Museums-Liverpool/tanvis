@@ -22,9 +22,24 @@
     <h1>Tanvis Temporal Year Chart Example</h1>
     
     <div
+      id="vc-control"
+      class="tanvis"
+      data-vis-type="control-block"
+      data-vis-area="vc-all"
+      data-vis-language="vernacular"
+    ></div>
+
+    <div
+      class="tanvis"
+      data-vis-type="species-name-block"
+      data-vis-taxon-id-source="vc-control"
+    ></div>
+
+    <div
       class="tanvis"
       data-vis-type="temporal-year-chart"
-      data-vis-taxonid="NBNORG0000052153"
+      data-vis-taxon-id-source="vc-control"
+      data-vis-control="vc-control"
       data-vis-start-year="2000"
       data-vis-end-year="2026"
       data-vis-width="600"
