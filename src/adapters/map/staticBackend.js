@@ -111,17 +111,32 @@ function createStaticMapOptions(element, config, options) {
 
   const areaSelectionKey = resolveAreaSelectionKey(config.area);
 
+  // Resolve the base path for static map resources which will be the
+  // scriptURL with this stripped off the end: /dist/tanvis.iife.js
+  // This is required because on GitHub pages, the script is served from
+  // a subfolder.
+  let scriptUrl;
+  const scripts = document.getElementsByTagName('script');
+  for (let i = 0; i < scripts.length; i++) {
+    const src = scripts[i].getAttribute('src');
+    if (src && src.includes('tanvis.iife.js')) {
+      scriptUrl = scripts[i].src;
+      break;
+    }
+  }
+  const basePath = scriptUrl ? scriptUrl.substring(0, scriptUrl.indexOf('/dist/tanvis.iife.js') + 1) : '';
+ 
   return {
     selector: `#${element.id}`,
     captionId: 'map-tetrad-info',
     transOptsControl: false,
     transOptsSel,
     transOptsKey: areaSelectionKey,
-    boundaryGjson: `data/vcs/simp-100/${areaSelectionKey}-100.geojson`,
+    boundaryGjson: `${basePath}data/vcs/simp-100/${areaSelectionKey}-100.geojson`,
     ...(height !== undefined ? { height } : {}),
     ...(shouldExpand ? { expand: true } : {}),
     ...(includeHectads
-      ? { gridGjson: `data/vcs/hectad-grids/${areaSelectionKey}-hectads.geojson` }
+      ? { gridGjson: `${basePath}data/vcs/hectad-grids/${areaSelectionKey}-hectads.geojson` }
       : { gridLineStyle: 'none' }),
     mapTypesSel: options.mapTypesSel,
     mapTypesKey: options.mapTypesKey,
