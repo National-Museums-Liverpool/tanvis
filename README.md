@@ -2,6 +2,9 @@
 
 Browser-first visualisation library scaffold.
 
+## Examples
+An index of example pages demonstrating the visualisations can be found at [examples/example-index.html](examples/example-index.html).
+
 ## Goals
 
 - Plain JavaScript source code
