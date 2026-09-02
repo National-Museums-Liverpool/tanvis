@@ -3,7 +3,7 @@
 Browser-first visualisation library scaffold.
 
 ## Examples
-An index of example pages demonstrating the visualisations can be found at [examples/example-index.html](examples/example-index.html).
+An index of example pages demonstrating the visualisations can be found at [examples/examples-index.html](examples/examples-index.html).
 
 ## Goals
 
