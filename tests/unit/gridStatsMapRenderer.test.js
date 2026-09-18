@@ -49,7 +49,7 @@ describe('renderGridStatsMap', () => {
     renderGridStatsMap(element, {
       type: 'grid-stats-map',
       mapType: 'static',
-      area: 'vc-58',
+      region: 'vc-58',
       gridStatsType: 'switch'
     });
 
@@ -90,7 +90,7 @@ describe('renderGridStatsMap', () => {
     renderGridStatsMap(element, {
       type: 'grid-stats-map',
       mapType: 'static',
-      area: 'vc-58',
+      region: 'vc-58',
       gridStatsType: 'species'
     });
 
@@ -122,7 +122,7 @@ describe('renderGridStatsMap', () => {
     renderGridStatsMap(element, {
       type: 'grid-stats-map',
       mapType: 'static',
-      area: 'vc-58',
+      region: 'vc-58',
       gridStatsType: 'rarity'
     });
 
@@ -153,21 +153,21 @@ describe('renderGridStatsMap', () => {
 
     const controlElement = document.createElement('div');
     controlElement.id = 'control';
-    controlElement.dataset.visArea = 'vc-all';
+    controlElement.dataset.visRegion = 'vc-all';
     document.body.appendChild(controlElement);
 
     const element = document.createElement('div');
     renderGridStatsMap(element, {
       type: 'grid-stats-map',
       mapType: 'static',
-      area: 'vc-all',
+      region: 'vc-all',
       gridStatsType: 'switch',
       control: 'control'
     });
 
     await new Promise((resolve) => setTimeout(resolve, 0));
 
-    publishControlEvent('control', { type: 'area-change', area: 'vc-58' });
+    publishControlEvent('control', { type: 'region-change', region: 'vc-58' });
 
     await new Promise((resolve) => setTimeout(resolve, 0));
 
@@ -216,7 +216,7 @@ describe('renderGridStatsMap', () => {
     renderGridStatsMap(element, {
       type: 'grid-stats-map',
       mapType: 'switch',
-      area: 'vc-58',
+      region: 'vc-58',
       gridStatsType: 'switch'
     });
 
@@ -273,7 +273,7 @@ describe('renderGridStatsMap', () => {
     renderGridStatsMap(element, {
       type: 'grid-stats-map',
       mapType: 'static',
-      area: 'vc-58',
+      region: 'vc-58',
       gridStatsType: 'switch'
     });
 
@@ -327,7 +327,7 @@ describe('renderGridStatsMap', () => {
     renderGridStatsMap(element, {
       type: 'grid-stats-map',
       mapType: 'static',
-      area: 'vc-58',
+      region: 'vc-58',
       gridStatsType: 'records'
     });
 
@@ -383,7 +383,7 @@ describe('renderGridStatsMap', () => {
     renderGridStatsMap(element, {
       type: 'grid-stats-map',
       mapType: 'switch',
-      area: 'vc-58',
+      region: 'vc-58',
       gridStatsType: 'records'
     });
 

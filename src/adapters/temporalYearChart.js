@@ -6,7 +6,7 @@ import { logApiRequest } from '../utils/apiRequest.js';
 import { D3_DEPENDENCY_MESSAGE } from '../utils/colourMapDots.js';
 import { createRadioGroup } from '../controls/radioGroup.js';
 import { subscribeToControl } from '../controls/controlBus.js';
-import { normalizeAreaContractValue } from '../controls/areaControls.js';
+import { normalizeRegionContractValue } from '../controls/regionControls.js';
 import { ensureSharedStyles } from '../styles/sharedStyles.js';
 
 // Adapter for Tanvis temporal year charts backed by BRC Charts.
@@ -25,30 +25,30 @@ export function createTemporalYearChartAdapter() {
       clearControlSubscriptions(element);
       const renderConfig = { ...config };
 
-      // Remember the currently selected area across taxon changes and
+      // Remember the currently selected region across taxon changes and
       // stats-type toggles, since renderConfig itself is captured once
       // at render time and would otherwise go stale.
-      element.__tanvisTemporalYearActiveArea = renderConfig.area;
+      element.__tanvisTemporalYearActiveRegion = renderConfig.region;
 
       if (renderConfig.control) {
         const controlBusCleanup = subscribeToControl(renderConfig.control, (event) => {
-          if (!event || event.type !== 'area-change') {
+          if (!event || event.type !== 'region-change') {
             return;
           }
 
-          const nextArea = event.area === undefined || event.area === null
-            ? renderConfig.area
-            : event.area;
-          const currentArea = normalizeAreaContractValue(element.__tanvisTemporalYearActiveArea ?? renderConfig.area);
+          const nextRegion = event.region === undefined || event.region === null
+            ? renderConfig.region
+            : event.region;
+          const currentRegion = normalizeRegionContractValue(element.__tanvisTemporalYearActiveRegion ?? renderConfig.region);
 
-          if (nextArea === currentArea) {
+          if (nextRegion === currentRegion) {
             return;
           }
 
-          element.dataset.visArea = nextArea === '' ? '' : String(nextArea ?? '');
+          element.dataset.visRegion = nextRegion === '' ? '' : String(nextRegion ?? '');
           updateTemporalYearChartForSpecies(element, {
             ...renderConfig,
-            area: nextArea,
+            region: nextRegion,
             taxonId: element.dataset.visTaxonid || renderConfig.taxonId
           });
         });
@@ -67,7 +67,7 @@ export function createTemporalYearChartAdapter() {
 
           updateTemporalYearChartForSpecies(element, {
             ...renderConfig,
-            area: element.__tanvisTemporalYearActiveArea ?? renderConfig.area,
+            region: element.__tanvisTemporalYearActiveRegion ?? renderConfig.region,
             taxonId: speciesId
           });
         });
@@ -150,7 +150,7 @@ async function updateTemporalYearChartForSpecies(element, config) {
   const brcCharts = getBrcChartsGlobal();
   const chartInstance = element.__tanvisTemporalYearChartInstance;
 
-  element.__tanvisTemporalYearActiveArea = config.area;
+  element.__tanvisTemporalYearActiveRegion = config.region;
 
   if (!chartInstance || typeof chartInstance.setChartOpts !== 'function') {
     return createTemporalYearChartAdapter().render(element, config);
@@ -163,7 +163,7 @@ async function updateTemporalYearChartForSpecies(element, config) {
     taxonIdentifier: config.taxonId,
     startYear: normalizedStartYear,
     endYear: normalizedEndYear,
-    area: config.area
+    region: config.region
   });
 
   const temporalStatsType = resolveActiveTemporalStatsType(element, config);
@@ -229,7 +229,7 @@ async function loadTemporalYearChart(element, config, status) {
     taxonIdentifier: config.taxonId,
     startYear: normalizedStartYear,
     endYear: normalizedEndYear,
-    area: config.area
+    region: config.region
   });
 
   const chartContainer = createTemporalYearChartContainer(element);
@@ -272,7 +272,7 @@ async function loadTemporalYearChart(element, config, status) {
   }
 }
 
-async function fetchTaxonYearStats({ apiBase, taxonIdentifier, startYear, endYear, area }) {
+async function fetchTaxonYearStats({ apiBase, taxonIdentifier, startYear, endYear, region }) {
   const resourceUrl = resolveResourceUrl(apiBase, TAXON_YEAR_STATS_RESOURCE);
   const rows = [];
   let offset = 0;
@@ -286,7 +286,7 @@ async function fetchTaxonYearStats({ apiBase, taxonIdentifier, startYear, endYea
     pageUrl.searchParams.set('taxon_identifier[eq]', taxonIdentifier);
     pageUrl.searchParams.set('year[gte]', String(startYear));
     pageUrl.searchParams.set('year[lte]', String(endYear));
-    pageUrl.searchParams.set('higher_geography_identifier[eq]', area ? area : 'null');
+    pageUrl.searchParams.set('higher_geography_identifier[eq]', region ? region : 'null');
     pageUrl.searchParams.set('limit', String(DEFAULT_PAGE_LIMIT));
     pageUrl.searchParams.set('offset', String(offset));
  
@@ -334,7 +334,7 @@ function createTemporalStatsTypeSwitchControl({ chartElement, selectedValue = 'r
       }
 
       // Pull the latest config/data instead of the values captured when the
-      // control was created, since the selected area or taxon may have
+      // control was created, since the selected region or taxon may have
       // changed since then.
       const latest = chartElement.__tanvisTemporalYearLatest || { config, chartRecords };
       const temporalStatsType = resolveTemporalStatsType(value);
@@ -453,20 +453,20 @@ function setTemporalStatsTypeState(element, temporalStatsType) {
 }
 
 function resolveTemporalMetric(temporalStatsType, config) {
-  const areaLabel = formatTemporalAreaLabel(config?.area);
+  const regionLabel = formatTemporalRegionLabel(config?.region);
   if (temporalStatsType === 'squares') {
-    return { prop: 'count', label: `Grid squares (${areaLabel})`, colour: config.squaresColour };
+    return { prop: 'count', label: `Grid squares (${regionLabel})`, colour: config.squaresColour };
   }
 
-  return { prop: 'count', label: `Records (${areaLabel})`, colour: config.recordsColour };
+  return { prop: 'count', label: `Records (${regionLabel})`, colour: config.recordsColour };
 }
 
-function formatTemporalAreaLabel(area) {
-  if (area === undefined || area === null || area === '') {
+function formatTemporalRegionLabel(region) {
+  if (region === undefined || region === null || region === '') {
     return 'all VCs';
   }
 
-  const normalized = String(area).trim();
+  const normalized = String(region).trim();
   if (/^vc\d+$/i.test(normalized)) {
     return normalized.toLowerCase();
   }

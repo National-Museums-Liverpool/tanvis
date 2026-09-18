@@ -82,7 +82,7 @@ describe('renderNewSpeciesTable', () => {
     expect(element.textContent).toContain('1 new species between 2025-01-01 and 2025-12-31');
   });
 
-  it('includes the selected area in the header text', async () => {
+  it('includes the selected region in the header text', async () => {
     window.Tabulator = createMockTabulator();
 
     vi.spyOn(globalThis, 'fetch').mockResolvedValue({
@@ -95,7 +95,7 @@ describe('renderNewSpeciesTable', () => {
       type: 'new-species-table',
       startDate: '2025-01-01',
       endDate: '2025-12-31',
-      area: '59'
+      region: '59'
     });
 
     await new Promise((resolve) => setTimeout(resolve, 0));
@@ -202,7 +202,7 @@ describe('renderNewSpeciesTable', () => {
 
     const controlElement = document.createElement('div');
     controlElement.id = 'vc-control-new-species';
-    controlElement.dataset.visArea = 'vc-all';
+    controlElement.dataset.visRegion = 'vc-all';
     controlElement.dataset.visTaxonGroup = 'diptera';
     document.body.appendChild(controlElement);
 
@@ -231,7 +231,7 @@ describe('renderNewSpeciesTable', () => {
 
     const controlElement = document.createElement('div');
     controlElement.id = 'vc-control-new-species-all-groups';
-    controlElement.dataset.visArea = 'vc-all';
+    controlElement.dataset.visRegion = 'vc-all';
     controlElement.dataset.visTaxonGroup = '';
     document.body.appendChild(controlElement);
 
@@ -259,7 +259,7 @@ describe('renderNewSpeciesTable', () => {
 
     const controlElement = document.createElement('div');
     controlElement.id = 'vc-control-new-species-language';
-    controlElement.dataset.visArea = 'vc-all';
+    controlElement.dataset.visRegion = 'vc-all';
     controlElement.dataset.visTaxonGroup = '';
     controlElement.dataset.visTaxonGroupLabelMode = 'vernacular';
     document.body.appendChild(controlElement);
@@ -287,8 +287,8 @@ describe('renderNewSpeciesTable', () => {
     });
 
     const controlElement = document.createElement('div');
-    controlElement.id = 'vc-control-new-species-area';
-    controlElement.dataset.visArea = 'vc-58';
+    controlElement.id = 'vc-control-new-species-region';
+    controlElement.dataset.visRegion = 'vc-58';
     controlElement.dataset.visTaxonGroup = '';
     document.body.appendChild(controlElement);
 
@@ -297,7 +297,7 @@ describe('renderNewSpeciesTable', () => {
       type: 'new-species-table',
       startDate: '2025-01-01',
       endDate: '2025-12-31',
-      control: 'vc-control-new-species-area'
+      control: 'vc-control-new-species-region'
     });
 
     await new Promise((resolve) => setTimeout(resolve, 0));
@@ -336,7 +336,7 @@ describe('renderNewSpeciesTable', () => {
 
     const controlElement = document.createElement('div');
     controlElement.id = 'vc-control-new-species-name-mode';
-    controlElement.dataset.visArea = 'vc-all';
+    controlElement.dataset.visRegion = 'vc-all';
     controlElement.dataset.visTaxonGroup = '';
     controlElement.dataset.visTaxonGroupLabelMode = 'scientific';
     document.body.appendChild(controlElement);
@@ -394,7 +394,7 @@ describe('renderNewSpeciesTable', () => {
 
     const controlElement = document.createElement('div');
     controlElement.id = 'vc-control-new-species-paged';
-    controlElement.dataset.visArea = 'vc-all';
+    controlElement.dataset.visRegion = 'vc-all';
     controlElement.dataset.visTaxonGroup = '';
     controlElement.dataset.visTaxonGroupLabelMode = 'vernacular';
     document.body.appendChild(controlElement);

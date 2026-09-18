@@ -5,7 +5,7 @@ import { createVisStatusReporter } from '../utils/visStatus.js';
 import { logApiRequest } from '../utils/apiRequest.js';
 import { renderLeafletAtlasMap } from './map/leafletBackend.js';
 import { renderStaticAtlasMap } from './map/staticBackend.js';
-import { normalizeAreaContractValue } from '../controls/areaControls.js';
+import { normalizeRegionContractValue } from '../controls/regionControls.js';
 import { ensureSharedStyles } from '../styles/sharedStyles.js';
 import {
   createMapTypeSwitchControl,
@@ -45,11 +45,11 @@ export function createSpeciesMapAdapter() {
   return {
     name: 'species-map',
     render(element, config) {
-      const effectiveArea = getEffectiveArea(config);
-      const normalizedArea = normalizeAreaContractValue(effectiveArea);
+      const effectiveRegion = getEffectiveRegion(config);
+      const normalizedRegion = normalizeRegionContractValue(effectiveRegion);
       const renderConfig = {
         ...config,
-        area: normalizedArea
+        region: normalizedRegion
       };
       const taxonIdSourceId = renderConfig.taxonIdSource || '';
       const shouldPreserveTaxonIdSourceSubscription = Boolean(
@@ -77,11 +77,11 @@ export function createSpeciesMapAdapter() {
       const currentSpeciesFromElement = element.dataset.visTaxonid || '';
       const speciesCode = currentSpeciesFromElement || renderConfig.species || renderConfig.taxonId || '';
       const apiBase = resolveApiBase();
-      const areaValue = normalizeAreaContractValue(renderConfig.area ?? '');
+      const regionValue = normalizeRegionContractValue(renderConfig.region ?? '');
 
       logSpeciesMapDebug('render:start', {
         loadId: (element.__tanvisSpeciesMapLoadId || 0) + 1,
-        area: areaValue,
+        region: regionValue,
         species: speciesCode,
         control: renderConfig.control || '',
         reuseExistingMap: shouldReuseExistingMap,
@@ -95,36 +95,36 @@ export function createSpeciesMapAdapter() {
       const taxonGroupExternalKey = getEffectiveTaxonGroup(renderConfig);
       const loadId = (element.__tanvisSpeciesMapLoadId || 0) + 1;
       element.__tanvisSpeciesMapLoadId = loadId;
-      element.dataset.visArea = renderConfig.area;
+      element.dataset.visRegion = renderConfig.region;
       element.dataset.visTaxonGroup = taxonGroupExternalKey;
       element.dataset.visTaxonid = speciesCode;
 
       if (renderConfig.control) {
         if (!shouldPreserveControlSubscription) {
           const controlBusCleanup = subscribeToControl(renderConfig.control, (event) => {
-            if (!event || (event.type !== 'area-change' && event.type !== 'taxon-group-change')) {
+            if (!event || (event.type !== 'region-change' && event.type !== 'taxon-group-change')) {
               return;
             }
 
-            const nextArea = getEffectiveArea(renderConfig);
+            const nextRegion = getEffectiveRegion(renderConfig);
             const nextTaxonGroupExternalKey = getEffectiveTaxonGroup(renderConfig);
-            const currentArea = normalizeAreaContractValue(element.dataset.visArea);
+            const currentRegion = normalizeRegionContractValue(element.dataset.visRegion);
             const currentTaxonGroup = element.dataset.visTaxonGroup || '';
 
-            if (nextArea === currentArea && nextTaxonGroupExternalKey === currentTaxonGroup) {
+            if (nextRegion === currentRegion && nextTaxonGroupExternalKey === currentTaxonGroup) {
               return;
             }
 
-            element.dataset.visArea = nextArea;
+            element.dataset.visRegion = nextRegion;
             element.dataset.visTaxonGroup = nextTaxonGroupExternalKey;
-            logSpeciesMapDebug('control:area-change', {
-              area: nextArea,
+            logSpeciesMapDebug('control:region-change', {
+              region: nextRegion,
               taxonGroup: nextTaxonGroupExternalKey,
               control: renderConfig.control || ''
             });
             createSpeciesMapAdapter().render(element, {
               ...renderConfig,
-              area: nextArea
+              region: nextRegion
             });
           });
 
@@ -178,7 +178,7 @@ export function createSpeciesMapAdapter() {
 
         logSpeciesMapDebug('render:map-ready', {
           loadId,
-          area: renderConfig.area ?? '',
+          region: renderConfig.region ?? '',
           species: speciesCode,
           reusedExistingMap: shouldReuseExistingMap,
           hasMapInstance: Boolean(map)
@@ -195,20 +195,20 @@ export function createSpeciesMapAdapter() {
 
       logSpeciesMapDebug('fetch:start', {
         loadId,
-        area: renderConfig.area ?? '',
+        region: renderConfig.region ?? '',
         species: speciesCode
       });
 
       fetchSpeciesOccurrences({
         apiBase,
         speciesCode,
-        area: renderConfig.area,
+        region: renderConfig.region,
       })
         .then((rows) => {
           if (element.__tanvisSpeciesMapLoadId !== loadId) {
             logSpeciesMapDebug('fetch:ignored-stale-response', {
               loadId,
-              area: renderConfig.area ?? '',
+              region: renderConfig.region ?? '',
               species: speciesCode
             });
             return;
@@ -219,26 +219,26 @@ export function createSpeciesMapAdapter() {
 
           logSpeciesMapDebug('fetch:resolved', {
             loadId,
-            area: renderConfig.area ?? '',
+            region: renderConfig.region ?? '',
             species: speciesCode,
             rowCount: occurrenceRows.length
           });
 
           logSpeciesMapDebug('adapter:apply-data', {
             loadId,
-            area: renderConfig.area ?? '',
+            region: renderConfig.region ?? '',
             species: speciesCode,
             mapInstanceId: map?.__tanvisMapInstanceId,
-            mapArea: map?.__tanvisMapArea,
+            mapRegion: map?.__tanvisMapRegion,
             elementId: element.id
           });
 
           applyOccurrenceDataToMap(map, occurrenceRows, {
             loadId,
-            area: renderConfig.area ?? '',
+            region: renderConfig.region ?? '',
             species: speciesCode,
             mapInstanceId: map?.__tanvisMapInstanceId,
-            mapArea: map?.__tanvisMapArea,
+            mapRegion: map?.__tanvisMapRegion,
             elementId: element.id
           });
         })
@@ -249,7 +249,7 @@ export function createSpeciesMapAdapter() {
 
           logSpeciesMapDebug('fetch:error', {
             loadId,
-            area: renderConfig.area ?? '',
+            region: renderConfig.region ?? '',
             species: speciesCode,
             error: normalizeErrorMessage(error, 'Failed to render species map')
           });
@@ -275,7 +275,7 @@ function renderMapBackend(element, config, hostElement, previousRows = []) {
   // Rows for this specific map instance - kept off the module scope so
   // concurrent maps (and tests) never clobber each other's occurrence data.
   // Seeded with the host element's last-known rows so the map keeps showing
-  // previous data while a new fetch (e.g. after an area/taxon change) is pending.
+  // previous data while a new fetch (e.g. after an region/taxon change) is pending.
   const occurrenceState = { rows: previousRows };
   const mapTypesSel = {
     [OCCURRENCES_MAP_TYPE_KEY]: () => createOccurrenceData(occurrenceState.rows, pointOpacity, dotStyleOptions),
@@ -296,7 +296,7 @@ function renderMapBackend(element, config, hostElement, previousRows = []) {
       errorMessage: 'Failed to render species map',
       mapTypesSel,
       mapTypesKey: OCCURRENCES_MAP_TYPE_KEY,
-      subscribeToAreaControl: false
+      subscribeToRegionControl: false
     });
   }
 
@@ -327,7 +327,7 @@ function renderMapBackend(element, config, hostElement, previousRows = []) {
 
       createSpeciesMapAdapter().render(hostElement, {
         ...config,
-        area: hostElement?.dataset?.visArea || config.area,
+        region: hostElement?.dataset?.visRegion || config.region,
         species: hostElement?.dataset?.visTaxonid || config.species || config.taxonId,
         mapType: 'switch',
         taxonIdSource: config.taxonIdSource,
@@ -450,7 +450,7 @@ export function applyOccurrenceDataToMap(map, occurrenceRows = [], context = {})
     ...context,
     rowCount: rows.length,
     mapInstanceId: map?.__tanvisMapInstanceId,
-    mapArea: map?.__tanvisMapArea,
+    mapRegion: map?.__tanvisMapRegion,
     elementId: map?.__tanvisMapElementId
   });
   map.setMapType(OCCURRENCES_MAP_TYPE_KEY);
@@ -460,28 +460,28 @@ export function applyOccurrenceDataToMap(map, occurrenceRows = [], context = {})
   return map;
 }
 
-function getEffectiveArea(config) {
+function getEffectiveRegion(config) {
   if (!config.control) {
-    return normalizeAreaContractValue(config.area);
+    return normalizeRegionContractValue(config.region);
   }
 
   if (typeof document === 'undefined') {
-    return normalizeAreaContractValue(config.area);
+    return normalizeRegionContractValue(config.region);
   }
 
   const controlElement = document.getElementById(config.control);
-  const controlAreaValue = controlElement?.dataset?.visArea;
-  const normalizedControlAreaValue = normalizeAreaContractValue(controlAreaValue);
-  if (controlElement && Object.prototype.hasOwnProperty.call(controlElement.dataset, 'visArea') && normalizedControlAreaValue !== undefined && normalizedControlAreaValue !== null && normalizedControlAreaValue !== '') {
-    return normalizedControlAreaValue;
+  const controlRegionValue = controlElement?.dataset?.visRegion;
+  const normalizedControlRegionValue = normalizeRegionContractValue(controlRegionValue);
+  if (controlElement && Object.prototype.hasOwnProperty.call(controlElement.dataset, 'visRegion') && normalizedControlRegionValue !== undefined && normalizedControlRegionValue !== null && normalizedControlRegionValue !== '') {
+    return normalizedControlRegionValue;
   }
 
   const latestEvent = getLatestControlEvent(config.control);
-  if (latestEvent?.type === 'area-change' && latestEvent.area !== undefined && latestEvent.area !== null) {
-    return normalizeAreaContractValue(latestEvent.area);
+  if (latestEvent?.type === 'region-change' && latestEvent.region !== undefined && latestEvent.region !== null) {
+    return normalizeRegionContractValue(latestEvent.region);
   }
 
-  return normalizeAreaContractValue(config.area);
+  return normalizeRegionContractValue(config.region);
 }
 
 function getEffectiveTaxonGroup(config) {
@@ -493,7 +493,7 @@ function getEffectiveTaxonGroup(config) {
   return controlElement?.dataset?.visTaxonGroup || '';
 }
 
-async function fetchSpeciesOccurrences({ apiBase, speciesCode, area }) {
+async function fetchSpeciesOccurrences({ apiBase, speciesCode, region }) {
   if (!speciesCode) {
     return [];
   }
@@ -506,8 +506,8 @@ async function fetchSpeciesOccurrences({ apiBase, speciesCode, area }) {
     const pageUrl = new URL(resourceUrl.toString());
     pageUrl.searchParams.set('taxon_identifier[eq]', speciesCode);
 
-    if (area) {
-      pageUrl.searchParams.set('higher_geography_identifier[eq]', String(area));
+    if (region) {
+      pageUrl.searchParams.set('higher_geography_identifier[eq]', String(region));
     }
 
     pageUrl.searchParams.set('limit', String(DEFAULT_PAGE_LIMIT));

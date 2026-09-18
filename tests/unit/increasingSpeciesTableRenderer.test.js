@@ -58,7 +58,7 @@ describe('renderIncreasingSpeciesTable', () => {
     expect(element.textContent).toContain('Top 25 species by frequency trend');
   });
 
-  it('includes the selected area in the header text', async () => {
+  it('includes the selected region in the header text', async () => {
     window.Tabulator = function Tabulator(container, options) {
       container.dataset.tabulatorMounted = 'true';
       void options.ajaxRequestFunc('custom_handler', {}, { page: 1, size: 10 });
@@ -76,7 +76,7 @@ describe('renderIncreasingSpeciesTable', () => {
     renderIncreasingSpeciesTable(element, {
       type: 'increasing-species-table',
       topN: 10,
-      area: 'vc59'
+      region: 'vc59'
     });
 
     await new Promise((resolve) => setTimeout(resolve, 0));
@@ -159,7 +159,7 @@ describe('renderIncreasingSpeciesTable', () => {
 
     const controlElement = document.createElement('div');
     controlElement.id = 'vc-control-increasing';
-    controlElement.dataset.visArea = 'vc-all';
+    controlElement.dataset.visRegion = 'vc-all';
     controlElement.dataset.visTaxonGroup = '';
     document.body.appendChild(controlElement);
 
@@ -201,7 +201,7 @@ describe('renderIncreasingSpeciesTable', () => {
 
     const controlElement = document.createElement('div');
     controlElement.id = 'vc-control-increasing-all-groups';
-    controlElement.dataset.visArea = 'vc-all';
+    controlElement.dataset.visRegion = 'vc-all';
     controlElement.dataset.visTaxonGroup = '';
     document.body.appendChild(controlElement);
 
@@ -234,7 +234,7 @@ describe('renderIncreasingSpeciesTable', () => {
 
     const controlElement = document.createElement('div');
     controlElement.id = 'vc-control-increasing-language';
-    controlElement.dataset.visArea = 'vc-all';
+    controlElement.dataset.visRegion = 'vc-all';
     controlElement.dataset.visTaxonGroup = '';
     controlElement.dataset.visTaxonGroupLabelMode = 'vernacular';
     document.body.appendChild(controlElement);
@@ -267,15 +267,15 @@ describe('renderIncreasingSpeciesTable', () => {
     });
 
     const controlElement = document.createElement('div');
-    controlElement.id = 'vc-control-increasing-area';
-    controlElement.dataset.visArea = 'vc-59';
+    controlElement.id = 'vc-control-increasing-region';
+    controlElement.dataset.visRegion = 'vc-59';
     controlElement.dataset.visTaxonGroup = '';
     document.body.appendChild(controlElement);
 
     const element = document.createElement('div');
     renderIncreasingSpeciesTable(element, {
       type: 'increasing-species-table',
-      control: 'vc-control-increasing-area'
+      control: 'vc-control-increasing-region'
     });
 
     await new Promise((resolve) => setTimeout(resolve, 0));
@@ -357,7 +357,7 @@ describe('renderIncreasingSpeciesTable', () => {
 
     const controlElement = document.createElement('div');
     controlElement.id = 'vc-control-increasing-name-mode';
-    controlElement.dataset.visArea = 'vc-all';
+    controlElement.dataset.visRegion = 'vc-all';
     controlElement.dataset.visTaxonGroup = '';
     controlElement.dataset.visTaxonGroupLabelMode = 'scientific';
     document.body.appendChild(controlElement);

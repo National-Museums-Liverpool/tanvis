@@ -4,7 +4,7 @@ import { getVisAttributeSchema } from '../../src/config/visAttributeSchema.js';
 describe('getVisAttributeSchema', () => {
   it('keeps per-vis-type rules explicit while resolving shared defaults', () => {
     const schema = getVisAttributeSchema('species-map');
-    const areaRule = schema.rules.find((rule) => rule.key === 'area');
+    const areaRule = schema.rules.find((rule) => rule.key === 'region');
     const hectadsRule = schema.rules.find((rule) => rule.key === 'hectads');
     const mapTypeRule = schema.rules.find((rule) => rule.key === 'mapType');
 
@@ -14,7 +14,7 @@ describe('getVisAttributeSchema', () => {
     expect(schema.rules.find((rule) => rule.key === 'dotColour')).toMatchObject({ defaultValue: 'black' });
     expect(schema.rules.find((rule) => rule.key === 'transformation')).toMatchObject({ defaultValue: 'none' });
     expect(schema.rules.find((rule) => rule.key === 'dotShape')).toMatchObject({ defaultValue: 'circle' });
-    expect(schema.rules.map((rule) => rule.key)).toEqual(expect.arrayContaining(['control', 'taxonId', 'area', 'mapType']));
+    expect(schema.rules.map((rule) => rule.key)).toEqual(expect.arrayContaining(['control', 'taxonId', 'region', 'mapType']));
     expect(schema.rules.find((rule) => rule.key === 'species')).toBeUndefined();
   });
 
@@ -31,8 +31,8 @@ describe('getVisAttributeSchema', () => {
   it('always includes shared rules even when vis-type lists do not mention them explicitly', () => {
     const schema = getVisAttributeSchema('control-block');
 
-    expect(schema.rules.find((rule) => rule.key === 'area')).toBeDefined();
-    expect(schema.rules.map((rule) => rule.key)).toContain('area');
+    expect(schema.rules.find((rule) => rule.key === 'region')).toBeDefined();
+    expect(schema.rules.map((rule) => rule.key)).toContain('region');
   });
 
   it('exposes boundaries for map-based visualisations but not temporal-year-chart', () => {
@@ -54,6 +54,6 @@ describe('getVisAttributeSchema', () => {
     expect(schema.rules.find((rule) => rule.key === 'imageVariant')).toMatchObject({ defaultValue: 'none' });
     expect(schema.rules.find((rule) => rule.key === 'expand')).toMatchObject({ defaultValue: false });
     expect(schema.rules.find((rule) => rule.key === 'control')).toBeUndefined();
-    expect(schema.rules.find((rule) => rule.key === 'area')).toBeUndefined();
+    expect(schema.rules.find((rule) => rule.key === 'region')).toBeUndefined();
   });
 });

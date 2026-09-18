@@ -1,5 +1,5 @@
 export const transOptsSel = {
-  // Different views for the three VCs in the Cheshire/Lancashire area
+  // Different views for the three VCs in the Cheshire/Lancashire region
   // and a combined view for all of them together.
   'vc-all': {
     id: 'vc-all',

@@ -1,5 +1,5 @@
 import { getLatestControlEvent, subscribeToControl } from '../../controls/controlBus.js';
-import { normalizeAreaContractValue } from '../../controls/areaControls.js';
+import { normalizeRegionContractValue } from '../../controls/regionControls.js';
 import { transOptsSel } from '../transOptsSel.js';
 
 const elementIdCounters = new Map();
@@ -34,37 +34,37 @@ export function clearExpandResizeHandlers(element) {
   delete element.__tanvisExpandCleanup;
 }
 
-export function getEffectiveArea(config) {
+export function getEffectiveRegion(config) {
   if (!config.control) {
-    return normalizeAreaContractValue(config.area);
+    return normalizeRegionContractValue(config.region);
   }
 
   if (typeof document === 'undefined') {
-    return normalizeAreaContractValue(config.area);
+    return normalizeRegionContractValue(config.region);
   }
 
   const controlElement = document.getElementById(config.control);
-  const controlAreaValue = controlElement?.dataset?.visArea;
-  const normalizedControlAreaValue = normalizeAreaContractValue(controlAreaValue);
-  if (controlElement && Object.prototype.hasOwnProperty.call(controlElement.dataset, 'visArea') && normalizedControlAreaValue !== undefined && normalizedControlAreaValue !== null && normalizedControlAreaValue !== '') {
-    return normalizedControlAreaValue;
+  const controlRegionValue = controlElement?.dataset?.visRegion;
+  const normalizedControlRegionValue = normalizeRegionContractValue(controlRegionValue);
+  if (controlElement && Object.prototype.hasOwnProperty.call(controlElement.dataset, 'visRegion') && normalizedControlRegionValue !== undefined && normalizedControlRegionValue !== null && normalizedControlRegionValue !== '') {
+    return normalizedControlRegionValue;
   }
 
   const latestEvent = getLatestControlEvent(config.control);
-  if (latestEvent?.type === 'area-change' && latestEvent.area !== undefined && latestEvent.area !== null) {
-    return normalizeAreaContractValue(latestEvent.area);
+  if (latestEvent?.type === 'region-change' && latestEvent.region !== undefined && latestEvent.region !== null) {
+    return normalizeRegionContractValue(latestEvent.region);
   }
 
-  return normalizeAreaContractValue(config.area);
+  return normalizeRegionContractValue(config.region);
 }
 
-export function subscribeToAreaControl(controlId, handler) {
+export function subscribeToRegionControl(controlId, handler) {
   return subscribeToControl(controlId, (event) => {
-    if (!event || event.type !== 'area-change' || event.area === undefined || event.area === null) {
+    if (!event || event.type !== 'region-change' || event.region === undefined || event.region === null) {
       return;
     }
 
-    handler(event.area, event);
+    handler(event.region, event);
   });
 }
 
@@ -144,7 +144,7 @@ export function resizeExpandedMap(element, config, map) {
 
   const width = getParentWidth(element);
   const explicitHeight = parseOptionalPositiveNumber(config.height);
-  const bounds = getAreaBounds(config.area);
+  const bounds = getRegionBounds(config.region);
   const height = explicitHeight ?? calculateHeightFromBounds(width, bounds);
 
   if (width === undefined || height === undefined) {
@@ -158,24 +158,24 @@ export function resizeExpandedMap(element, config, map) {
   }
 }
 
-export function resolveAreaSelectionKey(area) {
-  if (area === '') {
+export function resolveRegionSelectionKey(region) {
+  if (region === '') {
     return 'vc-all';
   }
 
-  return `vc-${area}`;
+  return `vc-${region}`;
 }
 
-export function getAreaBounds(area) {
-  return transOptsSel[resolveAreaSelectionKey(area)]?.bounds;
+export function getRegionBounds(region) {
+  return transOptsSel[resolveRegionSelectionKey(region)]?.bounds;
 }
 
-export function getAreaCentroid(area) {
-  return transOptsSel[resolveAreaSelectionKey(area)]?.centroid;
+export function getRegionCentroid(region) {
+  return transOptsSel[resolveRegionSelectionKey(region)]?.centroid;
 }
 
-export function getAreaInitZoom(area) {
-  return transOptsSel[resolveAreaSelectionKey(area)]?.initZoom ?? 10;
+export function getRegionInitZoom(region) {
+  return transOptsSel[resolveRegionSelectionKey(region)]?.initZoom ?? 10;
 }
 
 export function getBrcAtlasGlobal() {

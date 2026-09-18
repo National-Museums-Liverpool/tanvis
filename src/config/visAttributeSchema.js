@@ -241,7 +241,7 @@ const RULES = {
     exampleValue: 'my-control-block',
     info: `The id of a control block to link to this visualisation. 
       The visualisation will respond to control-bus selections made in that control,
-      such as area and taxon-group changes.`
+      such as geographic region and taxon group changes.`
   }),
   controlElements: createRule({
     key: 'controlElements',
@@ -255,7 +255,7 @@ const RULES = {
       if (typeof(value) === 'undefined' || value === null || value === '') {
         ret.value = rule.defaultValue;
       } else {
-        const allowedVals = new Set(['area', 'groups', 'language', 'species']);
+        const allowedVals = new Set(['region', 'groups', 'language', 'species']);
         const vals = value.split(/\s+/).map((token) => token.trim()).filter(Boolean);
         const hasInvalid = vals.some((token) => !allowedVals.has(token));
         if (hasInvalid) {
@@ -267,8 +267,8 @@ const RULES = {
       }
       return ret;
     },
-    defaultValue: 'area groups language species',
-    info: `A space-separated list of control-block sections to show. Allowed values are: area, groups, language, species.`
+    defaultValue: 'region groups language species',
+    info: `A space-separated list of control-block sections to show. Allowed values are: region, groups, language, species.`
   }),
   showDataOptsToggle: createRule({
     key: 'showDataOptsToggle',
@@ -420,9 +420,9 @@ const RULES = {
       or 'year-n', where n is any integer, which resolves to the last day of the current year minus n years
       (e.g. year-0 is the last day of the current year, year-1 is the last day of the previous year, etc.).`
   }),
-  area: createRule({
-    key: 'area',
-    datasetName: 'visArea',
+  region: createRule({
+    key: 'region',
+    datasetName: 'visRegion',
     parseAndValidate: (value, dataset, config, element, rule) => {
       const ret = parseAndValidateSet(value, dataset, config, element, rule);
       if (ret.error) {
@@ -440,9 +440,9 @@ const RULES = {
     },
     allowedValues: ['vc-58', 'vc-59', 'vc-60', 'vc-all'],
     defaultValue: 'vc-all',
-    info: `The vice county area to visualize. This can be one of the following values: 
+    info: `The geographic region to visualize. This can be one of the following values: 
       'vc-58', 'vc-59', 'vc-60' or 'vc-all'. 
-      Note that if a control block is linked to this visualisation, the area will be determined by 
+      Note that if a control block is linked to this visualisation, the region will be determined by 
       the control block selection and this attribute will be ignored.`
   }),
   boundaries: createRule({
@@ -675,23 +675,23 @@ const RULES = {
 // Add the new data attributes for control-block.
 
 const VIS_TYPE_RULE_SETS = {
-  'control-block': ['area', 'groupId', 'language','controlElements', 'showDataOptsToggle', 'showDataOptsExpanded'],
+  'control-block': ['region', 'groupId', 'language','controlElements', 'showDataOptsToggle', 'showDataOptsExpanded'],
   'species-identifier': ['taxonId'],
-  'species-map': ['taxonId', 'taxonIdSource', 'control', 'area', 'hectads', 'mapType', 'boundaries', 'dotShape', 'dotColour', 'transformation', 'dotShape', 'expand', 'width', 'height'],
-  'grid-stats-map': ['gridStatsType', 'control', 'area', 'hectads', 'mapType', 'boundaries', 'dotShape', 'dotColour', 'transformation', 'expand', 'width', 'height'],
-  'temporal-year-chart': ['taxonId', 'temporalStatsType', 'taxonIdSource', 'chartType', 'recordsColour', 'squaresColour','startYear', 'endYear', 'area', 'control', 'expand', 'width', 'height'],
-  'new-species-table': ['startDate', 'endDate', 'area', 'groupId', 'language','control', 'pageSize'],
-  'increasing-species-table': ['topN', 'area', 'groupId', 'language','control', 'pageSize'],
-  'species-absent-table': ['year', 'area', 'groupId', 'language','control', 'pageSize'],
+  'species-map': ['taxonId', 'taxonIdSource', 'control', 'region', 'hectads', 'mapType', 'boundaries', 'dotShape', 'dotColour', 'transformation', 'dotShape', 'expand', 'width', 'height'],
+  'grid-stats-map': ['gridStatsType', 'control', 'region', 'hectads', 'mapType', 'boundaries', 'dotShape', 'dotColour', 'transformation', 'expand', 'width', 'height'],
+  'temporal-year-chart': ['taxonId', 'temporalStatsType', 'taxonIdSource', 'chartType', 'recordsColour', 'squaresColour','startYear', 'endYear', 'region', 'control', 'expand', 'width', 'height'],
+  'new-species-table': ['startDate', 'endDate', 'region', 'groupId', 'language','control', 'pageSize'],
+  'increasing-species-table': ['topN', 'region', 'groupId', 'language','control', 'pageSize'],
+  'species-absent-table': ['year', 'region', 'groupId', 'language','control', 'pageSize'],
   'species-name-block': ['taxonId', 'taxonIdSource', 'primaryName', 'secondaryName', 'authority'],
   'species-remarks-block': ['taxonId', 'taxonIdSource'],
-  'species-info-block': ['taxonId', 'taxonIdSource', 'control', 'area'],
+  'species-info-block': ['taxonId', 'taxonIdSource', 'control', 'region'],
   'species-image': ['taxonId', 'taxonIdSource', 'imageVariant', 'expand', 'width', 'height', 'showImageCaption', 'showImageAttribution', 'showImageLicense'],
   'help-block': []
 };
 
 const VIS_TYPE_DESCRIPTIONS = {
-  'control-block': `A control block for selecting area, taxon group, language and taxon.
+  'control-block': `A control block for selecting geographic region, taxon group, language and taxon.
     Any visualisations on the page can subscribe to it to control their data and rendering.
     The four elements of the control block can be shown or hidden individually.`,
   'species-identifier': `This is not a visualisation itself but a hidden element that can be 
@@ -715,12 +715,12 @@ const VIS_TYPE_DESCRIPTIONS = {
     of records or the number of grid squares for each year. Alternatively, it can be configured
     to display a control to switch between the two chart types.`,
   'new-species-table': `A table showing newly recorded species between a given start and end date. 
-    The table can be filtered by area and taxon group, either directly or via a linked control block.`,
+    The table can be filtered by geographic region and taxon group, either directly or via a linked control block.`,
   'increasing-species-table': `A table showing the top 'N' (configurable) increasing 
-    species based on a trend statistic. The table can be filtered by area and taxon group, either 
+    species based on a trend statistic. The table can be filtered by geographic region and taxon group, either 
     directly or via a linked control block.`,
   'species-absent-table': `A table showing species not recorded since a given year. The table can 
-    be filtered by area and taxon group, either directly or via a linked control block.`,
+    be filtered by geographic region and taxon group, either directly or via a linked control block.`,
   'species-name-block': `A block visualisation showing the name of a species. Some default
     styling is applied to the name, but it can be overridden with CSS. The block can show either
     the scientific name or the vernacular name first, and can optionally show the other name in parentheses.

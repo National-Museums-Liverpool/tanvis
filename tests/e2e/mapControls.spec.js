@@ -5,19 +5,19 @@ import { test, expect } from '@playwright/test';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-test('control-block drives map area changes', async ({ page }) => {
+test('control-block drives map region changes', async ({ page }) => {
   await page.setContent(`
     <div
       class="tanvis"
       data-vis-type="control-block"
       id="map-controls"
-      data-vis-area="vc-60"
+      data-vis-region="vc-60"
     ></div>
 
     <div
       class="tanvis"
       data-vis-type="species-map"
-      data-vis-area="vc-60"
+      data-vis-region="vc-60"
       data-vis-control="map-controls"
     ></div>
   `);
@@ -73,7 +73,7 @@ test('control-block drives map area changes', async ({ page }) => {
   await page.getByLabel('vc59').check();
 
   await expect(page.getByLabel('vc59')).toBeChecked();
-  await expect(page.locator('.tanvis[data-vis-type="species-map"]')).toHaveAttribute('data-vis-area', '59');
+  await expect(page.locator('.tanvis[data-vis-type="species-map"]')).toHaveAttribute('data-vis-region', '59');
 
   const calls = await page.evaluate(() => ({
     svgMapCalls: window.__svgMapCalls,

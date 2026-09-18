@@ -10,7 +10,7 @@ describe('parseOptions', () => {
 
     expect(parsed).toMatchObject({
       type: 'control-block',
-      area: '',
+      region: '',
     });
     expect(parsed).not.toHaveProperty('source');
   });
@@ -18,15 +18,15 @@ describe('parseOptions', () => {
   it('parses vice-county attributes to numeric identifiers for specific areas and empty string for vc-all', () => {
     const element = document.createElement('div');
     element.dataset.visType = 'species-map';
-    element.dataset.visArea = 'vc-all';
+    element.dataset.visRegion = 'vc-all';
 
-    expect(parseOptions(element).area).toBe('');
+    expect(parseOptions(element).region).toBe('');
 
     const vc59Element = document.createElement('div');
     vc59Element.dataset.visType = 'species-map';
-    vc59Element.dataset.visArea = 'vc-59';
+    vc59Element.dataset.visRegion = 'vc-59';
 
-    expect(parseOptions(vc59Element).area).toBe(59);
+    expect(parseOptions(vc59Element).region).toBe(59);
   });
 
   it('does not default to a supported vis-type when data-vis-type is missing', () => {

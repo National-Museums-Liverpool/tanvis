@@ -28,7 +28,7 @@ describe('species map redraw flow', () => {
     const element = document.createElement('div');
     renderSpeciesMap(element, {
       type: 'species-map',
-      area: 'vc-58',
+      region: 'vc-58',
       taxonId: 'ABC123'
     });
 
@@ -57,7 +57,7 @@ describe('species map redraw flow', () => {
     ]);
   });
 
-  it('does not recreate the map when the control bus reports the same normalized area', () => {
+  it('does not recreate the map when the control bus reports the same normalized region', () => {
     let createCount = 0;
 
     window.brcatlas = {
@@ -73,14 +73,14 @@ describe('species map redraw flow', () => {
     const element = document.createElement('div');
     renderSpeciesMap(element, {
       type: 'species-map',
-      area: 'vc-59',
+      region: 'vc-59',
       taxonId: 'ABC123',
       control: 'control-block'
     });
 
     publishControlEvent('control-block', {
-      type: 'area-change',
-      area: 59
+      type: 'region-change',
+      region: 59
     });
 
     expect(createCount).toBe(1);
@@ -108,7 +108,7 @@ describe('species map redraw flow', () => {
     const element = document.createElement('div');
     renderSpeciesMap(element, {
       type: 'species-map',
-      area: 'vc-58',
+      region: 'vc-58',
       taxonId: 'ABC123'
     });
 
@@ -137,7 +137,7 @@ describe('species map redraw flow', () => {
     expect(payload.records).toEqual([]);
   });
 
-  it('uses the most recently available occurrence data while a new area fetch is pending', async () => {
+  it('uses the most recently available occurrence data while a new region fetch is pending', async () => {
     const mapTypeHandlers = {};
     let resolveSecondFetch;
 
@@ -152,8 +152,8 @@ describe('species map redraw flow', () => {
     };
 
     vi.spyOn(globalThis, 'fetch').mockImplementation(async (url) => {
-      const area = new URL(url).searchParams.get('higher_geography_identifier[eq]');
-      if (area === '58') {
+      const region = new URL(url).searchParams.get('higher_geography_identifier[eq]');
+      if (region === '58') {
         return {
           ok: true,
           json: async () => ({ data: [{ grid_ref_2km: 'SJ58D' }] })
@@ -168,7 +168,7 @@ describe('species map redraw flow', () => {
     const element = document.createElement('div');
     renderSpeciesMap(element, {
       type: 'species-map',
-      area: 'vc-58',
+      region: 'vc-58',
       taxonId: 'ABC123'
     });
 
@@ -179,7 +179,7 @@ describe('species map redraw flow', () => {
 
     renderSpeciesMap(element, {
       type: 'species-map',
-      area: 'vc-59',
+      region: 'vc-59',
       taxonId: 'ABC123'
     });
 
@@ -224,7 +224,7 @@ describe('species map redraw flow', () => {
 
     renderSpeciesMap(element, {
       type: 'species-map',
-      area: 'vc-58',
+      region: 'vc-58',
       taxonId: 'ABC123'
     });
 
@@ -273,7 +273,7 @@ describe('species map redraw flow', () => {
     renderSpeciesMap(element, {
       type: 'species-map',
       mapType: 'switch',
-      area: 'vc-58',
+      region: 'vc-58',
       taxonId: 'ABC123'
     });
 
@@ -306,7 +306,7 @@ describe('species map redraw flow', () => {
     renderSpeciesMap(element, {
       type: 'species-map',
       mapType: 'switch',
-      area: 'vc-58',
+      region: 'vc-58',
       taxonId: 'ABC123'
     });
 
@@ -315,7 +315,7 @@ describe('species map redraw flow', () => {
     renderSpeciesMap(element, {
       type: 'species-map',
       mapType: 'leaflet',
-      area: 'vc-58',
+      region: 'vc-58',
       taxonId: 'ABC123'
     });
 
@@ -361,7 +361,7 @@ describe('species map redraw flow', () => {
     const element = document.createElement('div');
     renderSpeciesMap(element, {
       type: 'species-map',
-      area: 'vc-58',
+      region: 'vc-58',
       taxonId: 'ABC123',
       taxonIdSource: 'linked-table'
     });
@@ -408,7 +408,7 @@ describe('species map redraw flow', () => {
     const element = document.createElement('div');
     renderSpeciesMap(element, {
       type: 'species-map',
-      area: 'vc-58',
+      region: 'vc-58',
       taxonId: 'ABC123',
       taxonIdSource: 'linked-table'
     });
@@ -481,7 +481,7 @@ describe('species map redraw flow', () => {
     renderSpeciesMap(element, {
       type: 'species-map',
       mapType: 'switch',
-      area: 'vc-58',
+      region: 'vc-58',
       taxonId: 'ABC123',
       taxonIdSource: 'linked-table'
     });
@@ -534,7 +534,7 @@ describe('species map redraw flow', () => {
     const element = document.createElement('div');
     renderSpeciesMap(element, {
       type: 'species-map',
-      area: 'vc-58',
+      region: 'vc-58',
       taxonId: 'ABC123',
       taxonIdSource: 'control'
     });
@@ -552,7 +552,7 @@ describe('species map redraw flow', () => {
     taxonIdSource.remove();
   });
 
-  it('keeps the latest taxonIdSource species selection when a control-block area change re-renders the map', async () => {
+  it('keeps the latest taxonIdSource species selection when a control-block region change re-renders the map', async () => {
     const requestedSpecies = [];
 
     window.brcatlas = {
@@ -584,7 +584,7 @@ describe('species map redraw flow', () => {
     const element = document.createElement('div');
     renderSpeciesMap(element, {
       type: 'species-map',
-      area: 'vc-58',
+      region: 'vc-58',
       taxonId: 'ABC123',
       control: 'control',
       taxonIdSource: 'linked-control'
@@ -598,7 +598,7 @@ describe('species map redraw flow', () => {
 
     await new Promise((resolve) => setTimeout(resolve, 0));
 
-    publishControlEvent('control', { type: 'area-change', area: 'vc-59' });
+    publishControlEvent('control', { type: 'region-change', region: 'vc-59' });
 
     await new Promise((resolve) => setTimeout(resolve, 0));
 
@@ -608,7 +608,7 @@ describe('species map redraw flow', () => {
     taxonIdSource.remove();
   });
 
-  it('prefers the current control dataset over stale area-change events from the control bus', async () => {
+  it('prefers the current control dataset over stale region-change events from the control bus', async () => {
     const requestedUrls = [];
 
     window.brcatlas = {
@@ -628,15 +628,15 @@ describe('species map redraw flow', () => {
 
     const controlElement = document.createElement('div');
     controlElement.id = 'control';
-    controlElement.dataset.visArea = 'vc-58';
+    controlElement.dataset.visRegion = 'vc-58';
     document.body.appendChild(controlElement);
 
-    publishControlEvent('control', { type: 'area-change', area: 'vc-59' });
+    publishControlEvent('control', { type: 'region-change', region: 'vc-59' });
 
     const element = document.createElement('div');
     renderSpeciesMap(element, {
       type: 'species-map',
-      area: 'vc-59',
+      region: 'vc-59',
       taxonId: 'ABC123',
       control: 'control'
     });
@@ -668,20 +668,20 @@ describe('species map redraw flow', () => {
 
     const controlElement = document.createElement('div');
     controlElement.id = 'control';
-    controlElement.dataset.visArea = '';
+    controlElement.dataset.visRegion = '';
     document.body.appendChild(controlElement);
 
     const element = document.createElement('div');
     renderSpeciesMap(element, {
       type: 'species-map',
-      area: 'vc-all',
+      region: 'vc-all',
       taxonId: 'ABC123',
       control: 'control'
     });
 
     await new Promise((resolve) => setTimeout(resolve, 0));
 
-    publishControlEvent('control', { type: 'area-change', area: 'vc-58' });
+    publishControlEvent('control', { type: 'region-change', region: 'vc-58' });
 
     await new Promise((resolve) => setTimeout(resolve, 0));
 
@@ -717,14 +717,14 @@ describe('species map redraw flow', () => {
 
     const controlElement = document.createElement('div');
     controlElement.id = 'control';
-    controlElement.dataset.visArea = 'vc-58';
+    controlElement.dataset.visRegion = 'vc-58';
     controlElement.dataset.visTaxonGroup = '';
     document.body.appendChild(controlElement);
 
     const element = document.createElement('div');
     renderSpeciesMap(element, {
       type: 'species-map',
-      area: 'vc-58',
+      region: 'vc-58',
       taxonId: 'ABC123',
       control: 'control',
       taxonIdSource: 'linked-table'
@@ -732,8 +732,8 @@ describe('species map redraw flow', () => {
 
     await new Promise((resolve) => setTimeout(resolve, 0));
 
-    controlElement.dataset.visArea = 'vc-59';
-    publishControlEvent('control', { type: 'area-change', area: 59 });
+    controlElement.dataset.visRegion = 'vc-59';
+    publishControlEvent('control', { type: 'region-change', region: 59 });
 
     await new Promise((resolve) => setTimeout(resolve, 0));
 

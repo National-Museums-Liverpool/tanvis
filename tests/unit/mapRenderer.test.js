@@ -4,7 +4,7 @@ import { renderLeafletMap } from '../../src/renderers/leafletMap.js';
 import { publishControlEvent } from '../../src/controls/controlBus.js';
 
 describe('renderStaticMap', () => {
-  it('calls brc-atlas svgMap and responds to control-block area changes', () => {
+  it('calls brc-atlas svgMap and responds to control-block region changes', () => {
     const setIdentfierCalls = [];
     const redrawCalls = [];
     const svgMapCalls = [];
@@ -21,13 +21,13 @@ describe('renderStaticMap', () => {
 
     const controlElement = document.createElement('div');
     controlElement.id = 'vc-control-static';
-    controlElement.dataset.visArea = '';
+    controlElement.dataset.visRegion = '';
     document.body.appendChild(controlElement);
 
     const element = document.createElement('div');
     const config = {
       type: 'map',
-      area: '',
+      region: '',
       control: 'vc-control-static'
     };
 
@@ -43,11 +43,11 @@ describe('renderStaticMap', () => {
     expect(redrawCalls).toHaveLength(1);
 
     publishControlEvent('vc-control-static', {
-      type: 'area-change',
-      area: 59
+      type: 'region-change',
+      region: 59
     });
 
-    expect(element.dataset.visArea).toBe('59');
+    expect(element.dataset.visRegion).toBe('59');
     expect(svgMapCalls).toHaveLength(2);
     expect(svgMapCalls[1].transOptsKey).toBe('vc-59');
     expect(svgMapCalls[1].boundaryGjson).toBe('/data/vcs/simp-100/vc-59-100.geojson');
@@ -69,7 +69,7 @@ describe('renderStaticMap', () => {
     const element = document.createElement('div');
     renderStaticMap(element, {
       type: 'map',
-      area: 'vc-58',
+      region: 'vc-58',
       ctl: false,
       hectads: false
     });
@@ -95,7 +95,7 @@ describe('renderStaticMap', () => {
     const element = document.createElement('div');
     renderStaticMap(element, {
       type: 'map',
-      area: 'vc-60',
+      region: 'vc-60',
       ctl: false,
       width: 700
     });
@@ -120,7 +120,7 @@ describe('renderStaticMap', () => {
     const element = document.createElement('div');
     renderStaticMap(element, {
       type: 'map',
-      area: 'vc-60',
+      region: 'vc-60',
       ctl: false,
       width: 700,
       height: 555
@@ -150,7 +150,7 @@ describe('renderLeafletMap', () => {
 
     renderLeafletMap(element, {
       type: 'leaflet-map',
-      area: 'vc-59'
+      region: 'vc-59'
     });
 
     expect(element.textContent).toContain('Leaflet is not available');
@@ -167,14 +167,14 @@ describe('renderLeafletMap', () => {
 
     renderLeafletMap(element, {
       type: 'leaflet-map',
-      area: 'vc-59'
+      region: 'vc-59'
     });
 
     expect(element.textContent).toContain('Leaflet stylesheet');
     expect(element.textContent).toContain('leaflet.css');
   });
 
-  it('responds to control-block area changes', () => {
+  it('responds to control-block region changes', () => {
     const leafletMapCalls = [];
     const setViewCalls = [];
 
@@ -192,13 +192,13 @@ describe('renderLeafletMap', () => {
 
     const controlElement = document.createElement('div');
     controlElement.id = 'vc-control-leaflet';
-    controlElement.dataset.visArea = '';
+    controlElement.dataset.visRegion = '';
     document.body.appendChild(controlElement);
 
     const element = document.createElement('div');
     renderLeafletMap(element, {
       type: 'leaflet-map',
-      area: '',
+      region: '',
       control: 'vc-control-leaflet'
     });
 
@@ -206,34 +206,34 @@ describe('renderLeafletMap', () => {
     expect(setViewCalls[0]).toEqual({ coords: [53.585317, -2.549048], zoom: 8 });
 
     publishControlEvent('vc-control-leaflet', {
-      type: 'area-change',
-      area: 59
+      type: 'region-change',
+      region: 59
     });
 
-    expect(element.dataset.visArea).toBe('59');
+    expect(element.dataset.visRegion).toBe('59');
     expect(leafletMapCalls).toHaveLength(1);
     expect(setViewCalls[1]).toEqual({ coords: [53.629982, -2.606334], zoom: 9 });
 
     publishControlEvent('vc-control-leaflet', {
-      type: 'area-change',
-      area: 58
+      type: 'region-change',
+      region: 58
     });
     expect(setViewCalls[2]).toEqual({ coords: [53.225875, -2.525714], zoom: 9 });
 
     publishControlEvent('vc-control-leaflet', {
-      type: 'area-change',
-      area: 60
+      type: 'region-change',
+      region: 60
     });
     expect(setViewCalls[3]).toEqual({ coords: [53.988606, -2.764047], zoom: 9 });
 
     publishControlEvent('vc-control-leaflet', {
-      type: 'area-change',
-      area: ''
+      type: 'region-change',
+      region: ''
     });
     expect(setViewCalls[4]).toEqual({ coords: [53.585317, -2.549048], zoom: 8 });
   });
 
-  it('pans to the selected area centroid on initial render', () => {
+  it('pans to the selected region centroid on initial render', () => {
     const setViewCalls = [];
 
     window.brcatlas = {
@@ -248,7 +248,7 @@ describe('renderLeafletMap', () => {
     const element = document.createElement('div');
     renderLeafletMap(element, {
       type: 'leaflet-map',
-      area: 'vc-59'
+      region: 'vc-59'
     });
 
     expect(setViewCalls).toEqual([{ coords: [53.629982, -2.606334], zoom: 9 }]);
@@ -269,7 +269,7 @@ describe('renderLeafletMap', () => {
     const element = document.createElement('div');
     renderLeafletMap(element, {
       type: 'leaflet-map',
-      area: 'vc-59',
+      region: 'vc-59',
       width: 630
     });
 
@@ -294,7 +294,7 @@ describe('renderLeafletMap', () => {
     const element = document.createElement('div');
     renderLeafletMap(element, {
       type: 'leaflet-map',
-      area: 'vc-59',
+      region: 'vc-59',
       width: 630,
       height: 410
     });
@@ -329,7 +329,7 @@ describe('renderLeafletMap', () => {
 
     renderLeafletMap(element, {
       type: 'leaflet-map',
-      area: 'vc-59',
+      region: 'vc-59',
       width: 630,
       expand: true
     });
@@ -366,7 +366,7 @@ describe('renderLeafletMap', () => {
 
     renderLeafletMap(element, {
       type: 'leaflet-map',
-      area: 'vc-59',
+      region: 'vc-59',
       expand: true
     });
 
@@ -394,7 +394,7 @@ describe('renderLeafletMap', () => {
     const element = document.createElement('div');
     renderLeafletMap(element, {
       type: 'leaflet-map',
-      area: 'vc-58',
+      region: 'vc-58',
       boundaries: true
     });
 

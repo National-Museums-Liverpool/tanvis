@@ -8,14 +8,14 @@ import {
   clearControlSubscription,
   clearExpandResizeHandlers,
   calculateHeightFromBounds,
-  getAreaBounds,
-  getAreaCentroid,
-  getAreaInitZoom,
+  getRegionBounds,
+  getRegionCentroid,
+  getRegionInitZoom,
   getBrcAtlasGlobal,
   getConfiguredWidth,
-  getEffectiveArea,
+  getEffectiveRegion,
   parseOptionalPositiveNumber,
-  subscribeToAreaControl
+  subscribeToRegionControl
 } from './common.js';
 
 export function renderLeafletAtlasMap(element, config, options = {}) {
@@ -47,15 +47,15 @@ export function renderLeafletAtlasMap(element, config, options = {}) {
     assignElementId(element, idPrefix);
     ensureMapTetradInfo(element);
 
-    const effectiveArea = getEffectiveArea(config);
-    const renderConfig = effectiveArea === config.area
+    const effectiveRegion = getEffectiveRegion(config);
+    const renderConfig = effectiveRegion === config.region
       ? config
       : {
           ...config,
-          area: effectiveArea
+          region: effectiveRegion
         };
 
-    element.dataset.visArea = renderConfig.area;
+    element.dataset.visRegion = renderConfig.region;
 
     const map = brcAtlas.leafletMap(createLeafletMapOptions(element, renderConfig, options));
 
@@ -63,7 +63,7 @@ export function renderLeafletAtlasMap(element, config, options = {}) {
       attachExpandResizeHandlers(element, renderConfig, map);
     }
 
-    panToAreaCentroid(renderConfig.area, map);
+    panToRegionCentroid(renderConfig.region, map);
 
 
     if (map && typeof map.redrawMap === 'function') {
@@ -71,13 +71,13 @@ export function renderLeafletAtlasMap(element, config, options = {}) {
     }
 
     if (renderConfig.control) {
-      element.__tanvisControlCleanup = subscribeToAreaControl(renderConfig.control, (area) => {
-        if (area === element.dataset.visArea) {
+      element.__tanvisControlCleanup = subscribeToRegionControl(renderConfig.control, (region) => {
+        if (region === element.dataset.visRegion) {
           return;
         }
 
-        element.dataset.visArea = area;
-        panToAreaCentroid(area, map);
+        element.dataset.visRegion = region;
+        panToRegionCentroid(region, map);
       });
     }
 
@@ -95,7 +95,7 @@ export function renderLeafletAtlasMap(element, config, options = {}) {
 function createLeafletMapOptions(element, config, options) {
   const width = getConfiguredWidth(element, config);
   const explicitHeight = parseOptionalPositiveNumber(config.height);
-  const selectedBounds = getAreaBounds(config.area);
+  const selectedBounds = getRegionBounds(config.region);
   const height = explicitHeight ?? calculateHeightFromBounds(width, selectedBounds);
   const showBoundaries = config.boundaries === true;
 
@@ -182,9 +182,9 @@ function syncMapTetradInfoEmptyState(info) {
   info.classList.toggle('tanvis-map-tetrad-info-empty', isEmpty);
 }
 
-function panToAreaCentroid(areaKey, map) {
-  const centroid = getAreaCentroid(areaKey);
-  const zoom = getAreaInitZoom(areaKey);
+function panToRegionCentroid(regionKey, map) {
+  const centroid = getRegionCentroid(regionKey);
+  const zoom = getRegionInitZoom(regionKey);
   const leafletMap = map?.lmap;
 
   if (!centroid || !leafletMap || typeof leafletMap.setView !== 'function') {

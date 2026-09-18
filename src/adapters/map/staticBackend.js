@@ -6,13 +6,13 @@ import {
   assignElementId,
   clearControlSubscription,
   clearExpandResizeHandlers,
-  getAreaBounds,
+  getRegionBounds,
   calculateHeightFromBounds,
   getBrcAtlasGlobal,
-  getEffectiveArea,
+  getEffectiveRegion,
   parseOptionalPositiveNumber,
-  resolveAreaSelectionKey,
-  subscribeToAreaControl
+  resolveRegionSelectionKey,
+  subscribeToRegionControl
 } from './common.js';
 import { transOptsSel } from '../transOptsSel.js';
 
@@ -41,26 +41,26 @@ export function renderStaticAtlasMap(element, config, options = {}) {
     assignElementId(element, idPrefix);
     ensureMapTetradInfo(element);
 
-    const effectiveArea = getEffectiveArea(config);
-    const renderConfig = effectiveArea === config.area
+    const effectiveRegion = getEffectiveRegion(config);
+    const renderConfig = effectiveRegion === config.region
       ? config
       : {
           ...config,
-          area: effectiveArea
+          region: effectiveRegion
         };
 
-    element.dataset.visArea = renderConfig.area;
+    element.dataset.visRegion = renderConfig.region;
 
     //console.log('config', createStaticMapOptions(element, renderConfig, options));
-    console.log('rendering static map for area:', renderConfig.area);
+    console.log('rendering static map for region:', renderConfig.region);
     const map = brcAtlas.svgMap(createStaticMapOptions(element, renderConfig, options));
     const instanceId = `${Date.now()}-${Math.random().toString(16).slice(2)}`;
     map.__tanvisMapInstanceId = instanceId;
-    map.__tanvisMapArea = renderConfig.area;
+    map.__tanvisMapRegion = renderConfig.region;
     map.__tanvisMapElementId = element.id;
     console.log('[species-map] created static map instance', {
       instanceId,
-      area: renderConfig.area,
+      region: renderConfig.region,
       elementId: element.id
     });
     // pause execution to allow the map to render before continuing (for testing purposes)
@@ -70,22 +70,22 @@ export function renderStaticAtlasMap(element, config, options = {}) {
     if (map && typeof map.redrawMap === 'function') {
       console.log('[species-map] redraw static map instance', {
         instanceId,
-        area: renderConfig.area,
+        region: renderConfig.region,
         elementId: element.id
       });
       map.redrawMap();
     }
 
-    if (renderConfig.control && options.subscribeToAreaControl !== false) {
-      element.__tanvisControlCleanup = subscribeToAreaControl(renderConfig.control, (area) => {
-        if (area === element.dataset.visArea) {
+    if (renderConfig.control && options.subscribeToRegionControl !== false) {
+      element.__tanvisControlCleanup = subscribeToRegionControl(renderConfig.control, (region) => {
+        if (region === element.dataset.visRegion) {
           return;
         }
 
-        element.dataset.visArea = area;
+        element.dataset.visRegion = region;
         renderStaticAtlasMap(element, {
           ...renderConfig,
-          area
+          region
         }, options);
       });
     }
@@ -106,10 +106,10 @@ function createStaticMapOptions(element, config, options) {
   const shouldExpand = config.expand === true;
   const width = parseOptionalPositiveNumber(config.width);
   const explicitHeight = parseOptionalPositiveNumber(config.height);
-  const selectedBounds = getAreaBounds(config.area);
+  const selectedBounds = getRegionBounds(config.region);
   const height = explicitHeight ?? calculateHeightFromBounds(width, selectedBounds);
 
-  const areaSelectionKey = resolveAreaSelectionKey(config.area);
+  const regionSelectionKey = resolveRegionSelectionKey(config.region);
 
   // Resolve the base path for static map resources which will be the
   // scriptURL with this stripped off the end: /dist/tanvis.iife.js
@@ -131,12 +131,12 @@ function createStaticMapOptions(element, config, options) {
     captionId: 'map-tetrad-info',
     transOptsControl: false,
     transOptsSel,
-    transOptsKey: areaSelectionKey,
-    boundaryGjson: `${basePath}data/vcs/simp-100/${areaSelectionKey}-100.geojson`,
+    transOptsKey: regionSelectionKey,
+    boundaryGjson: `${basePath}data/vcs/simp-100/${regionSelectionKey}-100.geojson`,
     ...(height !== undefined ? { height } : {}),
     ...(shouldExpand ? { expand: true } : {}),
     ...(includeHectads
-      ? { gridGjson: `${basePath}data/vcs/hectad-grids/${areaSelectionKey}-hectads.geojson` }
+      ? { gridGjson: `${basePath}data/vcs/hectad-grids/${regionSelectionKey}-hectads.geojson` }
       : { gridLineStyle: 'none' }),
     mapTypesSel: options.mapTypesSel,
     mapTypesKey: options.mapTypesKey,

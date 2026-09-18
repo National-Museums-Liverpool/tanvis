@@ -1,6 +1,6 @@
 import { clearElement } from '../utils/dom.js';
 import { subscribeToControl, getLatestControlEvent } from '../controls/controlBus.js';
-import { normalizeAreaContractValue } from '../controls/areaControls.js';
+import { normalizeRegionContractValue } from '../controls/regionControls.js';
 import { createApiError, normalizeErrorMessage, parseJsonSafe } from '../utils/apiError.js';
 import { createVisStatusReporter } from '../utils/visStatus.js';
 import { logApiRequest } from '../utils/apiRequest.js';
@@ -13,10 +13,10 @@ export function createSpeciesInfoBlockAdapter() {
   return {
     name: 'species-info-block',
     render(element, config) {
-      const effectiveArea = getEffectiveArea(config);
+      const effectiveRegion = getEffectiveRegion(config);
       const renderConfig = {
         ...config,
-        area: normalizeAreaContractValue(effectiveArea)
+        region: normalizeRegionContractValue(effectiveRegion)
       };
 
       const taxonIdSourceId = renderConfig.taxonIdSource || '';
@@ -38,22 +38,22 @@ export function createSpeciesInfoBlockAdapter() {
 
       if (renderConfig.control && !shouldPreserveControlSubscription) {
         const controlBusCleanup = subscribeToControl(renderConfig.control, (event) => {
-          if (!event || event.type !== 'area-change') {
+          if (!event || event.type !== 'region-change') {
             return;
           }
 
-          const nextArea = normalizeAreaContractValue(
-            event.area === undefined || event.area === null ? renderConfig.area : event.area
+          const nextRegion = normalizeRegionContractValue(
+            event.region === undefined || event.region === null ? renderConfig.region : event.region
           );
-          const currentArea = normalizeAreaContractValue(element.dataset.visArea);
-          if (nextArea === currentArea) {
+          const currentRegion = normalizeRegionContractValue(element.dataset.visRegion);
+          if (nextRegion === currentRegion) {
             return;
           }
 
-          element.dataset.visArea = normalizeAreaDatasetValue(nextArea);
+          element.dataset.visRegion = normalizeRegionDatasetValue(nextRegion);
           createSpeciesInfoBlockAdapter().render(element, {
             ...renderConfig,
-            area: nextArea,
+            region: nextRegion,
             taxonId: element.dataset.visTaxonid || renderConfig.taxonId
           });
         });
@@ -83,11 +83,11 @@ export function createSpeciesInfoBlockAdapter() {
       const taxonIdentifier = resolveTaxonIdentifier(element, renderConfig);
       const content = ensureContentStructure(element);
 
-      element.dataset.visArea = normalizeAreaDatasetValue(renderConfig.area);
+      element.dataset.visRegion = normalizeRegionDatasetValue(renderConfig.region);
 
       if (!taxonIdentifier) {
         status.clear();
-        renderSpeciesInfoText(content, [], renderConfig.area);
+        renderSpeciesInfoText(content, [], renderConfig.region);
         return;
       }
 
@@ -98,14 +98,14 @@ export function createSpeciesInfoBlockAdapter() {
       fetchTaxonStats({
         apiBase: resolveApiBase(),
         taxonIdentifier,
-        area: renderConfig.area
+        region: renderConfig.region
       })
         .then((stats) => {
           if (element.__tanvisSpeciesInfoBlockLoadId !== loadId) {
             return;
           }
 
-          renderSpeciesInfoText(content, stats, renderConfig.area);
+          renderSpeciesInfoText(content, stats, renderConfig.region);
           status.clear();
         })
         .catch((error) => {
@@ -136,12 +136,12 @@ function normalizeValue(value) {
   return value.trim();
 }
 
-function normalizeAreaDatasetValue(area) {
-  if (area === undefined || area === null) {
+function normalizeRegionDatasetValue(region) {
+  if (region === undefined || region === null) {
     return '';
   }
 
-  return String(area);
+  return String(region);
 }
 
 function subscribeToTaxonIdSource(taxonIdSourceId, onSpeciesSelected) {
@@ -189,39 +189,39 @@ function clearControlSubscription(element) {
   delete element.__tanvisControlId;
 }
 
-function getEffectiveArea(config) {
+function getEffectiveRegion(config) {
   if (!config.control || typeof document === 'undefined') {
-    return normalizeAreaContractValue(config.area);
+    return normalizeRegionContractValue(config.region);
   }
 
   const controlElement = document.getElementById(config.control);
-  const controlAreaValue = controlElement?.dataset?.visArea;
-  const normalizedControlAreaValue = normalizeAreaContractValue(controlAreaValue);
+  const controlRegionValue = controlElement?.dataset?.visRegion;
+  const normalizedControlRegionValue = normalizeRegionContractValue(controlRegionValue);
   if (
     controlElement
-    && Object.prototype.hasOwnProperty.call(controlElement.dataset, 'visArea')
-    && normalizedControlAreaValue !== undefined
-    && normalizedControlAreaValue !== null
-    && normalizedControlAreaValue !== ''
+    && Object.prototype.hasOwnProperty.call(controlElement.dataset, 'visRegion')
+    && normalizedControlRegionValue !== undefined
+    && normalizedControlRegionValue !== null
+    && normalizedControlRegionValue !== ''
   ) {
-    return normalizedControlAreaValue;
+    return normalizedControlRegionValue;
   }
 
   const latestEvent = getLatestControlEvent(config.control);
-  if (latestEvent?.type === 'area-change' && latestEvent.area !== undefined && latestEvent.area !== null) {
-    return normalizeAreaContractValue(latestEvent.area);
+  if (latestEvent?.type === 'region-change' && latestEvent.region !== undefined && latestEvent.region !== null) {
+    return normalizeRegionContractValue(latestEvent.region);
   }
 
-  return normalizeAreaContractValue(config.area);
+  return normalizeRegionContractValue(config.region);
 }
 
-async function fetchTaxonStats({ apiBase, taxonIdentifier, area }) {
+async function fetchTaxonStats({ apiBase, taxonIdentifier, region }) {
   const resourceUrl = resolveResourceUrl(apiBase, TAXON_STATS_RESOURCE);
   const pageUrl = new URL(resourceUrl.toString());
   pageUrl.searchParams.set('taxon_identifier[eq]', taxonIdentifier);
 
-  if (area) {
-    pageUrl.searchParams.set('higher_geography_identifier[eq]', String(area));
+  if (region) {
+    pageUrl.searchParams.set('higher_geography_identifier[eq]', String(region));
   }
 
   pageUrl.searchParams.set('include', 'taxon');
@@ -306,14 +306,14 @@ function ensureContentStructure(element) {
   return content;
 }
 
-function renderSpeciesInfoText(content, statsRows, area) {
+function renderSpeciesInfoText(content, statsRows, region) {
   const nodes = content.__tanvisSpeciesInfoBlockNodes;
   const rows = Array.isArray(statsRows) ? statsRows : [];
-  const sortedRows = sortStatsRowsForDisplay(rows, area);
+  const sortedRows = sortStatsRowsForDisplay(rows, region);
   const firstRow = sortedRows[0] || {};
 
-  renderCountCell(content, nodes.occurrencesValueCell, sortedRows, 'occurrences_count', area);
-  renderCountCell(content, nodes.gridSquaresValueCell, sortedRows, 'grid_square_count', area);
+  renderCountCell(content, nodes.occurrencesValueCell, sortedRows, 'occurrences_count', region);
+  renderCountCell(content, nodes.gridSquaresValueCell, sortedRows, 'grid_square_count', region);
   const conservationStatus = toDisplayStatus(firstRow?.taxon__conservation_status);
 
   renderItalicCell(nodes.conservationValueCell, content, conservationStatus);
@@ -341,13 +341,13 @@ function toDisplayNumber(value) {
   return String(value);
 }
 
-function renderCountCell(content, cell, rows, key, area) {
+function renderCountCell(content, cell, rows, key, region) {
   clearElement(cell);
   const doc = content?.ownerDocument || document;
 
-  const orderedRows = sortStatsRowsForDisplay(rows, area);
+  const orderedRows = sortStatsRowsForDisplay(rows, region);
   if (orderedRows.length === 0) {
-    appendCountEntry(cell, doc, '0', area ? formatVcLabel(area) : formatVcLabel(undefined));
+    appendCountEntry(cell, doc, '0', region ? formatVcLabel(region) : formatVcLabel(undefined));
     return;
   }
 
@@ -358,7 +358,7 @@ function renderCountCell(content, cell, rows, key, area) {
 
     const count = toDisplayNumber(row?.[key]);
     const vcLabel = formatVcLabel(resolveRowVcValue(row));
-    appendCountEntry(cell, doc, count, area ? formatVcLabel(area) : vcLabel);
+    appendCountEntry(cell, doc, count, region ? formatVcLabel(region) : vcLabel);
   });
 }
 
@@ -377,12 +377,12 @@ function renderItalicCell(cell, content, value) {
   cell.appendChild(emphasis);
 }
 
-function sortStatsRowsForDisplay(rows, area) {
+function sortStatsRowsForDisplay(rows, region) {
   if (!Array.isArray(rows) || rows.length === 0) {
     return [];
   }
 
-  if (area) {
+  if (region) {
     return rows;
   }
 

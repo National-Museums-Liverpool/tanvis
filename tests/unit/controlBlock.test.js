@@ -8,24 +8,24 @@ describe('control block species selector', () => {
     document.body.innerHTML = '';
   });
 
-  it('publishes normalized area values when the area selector changes', () => {
+  it('publishes normalized region values when the region selector changes', () => {
     const element = document.createElement('div');
     element.id = 'vc-control';
     document.body.appendChild(element);
 
     const adapter = createControlBlockAdapter();
     adapter.render(element, {
-      area: 'vc-58'
+      region: 'vc-58'
     });
 
-    expect(getLatestControlEvent('vc-control')?.area).toBe(58);
+    expect(getLatestControlEvent('vc-control')?.region).toBe(58);
 
     const area59Input = element.querySelector('input[value="59"]');
     expect(area59Input).not.toBeNull();
     area59Input.checked = true;
     area59Input.dispatchEvent(new Event('change', { bubbles: true }));
 
-    expect(getLatestControlEvent('vc-control')?.area).toBe(59);
+    expect(getLatestControlEvent('vc-control')?.region).toBe(59);
   });
 
   it('searches taxa by scientific name and dispatches the selected species id', async () => {
@@ -58,7 +58,7 @@ describe('control block species selector', () => {
 
     const adapter = createControlBlockAdapter();
     adapter.render(element, {
-      area: 'vc-58',
+      region: 'vc-58',
       source: 'https://example.test/api/'
     });
 
@@ -112,7 +112,7 @@ describe('control block species selector', () => {
 
     const adapter = createControlBlockAdapter();
     adapter.render(element, {
-      area: 'vc-58',
+      region: 'vc-58',
       groupId: 'diptera'
     });
 
@@ -147,7 +147,7 @@ describe('control block species selector', () => {
 
     const adapter = createControlBlockAdapter();
     adapter.render(element, {
-      area: 'vc-58',
+      region: 'vc-58',
       language: 'vernacular'
     });
 
@@ -189,7 +189,7 @@ describe('control block species selector', () => {
 
     const adapter = createControlBlockAdapter();
     adapter.render(element, {
-      area: 'vc-58'
+      region: 'vc-58'
     });
 
     await new Promise((resolve) => setTimeout(resolve, 0));
@@ -250,7 +250,7 @@ describe('control block species selector', () => {
 
     const adapter = createControlBlockAdapter();
     adapter.render(element, {
-      area: 'vc-58'
+      region: 'vc-58'
     });
 
     await new Promise((resolve) => setTimeout(resolve, 0));
@@ -315,7 +315,7 @@ describe('control block species selector', () => {
 
     const adapter = createControlBlockAdapter();
     adapter.render(element, {
-      area: 'vc-58'
+      region: 'vc-58'
     });
 
     await new Promise((resolve) => setTimeout(resolve, 0));
@@ -371,7 +371,7 @@ describe('control block species selector', () => {
 
     const adapter = createControlBlockAdapter();
     adapter.render(element, {
-      area: 'vc-58'
+      region: 'vc-58'
     });
 
     await new Promise((resolve) => setTimeout(resolve, 0));
@@ -399,12 +399,12 @@ describe('control block species selector', () => {
   it('shows only the requested control sections when data-vis-control-elements is set', async () => {
     const element = document.createElement('div');
     element.id = 'vc-control';
-    element.dataset.visControlElements = 'area';
+    element.dataset.visControlElements = 'region';
     document.body.appendChild(element);
 
     const adapter = createControlBlockAdapter();
     adapter.render(element, {
-      area: 'vc-58'
+      region: 'vc-58'
     });
 
     await new Promise((resolve) => setTimeout(resolve, 0));
@@ -418,12 +418,12 @@ describe('control block species selector', () => {
   it('hides only the language toggle buttons when data-vis-control-elements omits language', async () => {
     const element = document.createElement('div');
     element.id = 'vc-control';
-    element.dataset.visControlElements = 'area groups species';
+    element.dataset.visControlElements = 'region groups species';
     document.body.appendChild(element);
 
     const adapter = createControlBlockAdapter();
     adapter.render(element, {
-      area: 'vc-58'
+      region: 'vc-58'
     });
 
     await new Promise((resolve) => setTimeout(resolve, 0));
@@ -436,12 +436,12 @@ describe('control block species selector', () => {
   it('hides only the groups selector when data-vis-control-elements omits groups', async () => {
     const element = document.createElement('div');
     element.id = 'vc-control';
-    element.dataset.visControlElements = 'area language species';
+    element.dataset.visControlElements = 'region language species';
     document.body.appendChild(element);
 
     const adapter = createControlBlockAdapter();
     adapter.render(element, {
-      area: 'vc-58'
+      region: 'vc-58'
     });
 
     await new Promise((resolve) => setTimeout(resolve, 0));
@@ -481,7 +481,7 @@ describe('control block species selector', () => {
 
     const adapter = createControlBlockAdapter();
     adapter.render(element, {
-      area: 'vc-58'
+      region: 'vc-58'
     });
 
     await new Promise((resolve) => setTimeout(resolve, 0));

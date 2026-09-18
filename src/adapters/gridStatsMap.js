@@ -4,7 +4,7 @@ import { createApiError, normalizeErrorMessage, parseJsonSafe } from '../utils/a
 import { createVisStatusReporter } from '../utils/visStatus.js';
 import { renderLeafletAtlasMap } from './map/leafletBackend.js';
 import { renderStaticAtlasMap } from './map/staticBackend.js';
-import { normalizeAreaContractValue } from '../controls/areaControls.js';
+import { normalizeRegionContractValue } from '../controls/regionControls.js';
 import { createRadioGroup } from '../controls/radioGroup.js';
 import { ensureSharedStyles } from '../styles/sharedStyles.js';
 import {
@@ -34,36 +34,36 @@ export function createGridStatsMapAdapter() {
       clearElement(element);
       status.showInfo('Loading...');
 
-      const effectiveArea = getEffectiveArea(config);
-      const renderConfig = effectiveArea === config.area
+      const effectiveRegion = getEffectiveRegion(config);
+      const renderConfig = effectiveRegion === config.region
         ? config
         : {
             ...config,
-            area: effectiveArea
+            region: effectiveRegion
           };
 
       const apiBase = resolveApiBase();
-      const geographicRegionIdentifier = areaToGeographicRegionIdentifier(renderConfig.area);
+      const geographicRegionIdentifier = regionToGeographicRegionIdentifier(renderConfig.region);
       const loadId = (element.__tanvisGridStatsMapLoadId || 0) + 1;
       element.__tanvisGridStatsMapLoadId = loadId;
-      element.dataset.visArea = renderConfig.area;
+      element.dataset.visRegion = renderConfig.region;
 
       if (renderConfig.control) {
         element.__tanvisControlCleanup = subscribeToControl(renderConfig.control, (event) => {
-          if (!event || event.type !== 'area-change') {
+          if (!event || event.type !== 'region-change') {
             return;
           }
 
-          const nextArea = getEffectiveArea(renderConfig);
+          const nextRegion = getEffectiveRegion(renderConfig);
 
-          if (nextArea === element.dataset.visArea) {
+          if (nextRegion === element.dataset.visRegion) {
             return;
           }
 
-          element.dataset.visArea = nextArea;
+          element.dataset.visRegion = nextRegion;
           createGridStatsMapAdapter().render(element, {
             ...renderConfig,
-            area: nextArea
+            region: nextRegion
           });
         });
       }
@@ -75,7 +75,7 @@ export function createGridStatsMapAdapter() {
           }
 
           clearElement(element);
-          //const summary = createSummary(records.length, renderConfig.area);
+          //const summary = createSummary(records.length, renderConfig.region);
           const mapContainer = document.createElement('div');
 
           //element.appendChild(summary);
@@ -106,9 +106,9 @@ export function createGridStatsMapAdapter() {
   };
 }
 
-function createSummary(count, area) {
+function createSummary(count, region) {
   const summary = document.createElement('p');
-  summary.textContent = `${count} grid-square-stats records loaded${area ? ` for ${area}` : ''}. See the console for the raw payload.`;
+  summary.textContent = `${count} grid-square-stats records loaded${region ? ` for ${region}` : ''}. See the console for the raw payload.`;
   return summary;
 }
 
@@ -363,46 +363,46 @@ function getListData(payload) {
   return [];
 }
 
-function areaToGeographicRegionIdentifier(area) {
-  const normalizedArea = normalizeAreaContractValue(area);
+function regionToGeographicRegionIdentifier(region) {
+  const normalizedRegion = normalizeRegionContractValue(region);
 
-  if (normalizedArea === 58) {
+  if (normalizedRegion === 58) {
     return 58;
   }
 
-  if (normalizedArea === 59) {
+  if (normalizedRegion === 59) {
     return 59;
   }
 
-  if (normalizedArea === 60) {
+  if (normalizedRegion === 60) {
     return 60;
   }
 
   return undefined;
 }
 
-function getEffectiveArea(config) {
+function getEffectiveRegion(config) {
   if (!config.control) {
-    return normalizeAreaContractValue(config.area);
+    return normalizeRegionContractValue(config.region);
   }
 
   if (typeof document === 'undefined') {
-    return normalizeAreaContractValue(config.area);
+    return normalizeRegionContractValue(config.region);
   }
 
   const controlElement = document.getElementById(config.control);
-  const controlAreaValue = controlElement?.dataset?.visArea;
-  const normalizedControlAreaValue = normalizeAreaContractValue(controlAreaValue);
-  if (controlElement && Object.prototype.hasOwnProperty.call(controlElement.dataset, 'visArea') && normalizedControlAreaValue !== undefined && normalizedControlAreaValue !== null && normalizedControlAreaValue !== '') {
-    return normalizedControlAreaValue;
+  const controlRegionValue = controlElement?.dataset?.visRegion;
+  const normalizedControlRegionValue = normalizeRegionContractValue(controlRegionValue);
+  if (controlElement && Object.prototype.hasOwnProperty.call(controlElement.dataset, 'visRegion') && normalizedControlRegionValue !== undefined && normalizedControlRegionValue !== null && normalizedControlRegionValue !== '') {
+    return normalizedControlRegionValue;
   }
 
   const latestEvent = getLatestControlEvent(config.control);
-  if (latestEvent?.type === 'area-change' && latestEvent.area !== undefined && latestEvent.area !== null) {
-    return normalizeAreaContractValue(latestEvent.area);
+  if (latestEvent?.type === 'region-change' && latestEvent.region !== undefined && latestEvent.region !== null) {
+    return normalizeRegionContractValue(latestEvent.region);
   }
 
-  return normalizeAreaContractValue(config.area);
+  return normalizeRegionContractValue(config.region);
 }
 
 function clearControlSubscription(element) {

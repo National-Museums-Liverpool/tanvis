@@ -1,12 +1,12 @@
 import { clearElement } from '../utils/dom.js';
 import { createControlsPanel } from '../controls/panel.js';
-import { createAreaControls, normalizeAreaContractValue } from '../controls/areaControls.js';
+import { createRegionControls, normalizeRegionContractValue } from '../controls/regionControls.js';
 import { createTaxonGroupControls } from '../controls/taxonGroupControls.js';
 import { createSpeciesSearchControls } from '../controls/speciesSearchControls.js';
 import { publishControlEvent } from '../controls/controlBus.js';
 import { resolveApiBase } from '../config/apiBase.js';
 
-const CONTROL_ELEMENT_TOKENS = new Set(['area', 'groups', 'language', 'species']);
+const CONTROL_ELEMENT_TOKENS = new Set(['region', 'groups', 'language', 'species']);
 
 export function createControlBlockAdapter() {
   return {
@@ -29,15 +29,15 @@ export function createControlBlockAdapter() {
       panel.dataset.tanvisControls = 'data-options';
       element.appendChild(panel);
 
-      if (visibleControls.has('area')) {
-        createAreaControls({
+      if (visibleControls.has('region')) {
+        createRegionControls({
           element,
-          selectedValue: config.area,
+          selectedValue: config.region,
           body,
-          onAreaChange: (value) => {
+          onRegionChange: (value) => {
             publishControlEvent(element.id, {
-              type: 'area-change',
-              area: normalizeAreaContractValue(value)
+              type: 'region-change',
+              region: normalizeRegionContractValue(value)
             });
           }
         });
@@ -66,10 +66,10 @@ export function createControlBlockAdapter() {
         });
       }
 
-      if (visibleControls.has('area')) {
+      if (visibleControls.has('region')) {
         publishControlEvent(element.id, {
-          type: 'area-change',
-          area: normalizeAreaContractValue(config.area)
+          type: 'region-change',
+          region: normalizeRegionContractValue(config.region)
         });
       }
     }
@@ -78,12 +78,12 @@ export function createControlBlockAdapter() {
 
 function parseVisibleControls(value) {
   if (typeof value !== 'string') {
-    return new Set(['area', 'groups', 'language', 'species']);
+    return new Set(['region', 'groups', 'language', 'species']);
   }
 
   const controls = value.split(/\s+/)
     .map((token) => token.trim())
     .filter((token) => CONTROL_ELEMENT_TOKENS.has(token));
 
-  return new Set(controls.length > 0 ? controls : ['area', 'groups', 'language', 'species']);
+  return new Set(controls.length > 0 ? controls : ['region', 'groups', 'language', 'species']);
 }

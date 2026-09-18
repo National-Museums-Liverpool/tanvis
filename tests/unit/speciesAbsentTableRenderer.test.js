@@ -59,7 +59,7 @@ describe('renderSpeciesAbsentTable', () => {
     expect(element.textContent).toContain('on or before 2024');
   });
 
-  it('includes the selected area in the header text', async () => {
+  it('includes the selected region in the header text', async () => {
     window.Tabulator = function Tabulator(container, options) {
       container.dataset.tabulatorMounted = 'true';
       void options.ajaxRequestFunc('custom_handler', {}, { page: 1, size: 10 });
@@ -77,7 +77,7 @@ describe('renderSpeciesAbsentTable', () => {
     renderSpeciesAbsentTable(element, {
       type: 'species-absent-table',
       year: 2024,
-      area: 'vc59'
+      region: 'vc59'
     });
 
     await new Promise((resolve) => setTimeout(resolve, 0));
@@ -193,7 +193,7 @@ describe('renderSpeciesAbsentTable', () => {
 
     const controlElement = document.createElement('div');
     controlElement.id = 'vc-control-species-absent-label';
-    controlElement.dataset.visArea = 'vc-all';
+    controlElement.dataset.visRegion = 'vc-all';
     controlElement.dataset.visTaxonGroup = '';
     controlElement.dataset.visTaxonGroupLabelMode = 'scientific';
     document.body.appendChild(controlElement);
@@ -269,7 +269,7 @@ describe('renderSpeciesAbsentTable', () => {
 
     const controlElement = document.createElement('div');
     controlElement.id = 'vc-control-species-absent';
-    controlElement.dataset.visArea = 'vc-all';
+    controlElement.dataset.visRegion = 'vc-all';
     controlElement.dataset.visTaxonGroup = '';
     document.body.appendChild(controlElement);
 
@@ -311,7 +311,7 @@ describe('renderSpeciesAbsentTable', () => {
 
     const controlElement = document.createElement('div');
     controlElement.id = 'vc-control-species-absent-all-groups';
-    controlElement.dataset.visArea = 'vc-all';
+    controlElement.dataset.visRegion = 'vc-all';
     controlElement.dataset.visTaxonGroup = '';
     document.body.appendChild(controlElement);
 
@@ -344,7 +344,7 @@ describe('renderSpeciesAbsentTable', () => {
 
     const controlElement = document.createElement('div');
     controlElement.id = 'vc-control-species-absent-language';
-    controlElement.dataset.visArea = 'vc-all';
+    controlElement.dataset.visRegion = 'vc-all';
     controlElement.dataset.visTaxonGroup = '';
     controlElement.dataset.visTaxonGroupLabelMode = 'vernacular';
     document.body.appendChild(controlElement);
@@ -377,8 +377,8 @@ describe('renderSpeciesAbsentTable', () => {
     });
 
     const controlElement = document.createElement('div');
-    controlElement.id = 'vc-control-species-absent-area';
-    controlElement.dataset.visArea = 'vc-60';
+    controlElement.id = 'vc-control-species-absent-region';
+    controlElement.dataset.visRegion = 'vc-60';
     controlElement.dataset.visTaxonGroup = '';
     document.body.appendChild(controlElement);
 
@@ -386,7 +386,7 @@ describe('renderSpeciesAbsentTable', () => {
     renderSpeciesAbsentTable(element, {
       type: 'species-absent-table',
       year: 2024,
-      control: 'vc-control-species-absent-area'
+      control: 'vc-control-species-absent-region'
     });
 
     await new Promise((resolve) => setTimeout(resolve, 0));

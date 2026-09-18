@@ -25,7 +25,7 @@ describe('species info block', () => {
     renderSpeciesInfoBlock(element, {
       type: 'species-info-block',
       taxonId: 'NHMSYS0000000001',
-      area: 58
+      region: 58
     });
 
     await new Promise((resolve) => setTimeout(resolve, 0));
@@ -50,7 +50,7 @@ describe('species info block', () => {
     expect(rows[2].children[1]?.textContent).toBe('45 (vc58)');
   });
 
-  it('does not use higher_geography_identifier filter when area is empty (all VCs)', async () => {
+  it('does not use higher_geography_identifier filter when region is empty (all VCs)', async () => {
     vi.spyOn(globalThis, 'fetch').mockResolvedValue({
       ok: true,
       json: async () => ({
@@ -67,7 +67,7 @@ describe('species info block', () => {
     renderSpeciesInfoBlock(element, {
       type: 'species-info-block',
       taxonId: 'NHMSYS0000000002',
-      area: ''
+      region: ''
     });
 
     await new Promise((resolve) => setTimeout(resolve, 0));
@@ -91,7 +91,7 @@ describe('species info block', () => {
     renderSpeciesInfoBlock(element, {
       type: 'species-info-block',
       taxonId: 'NHMSYS0000000003',
-      area: 59
+      region: 59
     });
 
     await new Promise((resolve) => setTimeout(resolve, 0));
@@ -130,7 +130,7 @@ describe('species info block', () => {
       type: 'species-info-block',
       taxonId: 'NHMSYS0000000100',
       taxonIdSource: 'species-source',
-      area: 58
+      region: 58
     });
 
     await new Promise((resolve) => setTimeout(resolve, 0));
@@ -147,7 +147,7 @@ describe('species info block', () => {
     expect(element.dataset.visTaxonid).toBe('NHMSYS0000000200');
   });
 
-  it('updates area filter from linked control area-change events', async () => {
+  it('updates region filter from linked control region-change events', async () => {
     const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValue({
       ok: true,
       json: async () => ({ data: [{ occurrences_count: 3, grid_square_count: 2 }] })
@@ -157,7 +157,7 @@ describe('species info block', () => {
     renderSpeciesInfoBlock(element, {
       type: 'species-info-block',
       taxonId: 'NHMSYS0000000300',
-      area: 58,
+      region: 58,
       control: 'control-block'
     });
 
@@ -166,8 +166,8 @@ describe('species info block', () => {
     expect(lastUrl.searchParams.get('higher_geography_identifier[eq]')).toBe('58');
 
     publishControlEvent('control-block', {
-      type: 'area-change',
-      area: 59
+      type: 'region-change',
+      region: 59
     });
 
     await new Promise((resolve) => setTimeout(resolve, 0));

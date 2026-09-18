@@ -377,7 +377,7 @@ describe('renderTemporalYearChart', () => {
     ]);
   });
 
-  it('reacts to control-block area changes and taxonIdSource species selection events', async () => {
+  it('reacts to control-block region changes and taxonIdSource species selection events', async () => {
     const setChartOptsCalls = [];
     window.d3 = {};
     window.brccharts = {
@@ -419,14 +419,14 @@ describe('renderTemporalYearChart', () => {
       squaresColour: DEFAULT_SQUARES_COLOUR,
       control: 'control-block',
       taxonIdSource: 'linked-table',
-      area: 'GB-123'
+      region: 'GB-123'
     });
 
     await new Promise((resolve) => setTimeout(resolve, 0));
 
     publishControlEvent('control-block', {
-      type: 'area-change',
-      area: 'GB-999'
+      type: 'region-change',
+      region: 'GB-999'
     });
 
     await new Promise((resolve) => setTimeout(resolve, 10));

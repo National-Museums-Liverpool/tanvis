@@ -4,8 +4,8 @@ import { createApiError, normalizeErrorMessage, parseJsonSafe } from '../utils/a
 import { createVisStatusReporter, ensureStylesheetDependency } from '../utils/visStatus.js';
 import { resolveApiBase } from '../config/apiBase.js';
 import { logApiRequest } from '../utils/apiRequest.js';
-import { resolveAreaSelectionKey } from './map/common.js';
-import { normalizeAreaContractValue } from '../controls/areaControls.js';
+import { resolveRegionSelectionKey } from './map/common.js';
+import { normalizeRegionContractValue } from '../controls/regionControls.js';
 import { parseTaxonGroupDisplayNames } from '../utils/taxonGroupLabels.js';
 
 const TAXON_STATS_RESOURCE = 'taxon-stats';
@@ -27,22 +27,22 @@ export function createSpeciesAbsentTableAdapter() {
       clearElement(element);
       status.showInfo('Loading...');
 
-      const effectiveArea = getEffectiveArea(config);
-      const renderConfig = effectiveArea === config.area
+      const effectiveRegion = getEffectiveRegion(config);
+      const renderConfig = effectiveRegion === config.region
         ? config
         : {
             ...config,
-            area: effectiveArea
+            region: effectiveRegion
           };
 
       const year = Number(renderConfig.year);
       const apiBase = resolveApiBase();
-      const higherGeographyIdentifier = areaToHigherGeographyIdentifier(renderConfig.area);
+      const higherGeographyIdentifier = regionToHigherGeographyIdentifier(renderConfig.region);
       const taxonGroupExternalKey = getEffectiveTaxonGroup(renderConfig);
       const effectiveLabelMode = getEffectiveLabelMode(renderConfig);
       const loadId = (element.__tanvisSpeciesAbsentLoadId || 0) + 1;
       element.__tanvisSpeciesAbsentLoadId = loadId;
-      element.dataset.visArea = renderConfig.area;
+      element.dataset.visRegion = renderConfig.region;
       element.dataset.visTaxonGroup = taxonGroupExternalKey;
       element.dataset.visTaxonGroupLabelMode = effectiveLabelMode;
       const pageSize = getConfiguredPageSize(renderConfig);
@@ -53,19 +53,19 @@ export function createSpeciesAbsentTableAdapter() {
             return;
           }
 
-          if (event.type === 'area-change' || event.type === 'taxon-group-change') {
-            const nextArea = getEffectiveArea(renderConfig);
+          if (event.type === 'region-change' || event.type === 'taxon-group-change') {
+            const nextRegion = getEffectiveRegion(renderConfig);
             const nextTaxonGroupExternalKey = getEffectiveTaxonGroup(renderConfig);
 
-            if (nextArea === element.dataset.visArea && nextTaxonGroupExternalKey === (element.dataset.visTaxonGroup || '')) {
+            if (nextRegion === element.dataset.visRegion && nextTaxonGroupExternalKey === (element.dataset.visTaxonGroup || '')) {
               return;
             }
 
-            element.dataset.visArea = nextArea === '' ? '' : String(nextArea);
+            element.dataset.visRegion = nextRegion === '' ? '' : String(nextRegion);
             element.dataset.visTaxonGroup = nextTaxonGroupExternalKey;
             createSpeciesAbsentTableAdapter().render(element, {
               ...renderConfig,
-              area: nextArea
+              region: nextRegion
             });
             return;
           }
@@ -92,10 +92,10 @@ export function createSpeciesAbsentTableAdapter() {
       }
 
       clearElement(element);
-      const summary = createSummary(year, 0, renderConfig.area);
+      const summary = createSummary(year, 0, renderConfig.region);
       element.appendChild(summary);
       element.__tanvisSummaryElement = summary;
-      element.__tanvisSummaryState = { year, area: renderConfig.area, count: 0, taxonGroupInfo: null };
+      element.__tanvisSummaryState = { year, region: renderConfig.region, count: 0, taxonGroupInfo: null };
 
       if (taxonGroupExternalKey) {
         resolveTaxonGroupInfo(apiBase, taxonGroupExternalKey).then((taxonGroupInfo) => {
@@ -132,7 +132,7 @@ export function createSpeciesAbsentTableAdapter() {
           }
 
           element.__tanvisSummaryState.year = year;
-          element.__tanvisSummaryState.area = renderConfig.area;
+          element.__tanvisSummaryState.region = renderConfig.region;
           element.__tanvisSummaryState.count = pageResult.totalRows;
           refreshSummary(element, labelModeForRequest);
           element.__tanvisLatestRows = pageResult.records;
@@ -188,16 +188,16 @@ function rerenderTableRows(element, { labelMode }) {
   element.__tanvisLatestRows = remappedRows;
 }
 
-function createSummary(year, count, area, taxonGroupName) {
+function createSummary(year, count, region, taxonGroupName) {
   const summary = document.createElement('div');
   summary.classList.add('tanvis-table-header-text');
-  summary.textContent = buildSummaryText(year, count, area, taxonGroupName);
+  summary.textContent = buildSummaryText(year, count, region, taxonGroupName);
   return summary;
 }
 
-function buildSummaryText(year, count, area, taxonGroupName) {
+function buildSummaryText(year, count, region, taxonGroupName) {
   const suffix = taxonGroupName ? ` for taxon group ${taxonGroupName}` : '';
-  return `${count} species with last record date on or before ${year} for ${formatTableAreaLabel(area)}${suffix}`;
+  return `${count} species with last record date on or before ${year} for ${formatTableRegionLabel(region)}${suffix}`;
 }
 
 function refreshSummary(element, labelMode) {
@@ -208,20 +208,20 @@ function refreshSummary(element, labelMode) {
   }
 
   const taxonGroupName = state.taxonGroupInfo ? formatGroupName(state.taxonGroupInfo, labelMode) : '';
-  summary.textContent = buildSummaryText(state.year, state.count, state.area, taxonGroupName);
+  summary.textContent = buildSummaryText(state.year, state.count, state.region, taxonGroupName);
 }
 
-function formatTableAreaLabel(area) {
-  const normalizedArea = normalizeAreaContractValue(area);
-  if (normalizedArea === undefined || normalizedArea === null || normalizedArea === '' || normalizedArea === 'all' || normalizedArea === 'vc-all' || normalizedArea === 'all VCs') {
+function formatTableRegionLabel(region) {
+  const normalizedRegion = normalizeRegionContractValue(region);
+  if (normalizedRegion === undefined || normalizedRegion === null || normalizedRegion === '' || normalizedRegion === 'all' || normalizedRegion === 'vc-all' || normalizedRegion === 'all VCs') {
     return 'all VCs';
   }
 
-  if (typeof normalizedArea === 'number') {
-    return `vc${normalizedArea}`;
+  if (typeof normalizedRegion === 'number') {
+    return `vc${normalizedRegion}`;
   }
 
-  const candidate = String(normalizedArea).trim().toLowerCase();
+  const candidate = String(normalizedRegion).trim().toLowerCase();
   if (/^vc\d+$/.test(candidate)) {
     return candidate;
   }
@@ -447,18 +447,18 @@ async function fetchTaxonGroupsMap(apiBase) {
   }
 }
 
-function areaToHigherGeographyIdentifier(area) {
-  const normalizedArea = normalizeAreaContractValue(area);
+function regionToHigherGeographyIdentifier(region) {
+  const normalizedRegion = normalizeRegionContractValue(region);
 
-  if (normalizedArea === 58) {
+  if (normalizedRegion === 58) {
     return 58;
   }
 
-  if (normalizedArea === 59) {
+  if (normalizedRegion === 59) {
     return 59;
   }
 
-  if (normalizedArea === 60) {
+  if (normalizedRegion === 60) {
     return 60;
   }
 
@@ -474,28 +474,28 @@ function clearControlSubscription(element) {
   delete element.__tanvisControlCleanup;
 }
 
-function getEffectiveArea(config) {
+function getEffectiveRegion(config) {
   if (!config.control) {
-    return normalizeAreaContractValue(config.area);
+    return normalizeRegionContractValue(config.region);
   }
 
   if (typeof document === 'undefined') {
-    return normalizeAreaContractValue(config.area);
+    return normalizeRegionContractValue(config.region);
   }
 
   const controlElement = document.getElementById(config.control);
-  const controlAreaValue = controlElement?.dataset?.visArea;
-  const normalizedControlAreaValue = normalizeAreaContractValue(controlAreaValue);
-  if (controlElement && Object.prototype.hasOwnProperty.call(controlElement.dataset, 'visArea') && normalizedControlAreaValue !== undefined && normalizedControlAreaValue !== null && normalizedControlAreaValue !== '') {
-    return normalizedControlAreaValue;
+  const controlRegionValue = controlElement?.dataset?.visRegion;
+  const normalizedControlRegionValue = normalizeRegionContractValue(controlRegionValue);
+  if (controlElement && Object.prototype.hasOwnProperty.call(controlElement.dataset, 'visRegion') && normalizedControlRegionValue !== undefined && normalizedControlRegionValue !== null && normalizedControlRegionValue !== '') {
+    return normalizedControlRegionValue;
   }
 
   const latestEvent = getLatestControlEvent(config.control);
-  if (latestEvent?.type === 'area-change' && latestEvent.area !== undefined && latestEvent.area !== null) {
-    return normalizeAreaContractValue(latestEvent.area);
+  if (latestEvent?.type === 'region-change' && latestEvent.region !== undefined && latestEvent.region !== null) {
+    return normalizeRegionContractValue(latestEvent.region);
   }
 
-  return normalizeAreaContractValue(config.area);
+  return normalizeRegionContractValue(config.region);
 }
 
 function getConfiguredPageSize(config) {
