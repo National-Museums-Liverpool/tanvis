@@ -50,7 +50,7 @@ describe('renderIncreasingSpeciesTable', () => {
 
     expect(fetchMock).toHaveBeenCalledTimes(1);
     expect(String(fetchMock.mock.calls[0][0])).toContain('/api/v1/taxon-stats?include=taxon');
-    expect(String(fetchMock.mock.calls[0][0])).toContain('sort=-occurrences_count');
+    expect(String(fetchMock.mock.calls[0][0])).toContain('sort=-frequency_trend');
     expect(String(fetchMock.mock.calls[0][0])).toContain('limit=10');
     expect(String(fetchMock.mock.calls[0][0])).toContain('offset=0');
     expect(tabulatorCalls).toHaveLength(1);
@@ -109,7 +109,7 @@ describe('renderIncreasingSpeciesTable', () => {
     await new Promise((resolve) => setTimeout(resolve, 0));
 
     expect(String(fetchMock.mock.calls[0][0])).toContain('/api/v1/taxon-stats?include=taxon');
-    expect(String(fetchMock.mock.calls[0][0])).toContain('sort=-occurrences_count');
+    expect(String(fetchMock.mock.calls[0][0])).toContain('sort=-frequency_trend');
     expect(String(fetchMock.mock.calls[0][0])).toContain('limit=10');
     expect(String(fetchMock.mock.calls[0][0])).toContain('offset=0');
   });
@@ -182,7 +182,7 @@ describe('renderIncreasingSpeciesTable', () => {
     expect(fetchMock).toHaveBeenCalledTimes(2);
     expect(String(fetchMock.mock.calls[1][0])).toContain('taxon_group__external_key%5Beq%5D=diptera');
     expect(String(fetchMock.mock.calls[1][0])).toContain('include=taxon');
-    expect(String(fetchMock.mock.calls[1][0])).toContain('sort=-occurrences_count');
+    expect(String(fetchMock.mock.calls[1][0])).toContain('sort=-frequency_trend');
   });
 
   it('keeps the table adapter groupId when the control block is at the default all-groups value', async () => {

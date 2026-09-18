@@ -37,7 +37,7 @@ describe('renderStaticMap', () => {
     expect(svgMapCalls[0].selector).toMatch(/^#tanvis-map-/);
     expect(svgMapCalls[0].transOptsControl).toBe(false);
     expect(svgMapCalls[0].transOptsKey).toBe('vc-all');
-    expect(svgMapCalls[0].gridGjson).toBe('/data/vcs/hectad-grids/vc-all-hectads.geojson');
+    expect(svgMapCalls[0].gridGjson).toBe('data/vcs/hectad-grids/vc-all-hectads.geojson');
     expect(svgMapCalls[0].gridLineStyle).toBeUndefined();
     expect(setIdentfierCalls).toEqual([]);
     expect(redrawCalls).toHaveLength(1);
@@ -50,7 +50,7 @@ describe('renderStaticMap', () => {
     expect(element.dataset.visRegion).toBe('59');
     expect(svgMapCalls).toHaveLength(2);
     expect(svgMapCalls[1].transOptsKey).toBe('vc-59');
-    expect(svgMapCalls[1].boundaryGjson).toBe('/data/vcs/simp-100/vc-59-100.geojson');
+    expect(svgMapCalls[1].boundaryGjson).toBe('data/vcs/simp-100/vc-59-100.geojson');
     expect(redrawCalls).toHaveLength(2);
   });
 
@@ -77,7 +77,7 @@ describe('renderStaticMap', () => {
     expect(svgMapCalls).toHaveLength(1);
     expect(svgMapCalls[0].gridGjson).toBeUndefined();
     expect(svgMapCalls[0].gridLineStyle).toBe('none');
-    expect(svgMapCalls[0].boundaryGjson).toBe('/data/vcs/simp-100/vc-58-100.geojson');
+    expect(svgMapCalls[0].boundaryGjson).toBe('data/vcs/simp-100/vc-58-100.geojson');
   });
 
   it('passes calculated height but not width when width is provided', () => {

@@ -83,7 +83,7 @@ test('control-block drives map region changes', async ({ page }) => {
 
   expect(calls.svgMapCalls).toHaveLength(2);
   expect(calls.svgMapCalls[1].transOptsKey).toBe('vc-59');
-  expect(calls.svgMapCalls[1].boundaryGjson).toBe('/data/vcs/simp-100/vc-59-100.geojson');
+  expect(calls.svgMapCalls[1].boundaryGjson).toBe('data/vcs/simp-100/vc-59-100.geojson');
   expect(calls.setIdentifierCalls).toEqual([]);
   expect(calls.redrawCalls).toBe(2);
 });
