@@ -10,6 +10,7 @@ const KNOWN_VIS_TYPES = [
   'species-name-block',
   'species-remarks-block',
   'species-info-block',
+  'species-image',
   'help-block',
 ];
 
@@ -283,6 +284,27 @@ const RULES = {
     defaultValue: true,
     info: `Whether to show the data options expanded in the control block.` 
   }),
+  showImageCaption: createRule({
+    key: 'showImageCaption',
+    datasetName: 'visShowImageCaption',
+    parseAndValidate: parseAndValidateBoolean,
+    defaultValue: true,
+    info: `Whether to show the caption, if available, for the species image.`
+  }),
+  showImageAttribution: createRule({
+    key: 'showImageAttribution',
+    datasetName: 'visShowImageAttribution',
+    parseAndValidate: parseAndValidateBoolean,
+    defaultValue: true,
+    info: `Whether to show the attribution, if available, for the species image.`
+  }),
+  showImageLicense: createRule({
+    key: 'showImageLicense',
+    datasetName: 'visShowImageLicense',
+    parseAndValidate: parseAndValidateBoolean,
+    defaultValue: true,
+    info: `Whether to show the license, if available, for the species image.`
+  }),
   taxonIdSource: createRule({
     key: 'taxonIdSource',
     datasetName: 'visTaxonIdSource',
@@ -454,6 +476,19 @@ const RULES = {
       'squares' - to visualize square counts,
       'switch' - provide a control to switch between different temporal statistics.`
   }), 
+
+  imageVariant: createRule({
+    key: 'imageVariant',
+    datasetName: 'visImageVariant',
+    parseAndValidate: parseAndValidateSet,
+    allowedValues: ['none', 'large', 'thumbnail'],
+    defaultValue: 'none',  
+    info: `The variant of the species image to display. This can be one of the following values:
+      'none' - default image will be displayed,
+      'large' - to display a large image,
+      'thumbnail' - to display a thumbnail image.`
+  }), 
+
   hectads: createRule({
     key: 'hectads',
     datasetName: 'visHectads',
@@ -651,6 +686,7 @@ const VIS_TYPE_RULE_SETS = {
   'species-name-block': ['taxonId', 'taxonIdSource', 'primaryName', 'secondaryName', 'authority'],
   'species-remarks-block': ['taxonId', 'taxonIdSource'],
   'species-info-block': ['taxonId', 'taxonIdSource', 'control', 'area'],
+  'species-image': ['taxonId', 'taxonIdSource', 'imageVariant', 'expand', 'width', 'height', 'showImageCaption', 'showImageAttribution', 'showImageLicense'],
   'help-block': []
 };
 
@@ -692,6 +728,8 @@ const VIS_TYPE_DESCRIPTIONS = {
   'species-remarks-block': `A block visualisation showing remarks for a species.`,
   'species-info-block': `A block visualisation showing information for a species, including 
     its conservation status, a summary of the number of records and number of grid squares.`,
+  'species-image': `A block visualisation showing an image for a species, fetched from the 
+    taxa API's taxon-media data.`,
   'help-block': `A block visualisation showing help information.`
 };
 

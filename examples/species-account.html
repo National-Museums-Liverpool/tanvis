@@ -35,12 +35,12 @@
       }
 
       /* Desktop styles: Size to content */
-      .div-1, .div-3 {
+      .div-1 {
         flex: 0 0 auto; /* Sizes strictly to content */
       }
 
       /* Desktop styles: Fill remaining space */
-      .div-2, .div-4 {
+      .div-2 {
         flex: 1; /* Grows to fill the rest of the row */
       }
 
@@ -49,12 +49,6 @@
         width: 100%;
         height: 0;
       }
-
-      /* Styling each box with a different color */
-      /* .div-1 { background-color: #3498db; }
-      .div-2 { background-color: #e74c3c; }
-      .div-3 { background-color: #2ecc71; }
-      .div-4 { background-color: #f1c40f; } */
 
       #species-map-div {
         width: 500px;
@@ -105,18 +99,35 @@
       data-vis-taxon-id-source="species-identifier"
     ></div>
 
-    <div  
-      class="tanvis"
-      data-vis-type="species-info-block"
-      data-vis-control="vc-control"
-      data-vis-taxon-id-source="species-identifier"
-    ></div>
+    <div class="flex-container">
+      <div class="flex-item div-1" style="max-width: 500px;">
 
-    <div  
-      class="tanvis"
-      data-vis-type="species-remarks-block"
-      data-vis-taxon-id-source="species-identifier"
-    ></div>
+        <div  
+          class="tanvis"
+          data-vis-type="species-info-block"
+          data-vis-control="vc-control"
+          data-vis-taxon-id-source="species-identifier"
+        ></div>
+
+        <div  
+          class="tanvis"
+          data-vis-type="species-remarks-block"
+          data-vis-taxon-id-source="species-identifier"
+        ></div>
+      </div>
+      <div class="flex-item div-2" style="margin-left: 2rem">
+        <div
+          class="tanvis"
+          data-vis-type="species-image"
+          data-vis-taxon-id-source="species-identifier"
+          data-vis-image-variant="none"
+          data-vis-width="450"
+          data-vis-show-image-caption="true"
+          data-vis-show-image-attribution="true"
+          data-vis-show-image-license="true"
+        ></div>
+      </div>
+    </div>
 
     <div
       id="vc-control"

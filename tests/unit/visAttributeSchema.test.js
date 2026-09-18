@@ -44,4 +44,16 @@ describe('getVisAttributeSchema', () => {
     expect(gridSchema.rules.find((rule) => rule.key === 'boundaries')).toBeDefined();
     expect(temporalSchema.rules.find((rule) => rule.key === 'boundaries')).toBeUndefined();
   });
+
+  it('exposes taxonId, taxonIdSource, imageVariant, expand, width and height for species-image', () => {
+    const schema = getVisAttributeSchema('species-image');
+
+    expect(schema.rules.map((rule) => rule.key)).toEqual(
+      expect.arrayContaining(['taxonId', 'taxonIdSource', 'imageVariant', 'expand', 'width', 'height'])
+    );
+    expect(schema.rules.find((rule) => rule.key === 'imageVariant')).toMatchObject({ defaultValue: 'none' });
+    expect(schema.rules.find((rule) => rule.key === 'expand')).toMatchObject({ defaultValue: false });
+    expect(schema.rules.find((rule) => rule.key === 'control')).toBeUndefined();
+    expect(schema.rules.find((rule) => rule.key === 'area')).toBeUndefined();
+  });
 });

@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Tanvis Species Image Example</title>
+    <script src="https://unpkg.com/tabulator-tables@6.3.0/dist/js/tabulator.min.js"></script>
+    <link rel="stylesheet" href="https://unpkg.com/tabulator-tables@6.3.0/dist/css/tabulator.min.css" />
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        margin: 20px;
+      }
+
+      .tanvis {
+        margin-top: 1rem;
+      }
+
+    </style>
+  </head>
+  <body>
+    <h1>Tanvis Species Image Example</h1>
+   
+    <div
+      id="control"
+      class="tanvis"
+      data-vis-type="control-block"
+      data-vis-control-elements="language species"
+      data-vis-area="vc-all"
+      data-vis-language="vernacular"
+      data-vis-show-data-opts-toggle="false"
+    ></div>
+
+    <div
+      class="tanvis"
+      data-vis-type="species-name-block"
+      data-vis-taxonid="NBNORG0000008994"
+      data-vis-taxon-id-source="control"
+      data-vis-primary-name="scientific"
+      data-vis-secondary-name="vernacular"
+      data-vis-authority="true"
+    ></div>
+
+    <div
+      class="tanvis"
+      data-vis-type="species-image"
+      data-vis-taxonid="NBNORG0000008994"
+      data-vis-taxon-id-source="control"
+      data-vis-image-variant="none"
+      data-vis-expand="true"
+      data-vis-show-image-caption="true"
+      data-vis-show-image-attribution="true"
+      data-vis-show-image-license="true"
+    ></div>
+
+    <script src="../dist/tanvis.iife.js"></script>
+    <script type="module">
+      window.Tanvis.init();
+    </script>
+  </body>
+</html>

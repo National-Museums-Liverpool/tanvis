@@ -275,6 +275,18 @@ div[data-tanvis-controls="species-selector"] {
   font-size: 1.5rem;
 }
 
+.tanvis[data-vis-type='species-image'] [data-tanvis-species-image='content'] {
+  max-width: 100%;
+}
+
+.tanvis[data-vis-type='species-image'] [data-tanvis-species-image='content'] img {
+  max-width: 100%;
+}
+
+.tanvis[data-vis-type='species-image'] [data-tanvis-species-image='text'] {
+  overflow-wrap: break-word;
+}
+
 .tanvis-table-header-text {
   font-size: 1.2rem;
   margin-bottom: 0.5rem;
