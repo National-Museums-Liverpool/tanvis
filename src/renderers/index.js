@@ -5,6 +5,7 @@ export { renderSpeciesIdentifier } from './speciesIdentifier.js';
 export { renderNewSpeciesTable } from './newSpeciesTable.js';
 export { renderIncreasingSpeciesTable } from './increasingSpeciesTable.js';
 export { renderSpeciesAbsentTable } from './speciesAbsentTable.js';
+export { renderRecordsTable } from './recordsTable.js';
 export { renderSpeciesMap } from './speciesMap.js';
 export { renderGridStatsMap } from './gridStatsMap.js';
 export { renderTemporalYearChart } from './temporalYearChart.js';

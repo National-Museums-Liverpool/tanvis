@@ -16,6 +16,7 @@ var Tanvis = (function (exports) {
     'new-species-table',
     'increasing-species-table',
     'species-absent-table',
+    'records-table',
     'grid-stats-map',
     'temporal-year-chart',
     'species-name-block',
@@ -705,6 +706,7 @@ var Tanvis = (function (exports) {
     'species-remarks-block': ['taxonId', 'taxonIdSource'],
     'species-info-block': ['taxonId', 'taxonIdSource', 'control', 'region'],
     'species-image': ['taxonId', 'taxonIdSource', 'imageVariant', 'uuid', 'expand', 'width', 'height', 'showImageCaption', 'showImageAttribution', 'showImageLicense'],
+    'records-table': ['taxonId', 'taxonIdSource', 'control', 'region', 'pageSize'],
     'general-info-block': [],
     'help-block': []
   };
@@ -740,6 +742,8 @@ var Tanvis = (function (exports) {
     directly or via a linked control block.`,
     'species-absent-table': `A table showing species not recorded since a given year. The table can 
     be filtered by geographic region and taxon group, either directly or via a linked control block.`,
+    'records-table': `A table showing records for a species. The table can be filtered by geographic 
+    region either directly or via a linked control block.`,
     'species-name-block': `A block visualisation showing the name of a species. Some default
     styling is applied to the name, but it can be overridden with CSS. The block can show either
     the scientific name or the vernacular name first, and can optionally show the other name in parentheses.
@@ -1738,7 +1742,7 @@ div[data-tanvis-controls="species-selector"] {
     return element.id;
   }
 
-  function clearControlSubscription$6(element) {
+  function clearControlSubscription$7(element) {
     const cleanup = element?.__tanvisControlCleanup;
     if (typeof cleanup === 'function') {
       cleanup();
@@ -1756,7 +1760,7 @@ div[data-tanvis-controls="species-selector"] {
     delete element.__tanvisExpandCleanup;
   }
 
-  function getEffectiveRegion$6(config) {
+  function getEffectiveRegion$7(config) {
     if (!config.control) {
       return normalizeRegionContractValue(config.region);
     }
@@ -1908,7 +1912,7 @@ div[data-tanvis-controls="species-selector"] {
 
   function renderStaticAtlasMap(element, config, options = {}) {
     clearExpandResizeHandlers(element);
-    clearControlSubscription$6(element);
+    clearControlSubscription$7(element);
 
     const status = createVisStatusReporter(element);
     clearElement(element);
@@ -1931,7 +1935,7 @@ div[data-tanvis-controls="species-selector"] {
       assignElementId(element, idPrefix);
       ensureMapTetradInfo$1(element);
 
-      const effectiveRegion = getEffectiveRegion$6(config);
+      const effectiveRegion = getEffectiveRegion$7(config);
       const renderConfig = effectiveRegion === config.region
         ? config
         : {
@@ -2085,7 +2089,7 @@ div[data-tanvis-controls="species-selector"] {
 
   function renderLeafletAtlasMap(element, config, options = {}) {
     clearExpandResizeHandlers(element);
-    clearControlSubscription$6(element);
+    clearControlSubscription$7(element);
 
     const status = createVisStatusReporter(element);
     clearElement(element);
@@ -2112,7 +2116,7 @@ div[data-tanvis-controls="species-selector"] {
       assignElementId(element, idPrefix);
       ensureMapTetradInfo(element);
 
-      const effectiveRegion = getEffectiveRegion$6(config);
+      const effectiveRegion = getEffectiveRegion$7(config);
       const renderConfig = effectiveRegion === config.region
         ? config
         : {
@@ -2498,12 +2502,12 @@ div[data-tanvis-controls="species-selector"] {
   }
 
   async function fetchTaxonGroups(apiBase) {
-    const resourceUrl = resolveResourceUrl$8(apiBase, 'taxon-groups');
-    const payload = await fetchJson$b(resourceUrl.toString(), 'Failed to load taxon groups');
-    return getListData$7(payload);
+    const resourceUrl = resolveResourceUrl$9(apiBase, 'taxon-groups');
+    const payload = await fetchJson$c(resourceUrl.toString(), 'Failed to load taxon groups');
+    return getListData$8(payload);
   }
 
-  function resolveResourceUrl$8(apiBase, resourceName) {
+  function resolveResourceUrl$9(apiBase, resourceName) {
     const baseUrl = new URL(apiBase, window.location.origin);
     const pathname = baseUrl.pathname.endsWith('/') ? baseUrl.pathname : `${baseUrl.pathname}/`;
     baseUrl.pathname = `${pathname}${resourceName}`;
@@ -2512,7 +2516,7 @@ div[data-tanvis-controls="species-selector"] {
     return baseUrl;
   }
 
-  async function fetchJson$b(url, defaultErrorMessage) {
+  async function fetchJson$c(url, defaultErrorMessage) {
     logApiRequest(url, { method: 'GET' });
 
     let response;
@@ -2531,7 +2535,7 @@ div[data-tanvis-controls="species-selector"] {
     return payload || {};
   }
 
-  function getListData$7(payload) {
+  function getListData$8(payload) {
     if (Array.isArray(payload)) {
       return payload;
     }
@@ -2757,7 +2761,7 @@ div[data-tanvis-controls="species-selector"] {
       return [];
     }
 
-    const resourceUrl = resolveResourceUrl$7(apiBase, 'taxa');
+    const resourceUrl = resolveResourceUrl$8(apiBase, 'taxa');
     const url = new URL(resourceUrl.toString());
     url.searchParams.set(`${searchField}[contains]`, query);
     if (taxonGroupExternalKey) {
@@ -2766,11 +2770,11 @@ div[data-tanvis-controls="species-selector"] {
     }
     url.searchParams.set('limit', String(SPECIES_SEARCH_LIMIT));
 
-    const payload = await fetchJson$a(url.toString(), 'Failed to search taxa');
-    return getListData$6(payload);
+    const payload = await fetchJson$b(url.toString(), 'Failed to search taxa');
+    return getListData$7(payload);
   }
 
-  function resolveResourceUrl$7(apiBase, resourceName) {
+  function resolveResourceUrl$8(apiBase, resourceName) {
     const baseUrl = new URL(apiBase, window.location.origin);
     const pathname = baseUrl.pathname.endsWith('/') ? baseUrl.pathname : `${baseUrl.pathname}/`;
     baseUrl.pathname = `${pathname}${resourceName}`;
@@ -2779,7 +2783,7 @@ div[data-tanvis-controls="species-selector"] {
     return baseUrl;
   }
 
-  async function fetchJson$a(url, defaultErrorMessage) {
+  async function fetchJson$b(url, defaultErrorMessage) {
     logApiRequest(url, { method: 'GET' });
 
     let response;
@@ -2798,7 +2802,7 @@ div[data-tanvis-controls="species-selector"] {
     return payload || {};
   }
 
-  function getListData$6(payload) {
+  function getListData$7(payload) {
     if (Array.isArray(payload)) {
       return payload;
     }
@@ -2996,7 +3000,7 @@ div[data-tanvis-controls="species-selector"] {
   }
 
   const TAXON_STATS_RESOURCE$3 = 'taxon-stats';
-  const DEFAULT_PAGE_SIZE$2 = 10;
+  const DEFAULT_PAGE_SIZE$3 = 10;
   const columns$2 = [
     { title: 'Scientific', field: 'scientificName', formatter: 'html', headerSort: false },
     { title: 'Vernacular', field: 'commonName', headerSort: false , responsive: 8 },
@@ -3016,12 +3020,12 @@ div[data-tanvis-controls="species-selector"] {
     return {
       name: 'new-species-table',
       render(element, config) {
-        clearControlSubscription$5(element);
+        clearControlSubscription$6(element);
         const status = createVisStatusReporter(element);
         clearElement(element);
         status.showInfo('Loading...');
 
-        const effectiveRegion = getEffectiveRegion$5(config);
+        const effectiveRegion = getEffectiveRegion$6(config);
         const renderConfig = effectiveRegion === config.region
           ? config
           : {
@@ -3040,7 +3044,7 @@ div[data-tanvis-controls="species-selector"] {
         element.dataset.visRegion = renderConfig.region;
         element.dataset.visTaxonGroup = taxonGroupExternalKey;
         element.dataset.visTaxonGroupLabelMode = effectiveLabelMode;
-        const pageSize = getConfiguredPageSize$2(renderConfig);
+        const pageSize = getConfiguredPageSize$3(renderConfig);
 
         if (renderConfig.control) {
           element.__tanvisControlCleanup = subscribeToControl(renderConfig.control, (event) => {
@@ -3049,7 +3053,7 @@ div[data-tanvis-controls="species-selector"] {
             }
 
             if (event.type === 'region-change' || event.type === 'taxon-group-change') {
-              const nextRegion = getEffectiveRegion$5(renderConfig);
+              const nextRegion = getEffectiveRegion$6(renderConfig);
               const nextTaxonGroupExternalKey = getEffectiveTaxonGroup$3(renderConfig);
 
               if (nextRegion === element.dataset.visRegion && nextTaxonGroupExternalKey === (element.dataset.visTaxonGroup || '')) {
@@ -3073,12 +3077,12 @@ div[data-tanvis-controls="species-selector"] {
 
               element.dataset.visTaxonGroupLabelMode = nextLabelMode;
               rerenderTableRows$2(element, { labelMode: nextLabelMode });
-              refreshSummary$2(element, nextLabelMode);
+              refreshSummary$3(element, nextLabelMode);
             }
           });
         }
 
-        const Tabulator = getTabulatorGlobal$2();
+        const Tabulator = getTabulatorGlobal$3();
 
         if (!Tabulator) {
           clearElement(element);
@@ -3087,7 +3091,7 @@ div[data-tanvis-controls="species-selector"] {
         }
 
         clearElement(element);
-        const summary = createSummary$2(startDate, endDate, 0, renderConfig.region);
+        const summary = createSummary$3(startDate, endDate, 0, renderConfig.region);
         element.appendChild(summary);
         element.__tanvisSummaryElement = summary;
         element.__tanvisSummaryState = { startDate, endDate, region: renderConfig.region, count: 0, taxonGroupInfo: null };
@@ -3099,11 +3103,11 @@ div[data-tanvis-controls="species-selector"] {
             }
 
             element.__tanvisSummaryState.taxonGroupInfo = taxonGroupInfo;
-            refreshSummary$2(element, getEffectiveLabelModeForElement$2(element, renderConfig));
+            refreshSummary$3(element, getEffectiveLabelModeForElement$2(element, renderConfig));
           });
         }
 
-        createTableContainer$2({
+        createTableContainer$3({
           Tabulator,
           pageSize,
           requestPage: async ({ pageNumber, pageSize: requestedPageSize }) => {
@@ -3131,7 +3135,7 @@ div[data-tanvis-controls="species-selector"] {
             element.__tanvisSummaryState.endDate = endDate;
             element.__tanvisSummaryState.region = renderConfig.region;
             element.__tanvisSummaryState.count = pageResult.totalRows;
-            refreshSummary$2(element, labelModeForRequest);
+            refreshSummary$3(element, labelModeForRequest);
             element.__tanvisLatestRows = pageResult.records;
             return {
               data: pageResult.records,
@@ -3187,19 +3191,19 @@ div[data-tanvis-controls="species-selector"] {
     element.__tanvisLatestRows = remappedRows;
   }
 
-  function createSummary$2(startDate, endDate, count, region, taxonGroupName) {
+  function createSummary$3(startDate, endDate, count, region, taxonGroupName) {
     const summary = document.createElement('div');
     summary.classList.add('tanvis-table-header-text');
-    summary.textContent = buildSummaryText$2(startDate, endDate, count, region, taxonGroupName);
+    summary.textContent = buildSummaryText$3(startDate, endDate, count, region, taxonGroupName);
     return summary;
   }
 
-  function buildSummaryText$2(startDate, endDate, count, region, taxonGroupName) {
+  function buildSummaryText$3(startDate, endDate, count, region, taxonGroupName) {
     const suffix = taxonGroupName ? ` for taxon group ${taxonGroupName}` : '';
-    return `${count} new species between ${startDate} and ${endDate} for ${formatTableRegionLabel$2(region)}${suffix}`;
+    return `${count} new species between ${startDate} and ${endDate} for ${formatTableRegionLabel$3(region)}${suffix}`;
   }
 
-  function refreshSummary$2(element, labelMode) {
+  function refreshSummary$3(element, labelMode) {
     const state = element.__tanvisSummaryState;
     const summary = element.__tanvisSummaryElement;
     if (!state || !summary) {
@@ -3207,10 +3211,10 @@ div[data-tanvis-controls="species-selector"] {
     }
 
     const taxonGroupName = state.taxonGroupInfo ? formatGroupName$2(state.taxonGroupInfo, labelMode) : '';
-    summary.textContent = buildSummaryText$2(state.startDate, state.endDate, state.count, state.region, taxonGroupName);
+    summary.textContent = buildSummaryText$3(state.startDate, state.endDate, state.count, state.region, taxonGroupName);
   }
 
-  function formatTableRegionLabel$2(region) {
+  function formatTableRegionLabel$3(region) {
     const normalizedRegion = normalizeRegionContractValue(region);
     if (normalizedRegion === undefined || normalizedRegion === null || normalizedRegion === '' || normalizedRegion === 'all' || normalizedRegion === 'vc-all' || normalizedRegion === 'all VCs') {
       return 'all VCs';
@@ -3232,7 +3236,7 @@ div[data-tanvis-controls="species-selector"] {
     return candidate;
   }
 
-  function createTableContainer$2({ Tabulator, pageSize, requestPage, element, loadId, status }) {
+  function createTableContainer$3({ Tabulator, pageSize, requestPage, element, loadId, status }) {
     const container = document.createElement('div');
     element.appendChild(container);
 
@@ -3302,8 +3306,8 @@ div[data-tanvis-controls="species-selector"] {
 
     //console.log('Fetched verified dates:', payload.data.map((row) => row.first_verified_record_date));
 
-    const rows = getListData$5(payload);
-    const totalRows = getTotalCount$1(payload);
+    const rows = getListData$6(payload);
+    const totalRows = getTotalCount$2(payload);
     const totalPages = Math.max(1, Math.ceil(totalRows / pageSize));
 
     return {
@@ -3350,9 +3354,9 @@ div[data-tanvis-controls="species-selector"] {
 
   async function fetchTaxonGroupsMap$2(apiBase) {
     try {
-      const resourceUrl = resolveResourceUrl$6(apiBase, 'taxon-groups');
-      const payload = await fetchJson$9(resourceUrl.toString(), 'Failed to load taxon groups');
-      const groups = getListData$5(payload);
+      const resourceUrl = resolveResourceUrl$7(apiBase, 'taxon-groups');
+      const payload = await fetchJson$a(resourceUrl.toString(), 'Failed to load taxon groups');
+      const groups = getListData$6(payload);
       const map = new Map();
       for (const group of groups) {
         if (group?.external_key) {
@@ -3366,7 +3370,7 @@ div[data-tanvis-controls="species-selector"] {
   }
 
   async function fetchTaxonStatsInRange({ apiBase, startDate, endDate, higherGeographyIdentifier, taxonGroupExternalKey, limit, offset }) {
-    const resourceUrl = resolveResourceUrl$6(apiBase, TAXON_STATS_RESOURCE$3);
+    const resourceUrl = resolveResourceUrl$7(apiBase, TAXON_STATS_RESOURCE$3);
     const pageUrl = new URL(resourceUrl.toString());
     pageUrl.searchParams.set('first_record_date[gte]', startDate);
     pageUrl.searchParams.set('first_record_date[lte]', endDate);
@@ -3381,11 +3385,11 @@ div[data-tanvis-controls="species-selector"] {
     pageUrl.searchParams.set('offset', String(offset));
     pageUrl.searchParams.set('sort', '-first_record_date');
 
-    const payload = await fetchJson$9(pageUrl.toString(), 'Failed to load taxon-stats');
+    const payload = await fetchJson$a(pageUrl.toString(), 'Failed to load taxon-stats');
     return payload || {};
   }
 
-  function resolveResourceUrl$6(apiBase, resourceName) {
+  function resolveResourceUrl$7(apiBase, resourceName) {
     const baseUrl = new URL(apiBase, window.location.origin);
     const pathname = baseUrl.pathname.endsWith('/') ? baseUrl.pathname : `${baseUrl.pathname}/`;
     baseUrl.pathname = `${pathname}${resourceName}`;
@@ -3394,7 +3398,7 @@ div[data-tanvis-controls="species-selector"] {
     return baseUrl;
   }
 
-  async function fetchJson$9(url, defaultErrorMessage) {
+  async function fetchJson$a(url, defaultErrorMessage) {
     logApiRequest(url, { method: 'GET' });
 
     let response;
@@ -3413,7 +3417,7 @@ div[data-tanvis-controls="species-selector"] {
     return payload || {};
   }
 
-  function getListData$5(payload) {
+  function getListData$6(payload) {
     if (Array.isArray(payload)) {
       return payload;
     }
@@ -3429,7 +3433,7 @@ div[data-tanvis-controls="species-selector"] {
     return [];
   }
 
-  function getTotalCount$1(payload) {
+  function getTotalCount$2(payload) {
     if (Number.isFinite(payload?.meta?.total)) {
       return Number(payload.meta.total);
     }
@@ -3442,7 +3446,7 @@ div[data-tanvis-controls="species-selector"] {
       return Number(payload.last_row);
     }
 
-    return getListData$5(payload).length;
+    return getListData$6(payload).length;
   }
 
   function regionToHigherGeographyIdentifier$2(region) {
@@ -3463,7 +3467,7 @@ div[data-tanvis-controls="species-selector"] {
     return undefined;
   }
 
-  function clearControlSubscription$5(element) {
+  function clearControlSubscription$6(element) {
     const cleanup = element?.__tanvisControlCleanup;
     if (typeof cleanup === 'function') {
       cleanup();
@@ -3472,7 +3476,7 @@ div[data-tanvis-controls="species-selector"] {
     delete element.__tanvisControlCleanup;
   }
 
-  function getEffectiveRegion$5(config) {
+  function getEffectiveRegion$6(config) {
     if (!config.control) {
       return normalizeRegionContractValue(config.region);
     }
@@ -3512,10 +3516,10 @@ div[data-tanvis-controls="species-selector"] {
     return config?.groupId || '';
   }
 
-  function getConfiguredPageSize$2(config) {
-    const configuredPageSize = Number(config?.pageSize ?? config?.['data-vis-page-size'] ?? config?.['data-visPageSize'] ?? DEFAULT_PAGE_SIZE$2);
+  function getConfiguredPageSize$3(config) {
+    const configuredPageSize = Number(config?.pageSize ?? config?.['data-vis-page-size'] ?? config?.['data-visPageSize'] ?? DEFAULT_PAGE_SIZE$3);
     if (!Number.isFinite(configuredPageSize) || configuredPageSize <= 0) {
-      return DEFAULT_PAGE_SIZE$2;
+      return DEFAULT_PAGE_SIZE$3;
     }
 
     return configuredPageSize;
@@ -3556,7 +3560,7 @@ div[data-tanvis-controls="species-selector"] {
     return element?.dataset?.visTaxonGroupLabelMode || getEffectiveLabelMode$2(config);
   }
 
-  function getTabulatorGlobal$2() {
+  function getTabulatorGlobal$3() {
     if (typeof window === 'undefined') {
       return null;
     }
@@ -3573,7 +3577,7 @@ div[data-tanvis-controls="species-selector"] {
   }
 
   const TAXON_STATS_RESOURCE$2 = 'taxon-stats';
-  const DEFAULT_PAGE_SIZE$1 = 10;
+  const DEFAULT_PAGE_SIZE$2 = 10;
   const DEFAULT_TOP_N = 50;
   const columns$1 = [
     
@@ -3591,12 +3595,12 @@ div[data-tanvis-controls="species-selector"] {
     return {
       name: 'increasing-species-table',
       render(element, config) {
-        clearControlSubscription$4(element);
+        clearControlSubscription$5(element);
         const status = createVisStatusReporter(element);
         clearElement(element);
         status.showInfo('Loading...');
 
-        const effectiveRegion = getEffectiveRegion$4(config);
+        const effectiveRegion = getEffectiveRegion$5(config);
         const renderConfig = effectiveRegion === config.region
           ? config
           : {
@@ -3614,7 +3618,7 @@ div[data-tanvis-controls="species-selector"] {
         element.dataset.visRegion = renderConfig.region;
         element.dataset.visTaxonGroup = taxonGroupExternalKey;
         element.dataset.visTaxonGroupLabelMode = effectiveLabelMode;
-        const pageSize = getConfiguredPageSize$1(renderConfig);
+        const pageSize = getConfiguredPageSize$2(renderConfig);
 
         if (renderConfig.control) {
           element.__tanvisControlCleanup = subscribeToControl(renderConfig.control, (event) => {
@@ -3623,7 +3627,7 @@ div[data-tanvis-controls="species-selector"] {
             }
 
             if (event.type === 'region-change' || event.type === 'taxon-group-change') {
-              const nextRegion = getEffectiveRegion$4(renderConfig);
+              const nextRegion = getEffectiveRegion$5(renderConfig);
               const nextTaxonGroupExternalKey = getEffectiveTaxonGroup$2(renderConfig);
 
               if (nextRegion === element.dataset.visRegion && nextTaxonGroupExternalKey === (element.dataset.visTaxonGroup || '')) {
@@ -3647,12 +3651,12 @@ div[data-tanvis-controls="species-selector"] {
 
               element.dataset.visTaxonGroupLabelMode = nextLabelMode;
               rerenderTableRows$1(element, { labelMode: nextLabelMode });
-              refreshSummary$1(element, nextLabelMode);
+              refreshSummary$2(element, nextLabelMode);
             }
           });
         }
 
-        const Tabulator = getTabulatorGlobal$1();
+        const Tabulator = getTabulatorGlobal$2();
 
         if (!Tabulator) {
           clearElement(element);
@@ -3661,7 +3665,7 @@ div[data-tanvis-controls="species-selector"] {
         }
 
         clearElement(element);
-        const summary = createSummary$1(topN, 0, renderConfig.region);
+        const summary = createSummary$2(topN, 0, renderConfig.region);
         element.appendChild(summary);
         element.__tanvisSummaryElement = summary;
         element.__tanvisSummaryState = { topN, region: renderConfig.region, taxonGroupInfo: null };
@@ -3673,11 +3677,11 @@ div[data-tanvis-controls="species-selector"] {
             }
 
             element.__tanvisSummaryState.taxonGroupInfo = taxonGroupInfo;
-            refreshSummary$1(element, getEffectiveLabelModeForElement$1(element, renderConfig));
+            refreshSummary$2(element, getEffectiveLabelModeForElement$1(element, renderConfig));
           });
         }
 
-        createTableContainer$1({
+        createTableContainer$2({
           Tabulator,
           pageSize,
           requestPage: async ({ pageNumber, pageSize: requestedPageSize }) => {
@@ -3702,7 +3706,7 @@ div[data-tanvis-controls="species-selector"] {
 
             element.__tanvisSummaryState.topN = topN;
             element.__tanvisSummaryState.region = renderConfig.region;
-            refreshSummary$1(element, labelModeForRequest);
+            refreshSummary$2(element, labelModeForRequest);
             element.__tanvisLatestRows = pageResult.records;
             return {
               data: pageResult.records,
@@ -3758,19 +3762,19 @@ div[data-tanvis-controls="species-selector"] {
     element.__tanvisLatestRows = remappedRows;
   }
 
-  function createSummary$1(topN, count, region, taxonGroupName) {
+  function createSummary$2(topN, count, region, taxonGroupName) {
     const summary = document.createElement('div');
     summary.classList.add('tanvis-table-header-text');
-    summary.textContent = buildSummaryText$1(topN, region, taxonGroupName);
+    summary.textContent = buildSummaryText$2(topN, region, taxonGroupName);
     return summary;
   }
 
-  function buildSummaryText$1(topN, region, taxonGroupName) {
+  function buildSummaryText$2(topN, region, taxonGroupName) {
     const suffix = taxonGroupName ? ` for taxon group ${taxonGroupName}` : '';
-    return `Top ${topN} species by frequency trend for ${formatTableRegionLabel$1(region)}${suffix}`;
+    return `Top ${topN} species by frequency trend for ${formatTableRegionLabel$2(region)}${suffix}`;
   }
 
-  function refreshSummary$1(element, labelMode) {
+  function refreshSummary$2(element, labelMode) {
     const state = element.__tanvisSummaryState;
     const summary = element.__tanvisSummaryElement;
     if (!state || !summary) {
@@ -3778,10 +3782,10 @@ div[data-tanvis-controls="species-selector"] {
     }
 
     const taxonGroupName = state.taxonGroupInfo ? formatGroupName$1(state.taxonGroupInfo, labelMode) : '';
-    summary.textContent = buildSummaryText$1(state.topN, state.region, taxonGroupName);
+    summary.textContent = buildSummaryText$2(state.topN, state.region, taxonGroupName);
   }
 
-  function formatTableRegionLabel$1(region) {
+  function formatTableRegionLabel$2(region) {
     const normalizedRegion = normalizeRegionContractValue(region);
     if (normalizedRegion === undefined || normalizedRegion === null || normalizedRegion === '' || normalizedRegion === 'all' || normalizedRegion === 'vc-all' || normalizedRegion === 'all VCs') {
       return 'all VCs';
@@ -3803,7 +3807,7 @@ div[data-tanvis-controls="species-selector"] {
     return candidate;
   }
 
-  function createTableContainer$1({ Tabulator, pageSize, requestPage, element, loadId, status }) {
+  function createTableContainer$2({ Tabulator, pageSize, requestPage, element, loadId, status }) {
     const container = document.createElement('div');
     element.appendChild(container);
 
@@ -3864,7 +3868,7 @@ div[data-tanvis-controls="species-selector"] {
     return Math.floor(parsed);
   }
 
-  function getTabulatorGlobal$1() {
+  function getTabulatorGlobal$2() {
     if (typeof window === 'undefined') {
       return null;
     }
@@ -3874,7 +3878,7 @@ div[data-tanvis-controls="species-selector"] {
 
   async function buildIncreasingSpeciesRecordsPage({ apiBase, topN, higherGeographyIdentifier, taxonGroupExternalKey, pageNumber, pageSize, labelMode = 'scientific' }) {
     const effectiveTopN = Math.max(0, Math.floor(topN ?? DEFAULT_TOP_N));
-    const effectivePageSize = Math.max(1, Math.floor(pageSize ?? DEFAULT_PAGE_SIZE$1));
+    const effectivePageSize = Math.max(1, Math.floor(pageSize ?? DEFAULT_PAGE_SIZE$2));
     const offset = (pageNumber - 1) * effectivePageSize;
     const totalRows = effectiveTopN;
     const totalPages = Math.max(1, Math.ceil(totalRows / effectivePageSize));
@@ -3889,7 +3893,7 @@ div[data-tanvis-controls="species-selector"] {
 
     const limit = Math.min(effectivePageSize, Math.max(1, effectiveTopN - offset));
     const payload = await fetchTaxonStats$1({ apiBase, topN, higherGeographyIdentifier, taxonGroupExternalKey, limit, offset });
-    const taxonStatsRows = getListData$4(payload);
+    const taxonStatsRows = getListData$5(payload);
     const rankedRows = taxonStatsRows.slice(0, effectiveTopN - offset);
 
     return {
@@ -3940,9 +3944,9 @@ div[data-tanvis-controls="species-selector"] {
 
   async function fetchTaxonGroupsMap$1(apiBase) {
     try {
-      const resourceUrl = resolveResourceUrl$5(apiBase, 'taxon-groups');
-      const payload = await fetchJson$8(resourceUrl.toString(), 'Failed to load taxon groups');
-      const groups = getListData$4(payload);
+      const resourceUrl = resolveResourceUrl$6(apiBase, 'taxon-groups');
+      const payload = await fetchJson$9(resourceUrl.toString(), 'Failed to load taxon groups');
+      const groups = getListData$5(payload);
       const map = new Map();
       for (const group of groups) {
         if (group?.external_key) {
@@ -3956,7 +3960,7 @@ div[data-tanvis-controls="species-selector"] {
   }
 
   async function fetchTaxonStats$1({ apiBase, topN, higherGeographyIdentifier, taxonGroupExternalKey, limit, offset }) {
-    const resourceUrl = resolveResourceUrl$5(apiBase, TAXON_STATS_RESOURCE$2);
+    const resourceUrl = resolveResourceUrl$6(apiBase, TAXON_STATS_RESOURCE$2);
     const pageUrl = new URL(resourceUrl.toString());
     pageUrl.searchParams.set('include', 'taxon, taxon-group, taxon-rank');
     const vcId = higherGeographyIdentifier === undefined ? null : higherGeographyIdentifier;
@@ -3969,10 +3973,10 @@ div[data-tanvis-controls="species-selector"] {
     pageUrl.searchParams.set('limit', String(limit));
     pageUrl.searchParams.set('offset', String(offset));
 
-    const payload = await fetchJson$8(pageUrl.toString(), 'Failed to load taxon-stats');
+    const payload = await fetchJson$9(pageUrl.toString(), 'Failed to load taxon-stats');
     return payload || {};
   }
-  function resolveResourceUrl$5(apiBase, resourceName) {
+  function resolveResourceUrl$6(apiBase, resourceName) {
     const baseUrl = new URL(apiBase, window.location.origin);
     const pathname = baseUrl.pathname.endsWith('/') ? baseUrl.pathname : `${baseUrl.pathname}/`;
     baseUrl.pathname = `${pathname}${resourceName}`;
@@ -3981,7 +3985,7 @@ div[data-tanvis-controls="species-selector"] {
     return baseUrl;
   }
 
-  async function fetchJson$8(url, defaultErrorMessage) {
+  async function fetchJson$9(url, defaultErrorMessage) {
     logApiRequest(url, { method: 'GET' });
 
     let response;
@@ -4000,7 +4004,7 @@ div[data-tanvis-controls="species-selector"] {
     return payload || {};
   }
 
-  function getListData$4(payload) {
+  function getListData$5(payload) {
     if (Array.isArray(payload)) {
       return payload;
     }
@@ -4043,7 +4047,7 @@ div[data-tanvis-controls="species-selector"] {
     return undefined;
   }
 
-  function clearControlSubscription$4(element) {
+  function clearControlSubscription$5(element) {
     const cleanup = element?.__tanvisControlCleanup;
     if (typeof cleanup === 'function') {
       cleanup();
@@ -4052,7 +4056,7 @@ div[data-tanvis-controls="species-selector"] {
     delete element.__tanvisControlCleanup;
   }
 
-  function getEffectiveRegion$4(config) {
+  function getEffectiveRegion$5(config) {
     if (!config.control) {
       return normalizeRegionContractValue(config.region);
     }
@@ -4092,10 +4096,10 @@ div[data-tanvis-controls="species-selector"] {
     return config?.groupId || '';
   }
 
-  function getConfiguredPageSize$1(config) {
-    const configuredPageSize = Number(config?.pageSize ?? config?.['data-vis-page-size'] ?? config?.['data-visPageSize'] ?? DEFAULT_PAGE_SIZE$1);
+  function getConfiguredPageSize$2(config) {
+    const configuredPageSize = Number(config?.pageSize ?? config?.['data-vis-page-size'] ?? config?.['data-visPageSize'] ?? DEFAULT_PAGE_SIZE$2);
     if (!Number.isFinite(configuredPageSize) || configuredPageSize <= 0) {
-      return DEFAULT_PAGE_SIZE$1;
+      return DEFAULT_PAGE_SIZE$2;
     }
 
     return configuredPageSize;
@@ -4127,7 +4131,7 @@ div[data-tanvis-controls="species-selector"] {
   }
 
   const TAXON_STATS_RESOURCE$1 = 'taxon-stats';
-  const DEFAULT_PAGE_SIZE = 10;
+  const DEFAULT_PAGE_SIZE$1 = 10;
   const columns = [
     { title: 'Scientific', field: 'scientificName', formatter: 'html', headerSort: false },
     { title: 'Vernacular', field: 'commonName', headerSort: false, responsive: 9 },
@@ -4140,12 +4144,12 @@ div[data-tanvis-controls="species-selector"] {
     return {
       name: 'species-absent-table',
       render(element, config) {
-        clearControlSubscription$3(element);
+        clearControlSubscription$4(element);
         const status = createVisStatusReporter(element);
         clearElement(element);
         status.showInfo('Loading...');
 
-        const effectiveRegion = getEffectiveRegion$3(config);
+        const effectiveRegion = getEffectiveRegion$4(config);
         const renderConfig = effectiveRegion === config.region
           ? config
           : {
@@ -4163,7 +4167,7 @@ div[data-tanvis-controls="species-selector"] {
         element.dataset.visRegion = renderConfig.region;
         element.dataset.visTaxonGroup = taxonGroupExternalKey;
         element.dataset.visTaxonGroupLabelMode = effectiveLabelMode;
-        const pageSize = getConfiguredPageSize(renderConfig);
+        const pageSize = getConfiguredPageSize$1(renderConfig);
 
         if (renderConfig.control) {
           element.__tanvisControlCleanup = subscribeToControl(renderConfig.control, (event) => {
@@ -4172,7 +4176,7 @@ div[data-tanvis-controls="species-selector"] {
             }
 
             if (event.type === 'region-change' || event.type === 'taxon-group-change') {
-              const nextRegion = getEffectiveRegion$3(renderConfig);
+              const nextRegion = getEffectiveRegion$4(renderConfig);
               const nextTaxonGroupExternalKey = getEffectiveTaxonGroup$1(renderConfig);
 
               if (nextRegion === element.dataset.visRegion && nextTaxonGroupExternalKey === (element.dataset.visTaxonGroup || '')) {
@@ -4196,12 +4200,12 @@ div[data-tanvis-controls="species-selector"] {
 
               element.dataset.visTaxonGroupLabelMode = nextLabelMode;
               rerenderTableRows(element, { labelMode: nextLabelMode });
-              refreshSummary(element, nextLabelMode);
+              refreshSummary$1(element, nextLabelMode);
             }
           });
         }
 
-        const Tabulator = getTabulatorGlobal();
+        const Tabulator = getTabulatorGlobal$1();
 
         if (!Tabulator) {
           clearElement(element);
@@ -4210,7 +4214,7 @@ div[data-tanvis-controls="species-selector"] {
         }
 
         clearElement(element);
-        const summary = createSummary(year, 0, renderConfig.region);
+        const summary = createSummary$1(year, 0, renderConfig.region);
         element.appendChild(summary);
         element.__tanvisSummaryElement = summary;
         element.__tanvisSummaryState = { year, region: renderConfig.region, count: 0, taxonGroupInfo: null };
@@ -4222,11 +4226,11 @@ div[data-tanvis-controls="species-selector"] {
             }
 
             element.__tanvisSummaryState.taxonGroupInfo = taxonGroupInfo;
-            refreshSummary(element, getEffectiveLabelModeForElement(element, renderConfig));
+            refreshSummary$1(element, getEffectiveLabelModeForElement(element, renderConfig));
           });
         }
 
-        createTableContainer({
+        createTableContainer$1({
           Tabulator,
           pageSize,
           requestPage: async ({ pageNumber, pageSize: requestedPageSize }) => {
@@ -4252,7 +4256,7 @@ div[data-tanvis-controls="species-selector"] {
             element.__tanvisSummaryState.year = year;
             element.__tanvisSummaryState.region = renderConfig.region;
             element.__tanvisSummaryState.count = pageResult.totalRows;
-            refreshSummary(element, labelModeForRequest);
+            refreshSummary$1(element, labelModeForRequest);
             element.__tanvisLatestRows = pageResult.records;
             return {
               data: pageResult.records,
@@ -4306,19 +4310,19 @@ div[data-tanvis-controls="species-selector"] {
     element.__tanvisLatestRows = remappedRows;
   }
 
-  function createSummary(year, count, region, taxonGroupName) {
+  function createSummary$1(year, count, region, taxonGroupName) {
     const summary = document.createElement('div');
     summary.classList.add('tanvis-table-header-text');
-    summary.textContent = buildSummaryText(year, count, region, taxonGroupName);
+    summary.textContent = buildSummaryText$1(year, count, region, taxonGroupName);
     return summary;
   }
 
-  function buildSummaryText(year, count, region, taxonGroupName) {
+  function buildSummaryText$1(year, count, region, taxonGroupName) {
     const suffix = taxonGroupName ? ` for taxon group ${taxonGroupName}` : '';
-    return `${count} species with last record date on or before ${year} for ${formatTableRegionLabel(region)}${suffix}`;
+    return `${count} species with last record date on or before ${year} for ${formatTableRegionLabel$1(region)}${suffix}`;
   }
 
-  function refreshSummary(element, labelMode) {
+  function refreshSummary$1(element, labelMode) {
     const state = element.__tanvisSummaryState;
     const summary = element.__tanvisSummaryElement;
     if (!state || !summary) {
@@ -4326,10 +4330,10 @@ div[data-tanvis-controls="species-selector"] {
     }
 
     const taxonGroupName = state.taxonGroupInfo ? formatGroupName(state.taxonGroupInfo, labelMode) : '';
-    summary.textContent = buildSummaryText(state.year, state.count, state.region, taxonGroupName);
+    summary.textContent = buildSummaryText$1(state.year, state.count, state.region, taxonGroupName);
   }
 
-  function formatTableRegionLabel(region) {
+  function formatTableRegionLabel$1(region) {
     const normalizedRegion = normalizeRegionContractValue(region);
     if (normalizedRegion === undefined || normalizedRegion === null || normalizedRegion === '' || normalizedRegion === 'all' || normalizedRegion === 'vc-all' || normalizedRegion === 'all VCs') {
       return 'all VCs';
@@ -4351,7 +4355,7 @@ div[data-tanvis-controls="species-selector"] {
     return candidate;
   }
 
-  function createTableContainer({ Tabulator, pageSize, requestPage, element, loadId, status }) {
+  function createTableContainer$1({ Tabulator, pageSize, requestPage, element, loadId, status }) {
     const container = document.createElement('div');
     element.appendChild(container);
 
@@ -4414,8 +4418,8 @@ div[data-tanvis-controls="species-selector"] {
       offset
     });
 
-    const taxonStatsRows = getListData$3(payload);
-    const totalRows = getTotalCount(payload);
+    const taxonStatsRows = getListData$4(payload);
+    const totalRows = getTotalCount$1(payload);
     const totalPages = Math.max(1, Math.ceil(totalRows / pageSize));
 
     return {
@@ -4437,7 +4441,7 @@ div[data-tanvis-controls="species-selector"] {
   }
 
   async function fetchTaxonStatsAbsentSince({ apiBase, cutoffDate, higherGeographyIdentifier, taxonGroupExternalKey, limit, offset }) {
-    const resourceUrl = resolveResourceUrl$4(apiBase, TAXON_STATS_RESOURCE$1);
+    const resourceUrl = resolveResourceUrl$5(apiBase, TAXON_STATS_RESOURCE$1);
     const pageUrl = new URL(resourceUrl.toString());
     pageUrl.searchParams.set('last_record_date[lte]', cutoffDate);
     pageUrl.searchParams.set('include', 'taxon,taxon-group,taxon-rank');
@@ -4451,8 +4455,584 @@ div[data-tanvis-controls="species-selector"] {
     pageUrl.searchParams.set('offset', String(offset));
     pageUrl.searchParams.set('sort', '-last_record_date');
 
-    const payload = await fetchJson$7(pageUrl.toString(), 'Failed to load taxon-stats');
+    const payload = await fetchJson$8(pageUrl.toString(), 'Failed to load taxon-stats');
     return payload || {};
+  }
+
+  function resolveResourceUrl$5(apiBase, resourceName) {
+    const baseUrl = new URL(apiBase, window.location.origin);
+    const pathname = baseUrl.pathname.endsWith('/') ? baseUrl.pathname : `${baseUrl.pathname}/`;
+    baseUrl.pathname = `${pathname}${resourceName}`;
+    baseUrl.search = '';
+    baseUrl.hash = '';
+    return baseUrl;
+  }
+
+  async function fetchJson$8(url, defaultErrorMessage) {
+    logApiRequest(url, { method: 'GET' });
+
+    let response;
+    try {
+      response = await fetch(url);
+    } catch (cause) {
+      throw createApiError({ defaultMessage: defaultErrorMessage, cause });
+    }
+
+    const payload = await parseJsonSafe(response);
+
+    if (!response.ok) {
+      throw createApiError({ response, payload, defaultMessage: defaultErrorMessage });
+    }
+
+    return payload || {};
+  }
+
+  function getListData$4(payload) {
+    if (Array.isArray(payload)) {
+      return payload;
+    }
+
+    if (Array.isArray(payload?.data)) {
+      return payload.data;
+    }
+
+    if (Array.isArray(payload?.records)) {
+      return payload.records;
+    }
+
+    return [];
+  }
+
+  function getTotalCount$1(payload) {
+    if (Number.isFinite(payload?.meta?.total)) {
+      return Number(payload.meta.total);
+    }
+
+    if (Number.isFinite(payload?.total)) {
+      return Number(payload.total);
+    }
+
+    if (Number.isFinite(payload?.last_row)) {
+      return Number(payload.last_row);
+    }
+
+    return getListData$4(payload).length;
+  }
+
+  function formatVernacularName(taxon) {
+    const plural = taxon?.taxon__vernacular_names;
+    if (Array.isArray(plural)) {
+      return plural.join(', ');
+    }
+
+    return taxon?.vernacular_name || '';
+  }
+
+  function formatGroupName(group, labelMode = 'scientific') {
+    const parsedNames = parseTaxonGroupDisplayNames(group);
+    const displayName = labelMode === 'vernacular'
+      ? (parsedNames.vernacularName || parsedNames.scientificName)
+      : (parsedNames.scientificName || parsedNames.vernacularName);
+    return displayName;
+  }
+
+  const taxonGroupsByApiBase = new Map();
+
+  // Resolved independently of table rows so the name is available even when a query returns no records.
+  async function resolveTaxonGroupInfo(apiBase, taxonGroupExternalKey) {
+    if (!taxonGroupExternalKey) {
+      return null;
+    }
+
+    if (!taxonGroupsByApiBase.has(apiBase)) {
+      taxonGroupsByApiBase.set(apiBase, fetchTaxonGroupsMap(apiBase));
+    }
+
+    const groupsMap = await taxonGroupsByApiBase.get(apiBase);
+    return groupsMap.get(taxonGroupExternalKey) || null;
+  }
+
+  async function fetchTaxonGroupsMap(apiBase) {
+    try {
+      const resourceUrl = resolveResourceUrl$5(apiBase, 'taxon-groups');
+      const payload = await fetchJson$8(resourceUrl.toString(), 'Failed to load taxon groups');
+      const groups = getListData$4(payload);
+      const map = new Map();
+      for (const group of groups) {
+        if (group?.external_key) {
+          map.set(group.external_key, { title: group.title, friendly: group.friendly });
+        }
+      }
+      return map;
+    } catch {
+      return new Map();
+    }
+  }
+
+  function regionToHigherGeographyIdentifier(region) {
+    const normalizedRegion = normalizeRegionContractValue(region);
+
+    if (normalizedRegion === 58) {
+      return 58;
+    }
+
+    if (normalizedRegion === 59) {
+      return 59;
+    }
+
+    if (normalizedRegion === 60) {
+      return 60;
+    }
+
+    return undefined;
+  }
+
+  function clearControlSubscription$4(element) {
+    const cleanup = element?.__tanvisControlCleanup;
+    if (typeof cleanup === 'function') {
+      cleanup();
+    }
+
+    delete element.__tanvisControlCleanup;
+  }
+
+  function getEffectiveRegion$4(config) {
+    if (!config.control) {
+      return normalizeRegionContractValue(config.region);
+    }
+
+    if (typeof document === 'undefined') {
+      return normalizeRegionContractValue(config.region);
+    }
+
+    const controlElement = document.getElementById(config.control);
+    const controlRegionValue = controlElement?.dataset?.visRegion;
+    const normalizedControlRegionValue = normalizeRegionContractValue(controlRegionValue);
+    if (controlElement && Object.prototype.hasOwnProperty.call(controlElement.dataset, 'visRegion') && normalizedControlRegionValue !== undefined && normalizedControlRegionValue !== null && normalizedControlRegionValue !== '') {
+      return normalizedControlRegionValue;
+    }
+
+    const latestEvent = getLatestControlEvent(config.control);
+    if (latestEvent?.type === 'region-change' && latestEvent.region !== undefined && latestEvent.region !== null) {
+      return normalizeRegionContractValue(latestEvent.region);
+    }
+
+    return normalizeRegionContractValue(config.region);
+  }
+
+  function getConfiguredPageSize$1(config) {
+    const configuredPageSize = Number(config?.pageSize ?? config?.['data-vis-page-size'] ?? config?.['data-visPageSize'] ?? DEFAULT_PAGE_SIZE$1);
+    if (!Number.isFinite(configuredPageSize) || configuredPageSize <= 0) {
+      return DEFAULT_PAGE_SIZE$1;
+    }
+
+    return configuredPageSize;
+  }
+
+  function getEffectiveTaxonGroup$1(config) {
+    if (typeof document === 'undefined') {
+      return config?.groupId || '';
+    }
+
+    const controlElement = config.control ? document.getElementById(config.control) : null;
+    if (controlElement && Object.prototype.hasOwnProperty.call(controlElement.dataset, 'visTaxonGroup')) {
+      const controlGroupValue = controlElement.dataset.visTaxonGroup || '';
+      if (controlGroupValue) {
+        return controlGroupValue;
+      }
+    }
+
+    return config?.groupId || '';
+  }
+
+  function getEffectiveLabelMode(config, fallbackMode) {
+    if (fallbackMode) {
+      return fallbackMode;
+    }
+
+    const explicitControlValue = readControlLanguageValue(config);
+    if (explicitControlValue) {
+      return explicitControlValue;
+    }
+
+    if (config?.language) {
+      return config.language;
+    }
+
+    return 'scientific';
+  }
+
+  function readControlLanguageValue(config) {
+    if (!config.control || typeof document === 'undefined') {
+      return '';
+    }
+
+    const controlElement = document.getElementById(config.control);
+    const controlLanguageValue = controlElement?.dataset?.visTaxonGroupLabelMode || controlElement?.dataset?.visLanguage || '';
+    if (controlLanguageValue) {
+      return controlLanguageValue;
+    }
+
+    return '';
+  }
+
+  function getEffectiveLabelModeForElement(element, config) {
+    return element?.dataset?.visTaxonGroupLabelMode || getEffectiveLabelMode(config);
+  }
+
+  function getTabulatorGlobal$1() {
+    if (typeof window === 'undefined') {
+      return null;
+    }
+
+    return window.Tabulator || null;
+  }
+
+  const speciesAbsentTableAdapter = createSpeciesAbsentTableAdapter();
+
+  function renderSpeciesAbsentTable(element, config) {
+    speciesAbsentTableAdapter.render(element, config);
+  }
+
+  const OCCURRENCES_RESOURCE$1 = 'occurrences';
+  const DEFAULT_PAGE_SIZE = 10;
+  const DEFAULT_PLACEHOLDER_TEXT$3 = 'No species selected.';
+
+  // Update this map to change how occurrence attributes are titled in the table.
+  const COLUMN_TITLE_OVERRIDES = {
+    grid_ref: 'Grid ref',
+    grid_ref_2km: 'Tetrad',
+    locality: 'Location',
+    recorded_by: 'Recorder',
+    identified_by: 'Identifier',
+    identification_verification_status: 'Verification',
+    sex: 'Sex',
+    life_stage: 'Stage',
+    organism_quantity: 'Quantity',
+    higher_geography_identifier: 'VC'
+  };
+
+  function createRecordsTableAdapter() {
+    return {
+      name: 'records-table',
+      render(element, config) {
+        clearControlSubscription$3(element);
+        clearTaxonIdSourceSubscription$6(element);
+        const status = createVisStatusReporter(element);
+        clearElement(element);
+        status.showInfo('Loading...');
+
+        const effectiveRegion = getEffectiveRegion$3(config);
+        const renderConfig = effectiveRegion === config.region
+          ? config
+          : {
+              ...config,
+              region: effectiveRegion
+            };
+
+        const taxonIdentifier = resolveTaxonIdentifier$4(element, renderConfig);
+        const apiBase = resolveApiBase();
+        const loadId = (element.__tanvisRecordsTableLoadId || 0) + 1;
+        element.__tanvisRecordsTableLoadId = loadId;
+        element.dataset.visRegion = normalizeRegionDatasetValue$1(renderConfig.region);
+        element.dataset.visTaxonid = taxonIdentifier;
+        const pageSize = getConfiguredPageSize(renderConfig);
+
+        if (renderConfig.control) {
+          element.__tanvisControlCleanup = subscribeToControl(renderConfig.control, (event) => {
+            if (!event || event.type !== 'region-change') {
+              return;
+            }
+
+            const nextRegion = getEffectiveRegion$3(renderConfig);
+            if (normalizeRegionDatasetValue$1(nextRegion) === element.dataset.visRegion) {
+              return;
+            }
+
+            createRecordsTableAdapter().render(element, {
+              ...renderConfig,
+              region: nextRegion
+            });
+          });
+        }
+
+        if (renderConfig.taxonIdSource) {
+          element.__tanvisTaxonIdSourceCleanup = subscribeToTaxonIdSource$6(renderConfig.taxonIdSource, (speciesId) => {
+            if (!speciesId || speciesId === element.dataset.visTaxonid) {
+              return;
+            }
+
+            createRecordsTableAdapter().render(element, {
+              ...renderConfig,
+              taxonId: speciesId
+            });
+          });
+        }
+
+        if (!taxonIdentifier) {
+          clearElement(element);
+          status.clear();
+          renderPlaceholder$3(element);
+          return;
+        }
+
+        const Tabulator = getTabulatorGlobal();
+
+        if (!Tabulator) {
+          clearElement(element);
+          status.showError('Tabulator is not available. Include the Tabulator script before Tanvis.');
+          return;
+        }
+
+        clearElement(element);
+        const summary = createSummary(taxonIdentifier, 0, renderConfig.region);
+        element.appendChild(summary);
+        element.__tanvisSummaryElement = summary;
+        element.__tanvisSummaryState = { taxonIdentifier, region: renderConfig.region, count: 0 };
+
+        createTableContainer({
+          Tabulator,
+          pageSize,
+          requestPage: async ({ pageNumber, pageSize: requestedPageSize }) => {
+            const pageResult = await buildRecordsTablePage({
+              apiBase,
+              taxonIdentifier,
+              region: renderConfig.region,
+              pageNumber,
+              pageSize: requestedPageSize
+            });
+
+            if (element.__tanvisRecordsTableLoadId !== loadId) {
+              return {
+                data: [],
+                last_page: 1,
+                last_row: 0
+              };
+            }
+
+            element.__tanvisSummaryState.count = pageResult.totalRows;
+            refreshSummary(element);
+            return {
+              data: pageResult.records,
+              last_page: pageResult.totalPages,
+              last_row: pageResult.totalRows
+            };
+          },
+          element,
+          loadId,
+          status
+        });
+
+        const hasStylesheet = ensureStylesheetDependency(status, {
+          libraryName: 'Tabulator',
+          stylesheetHints: ['tabulator.min.css'],
+          message: 'Tabulator stylesheet is missing. Include tabulator.min.css to ensure the table is styled correctly.'
+        });
+
+        if (hasStylesheet) {
+          status.clear();
+        }
+      }
+    };
+  }
+
+  function resolveTaxonIdentifier$4(element, config) {
+    const fromDataset = normalizeValue$4(element?.dataset?.visTaxonid);
+    if (fromDataset) {
+      return fromDataset;
+    }
+
+    return normalizeValue$4(config?.taxonId);
+  }
+
+  function normalizeValue$4(value) {
+    if (typeof value !== 'string') {
+      return '';
+    }
+
+    return value.trim();
+  }
+
+  function normalizeRegionDatasetValue$1(region) {
+    if (region === undefined || region === null) {
+      return '';
+    }
+
+    return String(region);
+  }
+
+  function renderPlaceholder$3(element) {
+    const doc = element?.ownerDocument || document;
+    const placeholder = doc.createElement('div');
+    placeholder.dataset.tanvisRecordsTable = 'placeholder';
+    placeholder.textContent = DEFAULT_PLACEHOLDER_TEXT$3;
+    element.appendChild(placeholder);
+  }
+
+  function createSummary(taxonIdentifier, count, region) {
+    const summary = document.createElement('div');
+    summary.classList.add('tanvis-table-header-text');
+    summary.textContent = buildSummaryText(taxonIdentifier, count);
+    return summary;
+  }
+
+  function buildSummaryText(count, region) {
+    return `${count} recordsin ${formatTableRegionLabel(region)}`;
+  }
+
+  function refreshSummary(element) {
+    const state = element.__tanvisSummaryState;
+    const summary = element.__tanvisSummaryElement;
+    if (!state || !summary) {
+      return;
+    }
+
+    summary.textContent = buildSummaryText(state.count, state.region);
+  }
+
+  function formatTableRegionLabel(region) {
+    const normalizedRegion = normalizeRegionContractValue(region);
+    if (normalizedRegion === undefined || normalizedRegion === null || normalizedRegion === '' || normalizedRegion === 'all' || normalizedRegion === 'vc-all' || normalizedRegion === 'all VCs') {
+      return 'all VCs';
+    }
+
+    if (typeof normalizedRegion === 'number') {
+      return `vc${normalizedRegion}`;
+    }
+
+    const candidate = String(normalizedRegion).trim().toLowerCase();
+    if (/^vc\d+$/.test(candidate)) {
+      return candidate;
+    }
+
+    if (/^\d+$/.test(candidate)) {
+      return `vc${candidate}`;
+    }
+
+    return candidate;
+  }
+
+  // Columns are not fixed since the table shows whatever attributes the occurrences API returns.
+  function createTableContainer({ Tabulator, pageSize, requestPage, element, loadId, status }) {
+    const container = document.createElement('div');
+    element.appendChild(container);
+
+    const table = new Tabulator(container, {
+      autoColumns: true,
+      autoColumnsDefinitions: (definitions) => {
+        definitions.forEach((definition) => {
+          const overrideTitle = COLUMN_TITLE_OVERRIDES[definition.field];
+          if (overrideTitle) {
+            definition.title = overrideTitle;
+          }
+        });
+        return definitions;
+      },
+      layout: 'fitDataFill',
+      responsiveLayout: 'collapse',
+      pagination: true,
+      paginationMode: 'remote',
+      paginationSize: pageSize,
+      placeholder: 'No records found',
+      ajaxURL: 'custom_handler',
+      ajaxURLGenerator: function ajaxURLGenerator(url) {
+        return url;
+      },
+      ajaxRequestFunc: async (url, config, params) => {
+        try {
+          const pageNumber = Number(params?.page || 1);
+          const requestedPageSize = Number(params?.size || pageSize);
+          return await requestPage({ pageNumber, pageSize: requestedPageSize });
+        } catch (error) {
+          if (element.__tanvisRecordsTableLoadId === loadId) {
+            clearElement(element);
+            status.showError(normalizeErrorMessage(error, 'Failed to render records table'));
+          }
+          throw error;
+        }
+      }
+    });
+
+    container.dataset.tanvisTableContainer = 'true';
+    container.__tanvisTable = table;
+    return { container, table };
+  }
+
+  function getTabulatorGlobal() {
+    if (typeof window === 'undefined') {
+      return null;
+    }
+
+    return window.Tabulator || null;
+  }
+
+  async function buildRecordsTablePage({ apiBase, taxonIdentifier, region, pageNumber, pageSize }) {
+    const effectivePageSize = Math.max(1, Math.floor(pageSize ?? DEFAULT_PAGE_SIZE));
+    const offset = Math.max(0, (Math.max(1, Math.floor(pageNumber || 1)) - 1) * effectivePageSize);
+
+    const resourceUrl = resolveResourceUrl$4(apiBase, OCCURRENCES_RESOURCE$1);
+    const pageUrl = new URL(resourceUrl.toString());
+    pageUrl.searchParams.set('taxon_identifier[eq]', taxonIdentifier);
+
+    if (region) {
+      pageUrl.searchParams.set('higher_geography_identifier[eq]', String(region));
+    }
+
+    pageUrl.searchParams.set('sort', '-to_date');
+    pageUrl.searchParams.set('limit', String(effectivePageSize));
+    pageUrl.searchParams.set('offset', String(offset));
+
+    const payload = await fetchJson$7(pageUrl.toString(), 'Failed to load occurrences');
+    const records = getListData$3(payload).map(transformRecordForDisplay);
+    const totalRows = getTotalCount(payload) || records.length;
+    const totalPages = Math.max(1, Math.ceil(totalRows / effectivePageSize));
+
+    return {
+      records,
+      totalRows,
+      totalPages
+    };
+  }
+
+  // Replaces unique_key/taxon_identifier/from_date/to_date with friendlier Source and Date columns.
+  function transformRecordForDisplay(record) {
+    if (!record || typeof record !== 'object') {
+      return record;
+    }
+
+    const { unique_key, taxon_identifier, from_date, to_date, ...rest } = record;
+    const transformed = {};
+
+    if (unique_key !== undefined) {
+      transformed.Source = extractSourceFromUniqueKey(unique_key);
+    }
+
+    if (from_date !== undefined || to_date !== undefined) {
+      transformed.Date = formatDateRange(from_date, to_date);
+    }
+
+    return { ...transformed, ...rest };
+  }
+
+  function extractSourceFromUniqueKey(uniqueKey) {
+    if (typeof uniqueKey !== 'string') {
+      return '';
+    }
+
+    const separatorIndex = uniqueKey.indexOf(':');
+    return separatorIndex === -1 ? uniqueKey : uniqueKey.slice(0, separatorIndex);
+  }
+
+  function formatDateRange(fromDate, toDate) {
+    if (!fromDate) {
+      return toDate || '';
+    }
+
+    if (!toDate || fromDate === toDate) {
+      return fromDate;
+    }
+
+    return `${fromDate} to ${toDate}`;
   }
 
   function resolveResourceUrl$4(apiBase, resourceName) {
@@ -4515,74 +5095,6 @@ div[data-tanvis-controls="species-selector"] {
     return getListData$3(payload).length;
   }
 
-  function formatVernacularName(taxon) {
-    const plural = taxon?.taxon__vernacular_names;
-    if (Array.isArray(plural)) {
-      return plural.join(', ');
-    }
-
-    return taxon?.vernacular_name || '';
-  }
-
-  function formatGroupName(group, labelMode = 'scientific') {
-    const parsedNames = parseTaxonGroupDisplayNames(group);
-    const displayName = labelMode === 'vernacular'
-      ? (parsedNames.vernacularName || parsedNames.scientificName)
-      : (parsedNames.scientificName || parsedNames.vernacularName);
-    return displayName;
-  }
-
-  const taxonGroupsByApiBase = new Map();
-
-  // Resolved independently of table rows so the name is available even when a query returns no records.
-  async function resolveTaxonGroupInfo(apiBase, taxonGroupExternalKey) {
-    if (!taxonGroupExternalKey) {
-      return null;
-    }
-
-    if (!taxonGroupsByApiBase.has(apiBase)) {
-      taxonGroupsByApiBase.set(apiBase, fetchTaxonGroupsMap(apiBase));
-    }
-
-    const groupsMap = await taxonGroupsByApiBase.get(apiBase);
-    return groupsMap.get(taxonGroupExternalKey) || null;
-  }
-
-  async function fetchTaxonGroupsMap(apiBase) {
-    try {
-      const resourceUrl = resolveResourceUrl$4(apiBase, 'taxon-groups');
-      const payload = await fetchJson$7(resourceUrl.toString(), 'Failed to load taxon groups');
-      const groups = getListData$3(payload);
-      const map = new Map();
-      for (const group of groups) {
-        if (group?.external_key) {
-          map.set(group.external_key, { title: group.title, friendly: group.friendly });
-        }
-      }
-      return map;
-    } catch {
-      return new Map();
-    }
-  }
-
-  function regionToHigherGeographyIdentifier(region) {
-    const normalizedRegion = normalizeRegionContractValue(region);
-
-    if (normalizedRegion === 58) {
-      return 58;
-    }
-
-    if (normalizedRegion === 59) {
-      return 59;
-    }
-
-    if (normalizedRegion === 60) {
-      return 60;
-    }
-
-    return undefined;
-  }
-
   function clearControlSubscription$3(element) {
     const cleanup = element?.__tanvisControlCleanup;
     if (typeof cleanup === 'function') {
@@ -4592,19 +5104,55 @@ div[data-tanvis-controls="species-selector"] {
     delete element.__tanvisControlCleanup;
   }
 
-  function getEffectiveRegion$3(config) {
-    if (!config.control) {
-      return normalizeRegionContractValue(config.region);
+  function clearTaxonIdSourceSubscription$6(element) {
+    const cleanup = element?.__tanvisTaxonIdSourceCleanup;
+    if (typeof cleanup === 'function') {
+      cleanup();
     }
 
+    delete element.__tanvisTaxonIdSourceCleanup;
+  }
+
+  function subscribeToTaxonIdSource$6(taxonIdSourceId, onSpeciesSelected) {
     if (typeof document === 'undefined') {
+      return undefined;
+    }
+
+    const taxonIdSourceElement = document.getElementById(taxonIdSourceId);
+    if (!taxonIdSourceElement) {
+      return undefined;
+    }
+
+    const onTaxonIdentified = (event) => {
+      const speciesId = event?.detail?.speciesId;
+      if (typeof speciesId !== 'string' || !speciesId.trim()) {
+        return;
+      }
+
+      onSpeciesSelected(speciesId.trim());
+    };
+
+    taxonIdSourceElement.addEventListener('taxon-identified', onTaxonIdentified);
+    return () => {
+      taxonIdSourceElement.removeEventListener('taxon-identified', onTaxonIdentified);
+    };
+  }
+
+  function getEffectiveRegion$3(config) {
+    if (!config.control || typeof document === 'undefined') {
       return normalizeRegionContractValue(config.region);
     }
 
     const controlElement = document.getElementById(config.control);
     const controlRegionValue = controlElement?.dataset?.visRegion;
     const normalizedControlRegionValue = normalizeRegionContractValue(controlRegionValue);
-    if (controlElement && Object.prototype.hasOwnProperty.call(controlElement.dataset, 'visRegion') && normalizedControlRegionValue !== undefined && normalizedControlRegionValue !== null && normalizedControlRegionValue !== '') {
+    if (
+      controlElement
+      && Object.prototype.hasOwnProperty.call(controlElement.dataset, 'visRegion')
+      && normalizedControlRegionValue !== undefined
+      && normalizedControlRegionValue !== null
+      && normalizedControlRegionValue !== ''
+    ) {
       return normalizedControlRegionValue;
     }
 
@@ -4617,7 +5165,7 @@ div[data-tanvis-controls="species-selector"] {
   }
 
   function getConfiguredPageSize(config) {
-    const configuredPageSize = Number(config?.pageSize ?? config?.['data-vis-page-size'] ?? config?.['data-visPageSize'] ?? DEFAULT_PAGE_SIZE);
+    const configuredPageSize = Number(config?.pageSize ?? DEFAULT_PAGE_SIZE);
     if (!Number.isFinite(configuredPageSize) || configuredPageSize <= 0) {
       return DEFAULT_PAGE_SIZE;
     }
@@ -4625,69 +5173,10 @@ div[data-tanvis-controls="species-selector"] {
     return configuredPageSize;
   }
 
-  function getEffectiveTaxonGroup$1(config) {
-    if (typeof document === 'undefined') {
-      return config?.groupId || '';
-    }
+  const recordsTableAdapter = createRecordsTableAdapter();
 
-    const controlElement = config.control ? document.getElementById(config.control) : null;
-    if (controlElement && Object.prototype.hasOwnProperty.call(controlElement.dataset, 'visTaxonGroup')) {
-      const controlGroupValue = controlElement.dataset.visTaxonGroup || '';
-      if (controlGroupValue) {
-        return controlGroupValue;
-      }
-    }
-
-    return config?.groupId || '';
-  }
-
-  function getEffectiveLabelMode(config, fallbackMode) {
-    if (fallbackMode) {
-      return fallbackMode;
-    }
-
-    const explicitControlValue = readControlLanguageValue(config);
-    if (explicitControlValue) {
-      return explicitControlValue;
-    }
-
-    if (config?.language) {
-      return config.language;
-    }
-
-    return 'scientific';
-  }
-
-  function readControlLanguageValue(config) {
-    if (!config.control || typeof document === 'undefined') {
-      return '';
-    }
-
-    const controlElement = document.getElementById(config.control);
-    const controlLanguageValue = controlElement?.dataset?.visTaxonGroupLabelMode || controlElement?.dataset?.visLanguage || '';
-    if (controlLanguageValue) {
-      return controlLanguageValue;
-    }
-
-    return '';
-  }
-
-  function getEffectiveLabelModeForElement(element, config) {
-    return element?.dataset?.visTaxonGroupLabelMode || getEffectiveLabelMode(config);
-  }
-
-  function getTabulatorGlobal() {
-    if (typeof window === 'undefined') {
-      return null;
-    }
-
-    return window.Tabulator || null;
-  }
-
-  const speciesAbsentTableAdapter = createSpeciesAbsentTableAdapter();
-
-  function renderSpeciesAbsentTable(element, config) {
-    speciesAbsentTableAdapter.render(element, config);
+  function renderRecordsTable(element, config) {
+    recordsTableAdapter.render(element, config);
   }
 
   function normalizeMapTypeMode(value) {
@@ -8213,6 +8702,7 @@ div[data-tanvis-controls="species-selector"] {
     registerRenderer('new-species-table', renderNewSpeciesTable);
     registerRenderer('increasing-species-table', renderIncreasingSpeciesTable);
     registerRenderer('species-absent-table', renderSpeciesAbsentTable);
+    registerRenderer('records-table', renderRecordsTable);
     registerRenderer('species-map', renderSpeciesMap);
     registerRenderer('grid-stats-map', renderGridStatsMap);
     registerRenderer('temporal-year-chart', renderTemporalYearChart);

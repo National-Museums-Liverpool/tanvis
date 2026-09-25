@@ -5,6 +5,7 @@ const KNOWN_VIS_TYPES = [
   'new-species-table',
   'increasing-species-table',
   'species-absent-table',
+  'records-table',
   'grid-stats-map',
   'temporal-year-chart',
   'species-name-block',
@@ -695,6 +696,7 @@ const VIS_TYPE_RULE_SETS = {
   'species-remarks-block': ['taxonId', 'taxonIdSource'],
   'species-info-block': ['taxonId', 'taxonIdSource', 'control', 'region'],
   'species-image': ['taxonId', 'taxonIdSource', 'imageVariant', 'uuid', 'expand', 'width', 'height', 'showImageCaption', 'showImageAttribution', 'showImageLicense'],
+  'records-table': ['taxonId', 'taxonIdSource', 'control', 'region', 'pageSize'],
   'general-info-block': [],
   'help-block': []
 };
@@ -730,6 +732,8 @@ const VIS_TYPE_DESCRIPTIONS = {
     directly or via a linked control block.`,
   'species-absent-table': `A table showing species not recorded since a given year. The table can 
     be filtered by geographic region and taxon group, either directly or via a linked control block.`,
+  'records-table': `A table showing records for a species. The table can be filtered by geographic 
+    region either directly or via a linked control block.`,
   'species-name-block': `A block visualisation showing the name of a species. Some default
     styling is applied to the name, but it can be overridden with CSS. The block can show either
     the scientific name or the vernacular name first, and can optionally show the other name in parentheses.
