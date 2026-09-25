@@ -13,3 +13,4 @@ export { renderSpeciesRemarksBlock } from './speciesRemarksBlock.js';
 export { renderSpeciesInfoBlock } from './speciesInfoBlock.js';
 export { renderSpeciesImage } from './speciesImage.js';
 export { renderHelpBlock } from './helpBlock.js';
+export { renderGeneralInfoBlock } from './generalInfoBlock.js';

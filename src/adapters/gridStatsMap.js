@@ -9,6 +9,8 @@ import { createRadioGroup } from '../controls/radioGroup.js';
 import { ensureSharedStyles } from '../styles/sharedStyles.js';
 import {
   createMapTypeSwitchControl,
+  createDownloadButton,
+  createControlsRow,
   ensureMapControlsContainer,
   normalizeMapTypeMode,
   resolveActiveMapType
@@ -183,18 +185,29 @@ function renderMapControlGroup(mapElement, options) {
   const controls = ensureMapControlsContainer(hostElement);
   clearElement(controls);
 
-  if (!options.showMapTypeSwitch && !options.showGridStatsSwitch) {
+  const showDownloadButton = options.activeMapType === 'static';
+
+  if (!options.showMapTypeSwitch && !options.showGridStatsSwitch && !showDownloadButton) {
     controls.remove();
     return;
   }
 
+  const rowChildren = [];
   if (options.showMapTypeSwitch) {
-    controls.appendChild(createMapTypeSwitchControl({
+    rowChildren.push(createMapTypeSwitchControl({
       mapElement,
       activeMapType: options.activeMapType,
       onChange: options.onMapTypeChange,
       fallbackId: 'tanvis-grid-stats-map'
     }));
+  }
+
+  if (showDownloadButton) {
+    rowChildren.push(createDownloadButton({ map: options.map }));
+  }
+
+  if (rowChildren.length > 0) {
+    controls.appendChild(createControlsRow(rowChildren));
   }
 
   if (options.showGridStatsSwitch) {

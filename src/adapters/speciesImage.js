@@ -204,7 +204,7 @@ function renderPlaceholder(content) {
 }
 
 function renderSpeciesImageContent(content, taxon, config) {
-  const image = selectDisplayImage(taxon?.taxon_media);
+  const image = selectDisplayImage(taxon?.taxon_media, config?.uuid);
 
   if (!image) {
     renderPlaceholder(content);
@@ -266,12 +266,18 @@ function appendImageText(doc, content, config, image) {
 }
 
 
-function selectDisplayImage(taxonMedia) {
+function selectDisplayImage(taxonMedia, uuid) {
   const images = (Array.isArray(taxonMedia) ? taxonMedia : [])
     .filter((media) => typeof media?.mime_type === 'string' && media.mime_type.startsWith('image/'));
 
   if (images.length === 0) {
     return null;
+  }
+
+  const normalizedUuid = normalizeValue(uuid);
+  if (normalizedUuid) {
+    // When a specific uuid is requested, ignore is_primary/sort_order entirely.
+    return images.find((media) => media.uuid === normalizedUuid) || null;
   }
 
   if (images.length === 1) {

@@ -95,6 +95,48 @@ function getMapTypeSwitchName(mapElement, fallbackId) {
   return `${base}-map-type-switch`;
 }
 
+export function createDownloadButton({ map, controlClassName = 'tanvis-map-download-button' } = {}) {
+
+  // Resolve the base path for logo resources which will be the
+  // scriptURL with this stripped off the end: /dist/tanvis.iife.js
+  // This is required because on GitHub pages, the script is served from
+  // a subfolder.
+  let scriptUrl;
+  const scripts = document.getElementsByTagName('script');
+  for (let i = 0; i < scripts.length; i++) {
+    const src = scripts[i].getAttribute('src');
+    if (src && src.includes('tanvis.iife.js')) {
+      scriptUrl = scripts[i].src;
+      break;
+    }
+  }
+  const basePath = scriptUrl ? scriptUrl.substring(0, scriptUrl.indexOf('/dist/tanvis.iife.js') + 1) : '';
+
+  const button = document.createElement('button');
+  button.type = 'button';
+  button.className = controlClassName;
+  button.textContent = 'Download';
+  button.addEventListener('click', () => {
+    console.log('download');
+
+    map?.saveMap?.(false, 
+      {
+        text: "Map produced by Tanyptera Project using data from iRecord and NBN Atlas.",
+        margin: 10,
+        img: `${basePath}data/images/logo.png`
+      }, 
+      'tanvis-map');
+  });
+  return button;
+}
+
+export function createControlsRow(children, className = 'tanvis-map-controls-row') {
+  const row = document.createElement('div');
+  row.className = className;
+  children.filter(Boolean).forEach((child) => row.appendChild(child));
+  return row;
+}
+
 function getDatasetValue(element, datasetKey) {
   if (!element) {
     return '';

@@ -7,7 +7,13 @@ import { logApiRequest } from '../utils/apiRequest.js';
 import { resolveApiBase } from '../config/apiBase.js';
 
 const TAXON_STATS_RESOURCE = 'taxon-stats';
+const TAXON_YEAR_STATS_RESOURCE = 'taxon-year-stats';
 const DEFAULT_PAGE_LIMIT = 10000;
+const AVE_RECS_YEAR_SPAN = 10;
+
+// Adjust these to change the spacing between info rows and between each label and its value.
+const ROW_SPACING_PX = 6;
+const LABEL_VALUE_GAP_PX = 8;
 
 export function createSpeciesInfoBlockAdapter() {
   return {
@@ -87,7 +93,7 @@ export function createSpeciesInfoBlockAdapter() {
 
       if (!taxonIdentifier) {
         status.clear();
-        renderSpeciesInfoText(content, [], renderConfig.region);
+        renderSpeciesInfoText(content, [], renderConfig.region, []);
         return;
       }
 
@@ -95,17 +101,24 @@ export function createSpeciesInfoBlockAdapter() {
       element.__tanvisSpeciesInfoBlockLoadId = loadId;
       element.dataset.visTaxonid = taxonIdentifier;
 
-      fetchTaxonStats({
-        apiBase: resolveApiBase(),
-        taxonIdentifier,
-        region: renderConfig.region
-      })
-        .then((stats) => {
+      Promise.all([
+        fetchTaxonStats({
+          apiBase: resolveApiBase(),
+          taxonIdentifier,
+          region: renderConfig.region
+        }),
+        fetchAveRecsRows({
+          apiBase: resolveApiBase(),
+          taxonIdentifier,
+          region: renderConfig.region
+        })
+      ])
+        .then(([stats, aveRecsRows]) => {
           if (element.__tanvisSpeciesInfoBlockLoadId !== loadId) {
             return;
           }
 
-          renderSpeciesInfoText(content, stats, renderConfig.region);
+          renderSpeciesInfoText(content, stats, renderConfig.region, aveRecsRows);
           status.clear();
         })
         .catch((error) => {
@@ -231,6 +244,44 @@ async function fetchTaxonStats({ apiBase, taxonIdentifier, region }) {
   return getRecords(payload);
 }
 
+async function fetchAveRecsRows({ apiBase, taxonIdentifier, region }) {
+  const currentYear = new Date().getFullYear();
+  const endYear = currentYear - 1;
+  const startYear = currentYear - AVE_RECS_YEAR_SPAN;
+
+  const resourceUrl = resolveResourceUrl(apiBase, TAXON_YEAR_STATS_RESOURCE);
+  const pageUrl = new URL(resourceUrl.toString());
+  pageUrl.searchParams.set('taxon_identifier[eq]', taxonIdentifier);
+  pageUrl.searchParams.set('year[gte]', String(startYear));
+  pageUrl.searchParams.set('year[lte]', String(endYear));
+
+  if (region) {
+    pageUrl.searchParams.set('higher_geography_identifier[eq]', String(region));
+  }
+
+  pageUrl.searchParams.set('limit', String(DEFAULT_PAGE_LIMIT));
+
+  const payload = await fetchJson(pageUrl.toString(), 'Failed to load taxon-year-stats');
+  const yearRows = getRecords(payload);
+  return summariseAveRecsByRegion(yearRows);
+}
+
+function summariseAveRecsByRegion(yearRows) {
+  const totalsByRegion = new Map();
+
+  (Array.isArray(yearRows) ? yearRows : []).forEach((row) => {
+    const key = getRowSortKey(row);
+    const totals = totalsByRegion.get(key) || { sampleRow: row, sum: 0 };
+    totals.sum += Number(row?.occurrences_count) || 0;
+    totalsByRegion.set(key, totals);
+  });
+
+  return Array.from(totalsByRegion.values()).map(({ sampleRow, sum }) => ({
+    ...sampleRow,
+    average_records_per_year: sum / AVE_RECS_YEAR_SPAN
+  }));
+}
+
 function resolveResourceUrl(apiBase, resourceName) {
   const baseUrl = new URL(apiBase, window.location.origin);
   const pathname = baseUrl.pathname.endsWith('/') ? baseUrl.pathname : `${baseUrl.pathname}/`;
@@ -290,33 +341,61 @@ function ensureContentStructure(element) {
   const body = doc.createElement('tbody');
 
   const conservationValueCell = appendInfoRow(doc, body, 'Status');
+  const rarityCategoryValueCell = appendInfoRow(doc, body, 'Rarity category');
   const occurrencesValueCell = appendInfoRow(doc, body, 'Occurrences');
   const gridSquaresValueCell = appendInfoRow(doc, body, 'Tetrads');
+  const frequencyTrendValueCell = appendInfoRow(doc, body, 'Frequency trend');
+  const lastRecordValueCell = appendInfoRow(doc, body, 'Last record');
+  const aveRecsValueCell = appendInfoRow(doc, body, 'Recs per year');
 
   content.appendChild(body);
   element.appendChild(content);
 
   content.__tanvisSpeciesInfoBlockNodes = {
     conservationValueCell,
+    rarityCategoryValueCell,
     occurrencesValueCell,
-    gridSquaresValueCell
+    gridSquaresValueCell,
+    frequencyTrendValueCell,
+    lastRecordValueCell,
+    aveRecsValueCell
   };
 
   element.__tanvisSpeciesInfoBlockContent = content;
   return content;
 }
 
-function renderSpeciesInfoText(content, statsRows, region) {
+function renderSpeciesInfoText(content, statsRows, region, aveRecsRows) {
   const nodes = content.__tanvisSpeciesInfoBlockNodes;
   const rows = Array.isArray(statsRows) ? statsRows : [];
   const sortedRows = sortStatsRowsForDisplay(rows, region);
   const firstRow = sortedRows[0] || {};
 
-  renderCountCell(content, nodes.occurrencesValueCell, sortedRows, 'occurrences_count', region);
-  renderCountCell(content, nodes.gridSquaresValueCell, sortedRows, 'grid_square_count', region);
+  renderCountCell(content, nodes.occurrencesValueCell, sortedRows, 'occurrences_count', region, toDisplayNumber);
+  renderCountCell(content, nodes.gridSquaresValueCell, sortedRows, 'grid_square_count', region, toDisplayNumber);
+  renderCountCell(content, nodes.frequencyTrendValueCell, sortedRows, 'frequency_trend_state', region, toDisplayValue);
+  renderCountCell(content, nodes.lastRecordValueCell, sortedRows, 'last_record_date', region, toDisplayValue);
+  renderCountCell(content, nodes.aveRecsValueCell, aveRecsRows, 'average_records_per_year', region, toDisplayAverage);
   const conservationStatus = toDisplayStatus(firstRow?.taxon__conservation_status);
+  const rarityCategory = toDisplayValue(firstRow?.taxon__rarity_category);
 
   renderItalicCell(nodes.conservationValueCell, content, conservationStatus);
+  renderItalicCell(nodes.rarityCategoryValueCell, content, rarityCategory);
+}
+
+function toDisplayAverage(value) {
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed)) {
+    return '0';
+  }
+  return parsed.toFixed(0);
+}
+
+function toDisplayValue(value) {
+  if (value === undefined || value === null || value === '') {
+    return 'None specified';
+  }
+  return String(value);
 }
 
 function appendInfoRow(doc, body, labelText) {
@@ -326,6 +405,10 @@ function appendInfoRow(doc, body, labelText) {
 
   labelCell.textContent = `${labelText}:`;
   labelCell.style.textAlign = 'right';
+  labelCell.style.whiteSpace = 'nowrap';
+  labelCell.style.paddingBottom = `${ROW_SPACING_PX}px`;
+  labelCell.style.paddingRight = `${LABEL_VALUE_GAP_PX}px`;
+  valueCell.style.paddingBottom = `${ROW_SPACING_PX}px`;
 
   row.appendChild(labelCell);
   row.appendChild(valueCell);
@@ -341,13 +424,13 @@ function toDisplayNumber(value) {
   return String(value);
 }
 
-function renderCountCell(content, cell, rows, key, region) {
+function renderCountCell(content, cell, rows, key, region, formatValue = toDisplayNumber) {
   clearElement(cell);
   const doc = content?.ownerDocument || document;
 
   const orderedRows = sortStatsRowsForDisplay(rows, region);
   if (orderedRows.length === 0) {
-    appendCountEntry(cell, doc, '0', region ? formatVcLabel(region) : formatVcLabel(undefined));
+    appendCountEntry(cell, doc, formatValue(undefined), region ? formatVcLabel(region) : formatVcLabel(undefined));
     return;
   }
 
@@ -356,25 +439,31 @@ function renderCountCell(content, cell, rows, key, region) {
       cell.appendChild(doc.createTextNode(', '));
     }
 
-    const count = toDisplayNumber(row?.[key]);
+    const count = formatValue(row?.[key]);
     const vcLabel = formatVcLabel(resolveRowVcValue(row));
     appendCountEntry(cell, doc, count, region ? formatVcLabel(region) : vcLabel);
   });
 }
 
 function appendCountEntry(cell, doc, count, label) {
+  const entry = doc.createElement('span');
+  entry.style.whiteSpace = 'nowrap';
+
   const strong = doc.createElement('strong');
   strong.textContent = String(count);
-  cell.appendChild(strong);
-  cell.appendChild(doc.createTextNode(` (${label})`));
+  entry.appendChild(strong);
+  entry.appendChild(doc.createTextNode(` (${label})`));
+  cell.appendChild(entry);
 }
 
 function renderItalicCell(cell, content, value) {
   clearElement(cell);
   const doc = content?.ownerDocument || document;
+  const strong = doc.createElement('strong');
   const emphasis = doc.createElement('em');
   emphasis.textContent = value;
-  cell.appendChild(emphasis);
+  strong.appendChild(emphasis);
+  cell.appendChild(strong);
 }
 
 function sortStatsRowsForDisplay(rows, region) {

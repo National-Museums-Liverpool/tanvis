@@ -228,7 +228,10 @@ describe('renderGridStatsMap', () => {
 
     const controls = element.querySelector('.tanvis-grid-stats-map-controls');
     expect(controls).not.toBeNull();
-    expect(controls.children[0].classList.contains('tanvis-grid-stats-map-type-switch')).toBe(true);
+    const row = controls.children[0];
+    expect(row.classList.contains('tanvis-map-controls-row')).toBe(true);
+    expect(row.children[0].classList.contains('tanvis-grid-stats-map-type-switch')).toBe(true);
+    expect(row.children[1].classList.contains('tanvis-map-download-button')).toBe(true);
     expect(controls.children[1].classList.contains('tanvis-grid-stats-switch')).toBe(true);
 
     const leafletInput = element.querySelector('input[type="radio"][value="leaflet"]');

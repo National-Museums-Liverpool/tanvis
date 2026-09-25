@@ -11,6 +11,7 @@ const KNOWN_VIS_TYPES = [
   'species-remarks-block',
   'species-info-block',
   'species-image',
+  'general-info-block',
   'help-block',
 ];
 
@@ -488,7 +489,14 @@ const RULES = {
       'large' - to display a large image,
       'thumbnail' - to display a thumbnail image.`
   }), 
-
+  uuid: createRule({
+    key: 'uuid',
+    datasetName: 'visUuid',
+    parseAndValidate: parseAndValidateString,
+    defaultValue: '',
+    info: `The specific UUID of a specific image to display (get this from TanHub). This is a string value. Note that when
+      this is specified, the sort order and 'is_primary' flags will be ignored.`
+  }),
   hectads: createRule({
     key: 'hectads',
     datasetName: 'visHectads',
@@ -686,7 +694,8 @@ const VIS_TYPE_RULE_SETS = {
   'species-name-block': ['taxonId', 'taxonIdSource', 'primaryName', 'secondaryName', 'authority'],
   'species-remarks-block': ['taxonId', 'taxonIdSource'],
   'species-info-block': ['taxonId', 'taxonIdSource', 'control', 'region'],
-  'species-image': ['taxonId', 'taxonIdSource', 'imageVariant', 'expand', 'width', 'height', 'showImageCaption', 'showImageAttribution', 'showImageLicense'],
+  'species-image': ['taxonId', 'taxonIdSource', 'imageVariant', 'uuid', 'expand', 'width', 'height', 'showImageCaption', 'showImageAttribution', 'showImageLicense'],
+  'general-info-block': [],
   'help-block': []
 };
 
@@ -730,6 +739,7 @@ const VIS_TYPE_DESCRIPTIONS = {
     its conservation status, a summary of the number of records and number of grid squares.`,
   'species-image': `A block visualisation showing an image for a species, fetched from the 
     taxa API's taxon-media data.`,
+  'general-info-block': `A block visualisation showing general information for the project.`,
   'help-block': `A block visualisation showing help information.`
 };
 

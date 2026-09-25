@@ -224,6 +224,36 @@ const SHARED_STYLES = `
   min-width: 5.25rem;
 }
 
+.tanvis-map-controls-row {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.tanvis-map-download-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.5rem 0.9rem;
+  border: 1px solid #9ca3af;
+  background: #f8fafc;
+  color: #1f2937;
+  font: 600 0.95rem/1.2 system-ui, sans-serif;
+  cursor: pointer;
+  transition: background-color 160ms ease, border-color 160ms ease, color 160ms ease, box-shadow 160ms ease;
+}
+
+.tanvis-map-download-button:hover {
+  border-color: #6b7280;
+  background: #f1f5f9;
+}
+
+.tanvis-map-download-button:focus-visible {
+  outline: 0;
+  border-color: #6b7280;
+  box-shadow: 0 0 0 3px rgba(15, 118, 110, 0.18);
+}
+
 #map-tetrad-info {
   min-height: 1.2em;
   margin: 0 0 0.35rem;

@@ -22,6 +22,7 @@ var Tanvis = (function (exports) {
     'species-remarks-block',
     'species-info-block',
     'species-image',
+    'general-info-block',
     'help-block',
   ];
 
@@ -498,7 +499,14 @@ var Tanvis = (function (exports) {
       'large' - to display a large image,
       'thumbnail' - to display a thumbnail image.`
     }), 
-
+    uuid: createRule({
+      key: 'uuid',
+      datasetName: 'visUuid',
+      parseAndValidate: parseAndValidateString,
+      defaultValue: '',
+      info: `The specific UUID of a specific image to display (get this from TanHub). This is a string value. Note that when
+      this is specified, the sort order and 'is_primary' flags will be ignored.`
+    }),
     hectads: createRule({
       key: 'hectads',
       datasetName: 'visHectads',
@@ -696,7 +704,8 @@ var Tanvis = (function (exports) {
     'species-name-block': ['taxonId', 'taxonIdSource', 'primaryName', 'secondaryName', 'authority'],
     'species-remarks-block': ['taxonId', 'taxonIdSource'],
     'species-info-block': ['taxonId', 'taxonIdSource', 'control', 'region'],
-    'species-image': ['taxonId', 'taxonIdSource', 'imageVariant', 'expand', 'width', 'height', 'showImageCaption', 'showImageAttribution', 'showImageLicense'],
+    'species-image': ['taxonId', 'taxonIdSource', 'imageVariant', 'uuid', 'expand', 'width', 'height', 'showImageCaption', 'showImageAttribution', 'showImageLicense'],
+    'general-info-block': [],
     'help-block': []
   };
 
@@ -740,6 +749,7 @@ var Tanvis = (function (exports) {
     its conservation status, a summary of the number of records and number of grid squares.`,
     'species-image': `A block visualisation showing an image for a species, fetched from the 
     taxa API's taxon-media data.`,
+    'general-info-block': `A block visualisation showing general information for the project.`,
     'help-block': `A block visualisation showing help information.`
   };
 
@@ -1276,6 +1286,36 @@ var Tanvis = (function (exports) {
 .tanvis-grid-stats-map-type-switch .tanvis-controls-text {
   text-transform: none;
   min-width: 5.25rem;
+}
+
+.tanvis-map-controls-row {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.tanvis-map-download-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.5rem 0.9rem;
+  border: 1px solid #9ca3af;
+  background: #f8fafc;
+  color: #1f2937;
+  font: 600 0.95rem/1.2 system-ui, sans-serif;
+  cursor: pointer;
+  transition: background-color 160ms ease, border-color 160ms ease, color 160ms ease, box-shadow 160ms ease;
+}
+
+.tanvis-map-download-button:hover {
+  border-color: #6b7280;
+  background: #f1f5f9;
+}
+
+.tanvis-map-download-button:focus-visible {
+  outline: 0;
+  border-color: #6b7280;
+  box-shadow: 0 0 0 3px rgba(15, 118, 110, 0.18);
 }
 
 #map-tetrad-info {
@@ -4745,6 +4785,48 @@ div[data-tanvis-controls="species-selector"] {
     return `${base}-map-type-switch`;
   }
 
+  function createDownloadButton({ map, controlClassName = 'tanvis-map-download-button' } = {}) {
+
+    // Resolve the base path for logo resources which will be the
+    // scriptURL with this stripped off the end: /dist/tanvis.iife.js
+    // This is required because on GitHub pages, the script is served from
+    // a subfolder.
+    let scriptUrl;
+    const scripts = document.getElementsByTagName('script');
+    for (let i = 0; i < scripts.length; i++) {
+      const src = scripts[i].getAttribute('src');
+      if (src && src.includes('tanvis.iife.js')) {
+        scriptUrl = scripts[i].src;
+        break;
+      }
+    }
+    const basePath = scriptUrl ? scriptUrl.substring(0, scriptUrl.indexOf('/dist/tanvis.iife.js') + 1) : '';
+
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = controlClassName;
+    button.textContent = 'Download';
+    button.addEventListener('click', () => {
+      console.log('download');
+
+      map?.saveMap?.(false, 
+        {
+          text: "Map produced by Tanyptera Project using data from iRecord and NBN Atlas.",
+          margin: 10,
+          img: `${basePath}data/images/logo.png`
+        }, 
+        'tanvis-map');
+    });
+    return button;
+  }
+
+  function createControlsRow(children, className = 'tanvis-map-controls-row') {
+    const row = document.createElement('div');
+    row.className = className;
+    children.filter(Boolean).forEach((child) => row.appendChild(child));
+    return row;
+  }
+
   function getDatasetValue(element, datasetKey) {
     if (!element) {
       return '';
@@ -5178,6 +5260,7 @@ div[data-tanvis-controls="species-selector"] {
     }
 
     renderMapControlGroup$1(element, {
+      map,
       activeMapType,
       showMapTypeSwitch: shouldShowMapTypeSwitch,
       onMapTypeChange: (nextMapType) => {
@@ -5215,17 +5298,28 @@ div[data-tanvis-controls="species-selector"] {
     const controls = ensureMapControlsContainer(hostElement);
     clearElement(controls);
 
-    if (!options.showMapTypeSwitch) {
+    const showDownloadButton = options.activeMapType === 'static';
+
+    if (!options.showMapTypeSwitch && !showDownloadButton) {
       controls.remove();
       return;
     }
 
-    controls.appendChild(createMapTypeSwitchControl({
-      mapElement,
-      activeMapType: options.activeMapType,
-      onChange: options.onMapTypeChange,
-      fallbackId: 'tanvis-species-map'
-    }));
+    const rowChildren = [];
+    if (options.showMapTypeSwitch) {
+      rowChildren.push(createMapTypeSwitchControl({
+        mapElement,
+        activeMapType: options.activeMapType,
+        onChange: options.onMapTypeChange,
+        fallbackId: 'tanvis-species-map'
+      }));
+    }
+
+    if (showDownloadButton) {
+      rowChildren.push(createDownloadButton({ map: options.map }));
+    }
+
+    controls.appendChild(createControlsRow(rowChildren));
   }
 
   function clearControlSubscription$2(element) {
@@ -5612,6 +5706,7 @@ div[data-tanvis-controls="species-selector"] {
     }
 
     renderMapControlGroup(mapElement, {
+      map,
       activeMapType,
       selectedMapTypeKey,
       showMapTypeSwitch,
@@ -5646,18 +5741,29 @@ div[data-tanvis-controls="species-selector"] {
     const controls = ensureMapControlsContainer(hostElement);
     clearElement(controls);
 
-    if (!options.showMapTypeSwitch && !options.showGridStatsSwitch) {
+    const showDownloadButton = options.activeMapType === 'static';
+
+    if (!options.showMapTypeSwitch && !options.showGridStatsSwitch && !showDownloadButton) {
       controls.remove();
       return;
     }
 
+    const rowChildren = [];
     if (options.showMapTypeSwitch) {
-      controls.appendChild(createMapTypeSwitchControl({
+      rowChildren.push(createMapTypeSwitchControl({
         mapElement,
         activeMapType: options.activeMapType,
         onChange: options.onMapTypeChange,
         fallbackId: 'tanvis-grid-stats-map'
       }));
+    }
+
+    if (showDownloadButton) {
+      rowChildren.push(createDownloadButton({ map: options.map }));
+    }
+
+    if (rowChildren.length > 0) {
+      controls.appendChild(createControlsRow(rowChildren));
     }
 
     if (options.showGridStatsSwitch) {
@@ -5959,7 +6065,7 @@ div[data-tanvis-controls="species-selector"] {
   // Adapter for Tanvis temporal year charts backed by BRC Charts.
   // Keeps all dependency checks and data-loading in one place.
 
-  const TAXON_YEAR_STATS_RESOURCE = 'taxon-year-stats';
+  const TAXON_YEAR_STATS_RESOURCE$1 = 'taxon-year-stats';
   const DEFAULT_PAGE_LIMIT$1 = 10000;
 
   let temporalYearChartIdCounter = 0;
@@ -6219,7 +6325,7 @@ div[data-tanvis-controls="species-selector"] {
   }
 
   async function fetchTaxonYearStats({ apiBase, taxonIdentifier, startYear, endYear, region }) {
-    const resourceUrl = resolveResourceUrl$1(apiBase, TAXON_YEAR_STATS_RESOURCE);
+    const resourceUrl = resolveResourceUrl$1(apiBase, TAXON_YEAR_STATS_RESOURCE$1);
     const rows = [];
     let offset = 0;
 
@@ -6315,7 +6421,8 @@ div[data-tanvis-controls="species-selector"] {
       chartStyle: config.chartType,
       lineInterpolator: 'curveMonotoneX',
       showLegend: true,
-      interactivity: 'mousemove',
+      interactivity: 'none',
+      margin: { left: 40 },
       minY: 0,
       perRow: 1,
       ...(Number.isFinite(startYear) ? { minPeriod: startYear } : {}),
@@ -7037,7 +7144,13 @@ div[data-tanvis-controls="species-selector"] {
   }
 
   const TAXON_STATS_RESOURCE = 'taxon-stats';
+  const TAXON_YEAR_STATS_RESOURCE = 'taxon-year-stats';
   const DEFAULT_PAGE_LIMIT = 10000;
+  const AVE_RECS_YEAR_SPAN = 10;
+
+  // Adjust these to change the spacing between info rows and between each label and its value.
+  const ROW_SPACING_PX = 6;
+  const LABEL_VALUE_GAP_PX = 8;
 
   function createSpeciesInfoBlockAdapter() {
     return {
@@ -7117,7 +7230,7 @@ div[data-tanvis-controls="species-selector"] {
 
         if (!taxonIdentifier) {
           status.clear();
-          renderSpeciesInfoText(content, [], renderConfig.region);
+          renderSpeciesInfoText(content, [], renderConfig.region, []);
           return;
         }
 
@@ -7125,17 +7238,24 @@ div[data-tanvis-controls="species-selector"] {
         element.__tanvisSpeciesInfoBlockLoadId = loadId;
         element.dataset.visTaxonid = taxonIdentifier;
 
-        fetchTaxonStats({
-          apiBase: resolveApiBase(),
-          taxonIdentifier,
-          region: renderConfig.region
-        })
-          .then((stats) => {
+        Promise.all([
+          fetchTaxonStats({
+            apiBase: resolveApiBase(),
+            taxonIdentifier,
+            region: renderConfig.region
+          }),
+          fetchAveRecsRows({
+            apiBase: resolveApiBase(),
+            taxonIdentifier,
+            region: renderConfig.region
+          })
+        ])
+          .then(([stats, aveRecsRows]) => {
             if (element.__tanvisSpeciesInfoBlockLoadId !== loadId) {
               return;
             }
 
-            renderSpeciesInfoText(content, stats, renderConfig.region);
+            renderSpeciesInfoText(content, stats, renderConfig.region, aveRecsRows);
             status.clear();
           })
           .catch((error) => {
@@ -7261,6 +7381,44 @@ div[data-tanvis-controls="species-selector"] {
     return getRecords(payload);
   }
 
+  async function fetchAveRecsRows({ apiBase, taxonIdentifier, region }) {
+    const currentYear = new Date().getFullYear();
+    const endYear = currentYear - 1;
+    const startYear = currentYear - AVE_RECS_YEAR_SPAN;
+
+    const resourceUrl = resolveResourceUrl(apiBase, TAXON_YEAR_STATS_RESOURCE);
+    const pageUrl = new URL(resourceUrl.toString());
+    pageUrl.searchParams.set('taxon_identifier[eq]', taxonIdentifier);
+    pageUrl.searchParams.set('year[gte]', String(startYear));
+    pageUrl.searchParams.set('year[lte]', String(endYear));
+
+    if (region) {
+      pageUrl.searchParams.set('higher_geography_identifier[eq]', String(region));
+    }
+
+    pageUrl.searchParams.set('limit', String(DEFAULT_PAGE_LIMIT));
+
+    const payload = await fetchJson$1(pageUrl.toString(), 'Failed to load taxon-year-stats');
+    const yearRows = getRecords(payload);
+    return summariseAveRecsByRegion(yearRows);
+  }
+
+  function summariseAveRecsByRegion(yearRows) {
+    const totalsByRegion = new Map();
+
+    (Array.isArray(yearRows) ? yearRows : []).forEach((row) => {
+      const key = getRowSortKey(row);
+      const totals = totalsByRegion.get(key) || { sampleRow: row, sum: 0 };
+      totals.sum += Number(row?.occurrences_count) || 0;
+      totalsByRegion.set(key, totals);
+    });
+
+    return Array.from(totalsByRegion.values()).map(({ sampleRow, sum }) => ({
+      ...sampleRow,
+      average_records_per_year: sum / AVE_RECS_YEAR_SPAN
+    }));
+  }
+
   function resolveResourceUrl(apiBase, resourceName) {
     const baseUrl = new URL(apiBase, window.location.origin);
     const pathname = baseUrl.pathname.endsWith('/') ? baseUrl.pathname : `${baseUrl.pathname}/`;
@@ -7320,33 +7478,61 @@ div[data-tanvis-controls="species-selector"] {
     const body = doc.createElement('tbody');
 
     const conservationValueCell = appendInfoRow(doc, body, 'Status');
+    const rarityCategoryValueCell = appendInfoRow(doc, body, 'Rarity category');
     const occurrencesValueCell = appendInfoRow(doc, body, 'Occurrences');
     const gridSquaresValueCell = appendInfoRow(doc, body, 'Tetrads');
+    const frequencyTrendValueCell = appendInfoRow(doc, body, 'Frequency trend');
+    const lastRecordValueCell = appendInfoRow(doc, body, 'Last record');
+    const aveRecsValueCell = appendInfoRow(doc, body, 'Recs per year');
 
     content.appendChild(body);
     element.appendChild(content);
 
     content.__tanvisSpeciesInfoBlockNodes = {
       conservationValueCell,
+      rarityCategoryValueCell,
       occurrencesValueCell,
-      gridSquaresValueCell
+      gridSquaresValueCell,
+      frequencyTrendValueCell,
+      lastRecordValueCell,
+      aveRecsValueCell
     };
 
     element.__tanvisSpeciesInfoBlockContent = content;
     return content;
   }
 
-  function renderSpeciesInfoText(content, statsRows, region) {
+  function renderSpeciesInfoText(content, statsRows, region, aveRecsRows) {
     const nodes = content.__tanvisSpeciesInfoBlockNodes;
     const rows = Array.isArray(statsRows) ? statsRows : [];
     const sortedRows = sortStatsRowsForDisplay(rows, region);
     const firstRow = sortedRows[0] || {};
 
-    renderCountCell(content, nodes.occurrencesValueCell, sortedRows, 'occurrences_count', region);
-    renderCountCell(content, nodes.gridSquaresValueCell, sortedRows, 'grid_square_count', region);
+    renderCountCell(content, nodes.occurrencesValueCell, sortedRows, 'occurrences_count', region, toDisplayNumber);
+    renderCountCell(content, nodes.gridSquaresValueCell, sortedRows, 'grid_square_count', region, toDisplayNumber);
+    renderCountCell(content, nodes.frequencyTrendValueCell, sortedRows, 'frequency_trend_state', region, toDisplayValue);
+    renderCountCell(content, nodes.lastRecordValueCell, sortedRows, 'last_record_date', region, toDisplayValue);
+    renderCountCell(content, nodes.aveRecsValueCell, aveRecsRows, 'average_records_per_year', region, toDisplayAverage);
     const conservationStatus = toDisplayStatus(firstRow?.taxon__conservation_status);
+    const rarityCategory = toDisplayValue(firstRow?.taxon__rarity_category);
 
     renderItalicCell(nodes.conservationValueCell, content, conservationStatus);
+    renderItalicCell(nodes.rarityCategoryValueCell, content, rarityCategory);
+  }
+
+  function toDisplayAverage(value) {
+    const parsed = Number(value);
+    if (!Number.isFinite(parsed)) {
+      return '0';
+    }
+    return parsed.toFixed(0);
+  }
+
+  function toDisplayValue(value) {
+    if (value === undefined || value === null || value === '') {
+      return 'None specified';
+    }
+    return String(value);
   }
 
   function appendInfoRow(doc, body, labelText) {
@@ -7356,6 +7542,10 @@ div[data-tanvis-controls="species-selector"] {
 
     labelCell.textContent = `${labelText}:`;
     labelCell.style.textAlign = 'right';
+    labelCell.style.whiteSpace = 'nowrap';
+    labelCell.style.paddingBottom = `${ROW_SPACING_PX}px`;
+    labelCell.style.paddingRight = `${LABEL_VALUE_GAP_PX}px`;
+    valueCell.style.paddingBottom = `${ROW_SPACING_PX}px`;
 
     row.appendChild(labelCell);
     row.appendChild(valueCell);
@@ -7371,13 +7561,13 @@ div[data-tanvis-controls="species-selector"] {
     return String(value);
   }
 
-  function renderCountCell(content, cell, rows, key, region) {
+  function renderCountCell(content, cell, rows, key, region, formatValue = toDisplayNumber) {
     clearElement(cell);
     const doc = content?.ownerDocument || document;
 
     const orderedRows = sortStatsRowsForDisplay(rows, region);
     if (orderedRows.length === 0) {
-      appendCountEntry(cell, doc, '0', region ? formatVcLabel(region) : formatVcLabel(undefined));
+      appendCountEntry(cell, doc, formatValue(undefined), region ? formatVcLabel(region) : formatVcLabel(undefined));
       return;
     }
 
@@ -7386,25 +7576,31 @@ div[data-tanvis-controls="species-selector"] {
         cell.appendChild(doc.createTextNode(', '));
       }
 
-      const count = toDisplayNumber(row?.[key]);
+      const count = formatValue(row?.[key]);
       const vcLabel = formatVcLabel(resolveRowVcValue(row));
       appendCountEntry(cell, doc, count, region ? formatVcLabel(region) : vcLabel);
     });
   }
 
   function appendCountEntry(cell, doc, count, label) {
+    const entry = doc.createElement('span');
+    entry.style.whiteSpace = 'nowrap';
+
     const strong = doc.createElement('strong');
     strong.textContent = String(count);
-    cell.appendChild(strong);
-    cell.appendChild(doc.createTextNode(` (${label})`));
+    entry.appendChild(strong);
+    entry.appendChild(doc.createTextNode(` (${label})`));
+    cell.appendChild(entry);
   }
 
   function renderItalicCell(cell, content, value) {
     clearElement(cell);
     const doc = content?.ownerDocument || document;
+    const strong = doc.createElement('strong');
     const emphasis = doc.createElement('em');
     emphasis.textContent = value;
-    cell.appendChild(emphasis);
+    strong.appendChild(emphasis);
+    cell.appendChild(strong);
   }
 
   function sortStatsRowsForDisplay(rows, region) {
@@ -7719,7 +7915,7 @@ div[data-tanvis-controls="species-selector"] {
   }
 
   function renderSpeciesImageContent(content, taxon, config) {
-    const image = selectDisplayImage(taxon?.taxon_media);
+    const image = selectDisplayImage(taxon?.taxon_media, config?.uuid);
 
     if (!image) {
       renderPlaceholder(content);
@@ -7781,12 +7977,18 @@ div[data-tanvis-controls="species-selector"] {
   }
 
 
-  function selectDisplayImage(taxonMedia) {
+  function selectDisplayImage(taxonMedia, uuid) {
     const images = (Array.isArray(taxonMedia) ? taxonMedia : [])
       .filter((media) => typeof media?.mime_type === 'string' && media.mime_type.startsWith('image/'));
 
     if (images.length === 0) {
       return null;
+    }
+
+    const normalizedUuid = normalizeValue(uuid);
+    if (normalizedUuid) {
+      // When a specific uuid is requested, ignore is_primary/sort_order entirely.
+      return images.find((media) => media.uuid === normalizedUuid) || null;
     }
 
     if (images.length === 1) {
@@ -7967,6 +8169,34 @@ div[data-tanvis-controls="species-selector"] {
     helpBlockAdapter.render(element, config);
   }
 
+  // Update this constant to change the fixed text shown by the general-info-block visualisation.
+  const GENERAL_INFO_TEXT = `These visualisations use live publicly available 
+    data obtained from BRC's iRecord and NBN Trust's NBN Atlas. 
+    Collation and pre-processed of the data is achieved by TanHub 
+    (designed by John Van Breda). TanVis tools use the data to generate 
+    the visualisations (designed by Rich Burkmar). The coding for both 
+    TanHub and TanVis are opensource and available from GitHub. `;
+
+  function createGeneralInfoBlockAdapter() {
+    return {
+      name: 'general-info-block',
+      render(element) {
+        clearElement(element);
+
+        const content = element.ownerDocument.createElement('div');
+        content.dataset.tanvisGeneralInfoBlock = 'content';
+        content.textContent = GENERAL_INFO_TEXT;
+        element.appendChild(content);
+      }
+    };
+  }
+
+  const generalInfoBlockAdapter = createGeneralInfoBlockAdapter();
+
+  function renderGeneralInfoBlock(element, config) {
+    generalInfoBlockAdapter.render(element, config);
+  }
+
   // Makes initialization idempotent so calling init() repeatedly 
   // does not keep re-registering the same renderers.
 
@@ -7991,6 +8221,7 @@ div[data-tanvis-controls="species-selector"] {
     registerRenderer('species-info-block', renderSpeciesInfoBlock);
     registerRenderer('species-image', renderSpeciesImage);
     registerRenderer('help-block', renderHelpBlock);
+    registerRenderer('general-info-block', renderGeneralInfoBlock);
     defaultsRegistered = true;
   }
 

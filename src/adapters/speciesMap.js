@@ -9,6 +9,8 @@ import { normalizeRegionContractValue } from '../controls/regionControls.js';
 import { ensureSharedStyles } from '../styles/sharedStyles.js';
 import {
   createMapTypeSwitchControl,
+  createDownloadButton,
+  createControlsRow,
   ensureMapControlsContainer,
   normalizeMapTypeMode,
   resolveActiveMapType
@@ -317,6 +319,7 @@ function renderMapBackend(element, config, hostElement, previousRows = []) {
   }
 
   renderMapControlGroup(element, {
+    map,
     activeMapType,
     showMapTypeSwitch: shouldShowMapTypeSwitch,
     onMapTypeChange: (nextMapType) => {
@@ -354,17 +357,28 @@ function renderMapControlGroup(mapElement, options) {
   const controls = ensureMapControlsContainer(hostElement);
   clearElement(controls);
 
-  if (!options.showMapTypeSwitch) {
+  const showDownloadButton = options.activeMapType === 'static';
+
+  if (!options.showMapTypeSwitch && !showDownloadButton) {
     controls.remove();
     return;
   }
 
-  controls.appendChild(createMapTypeSwitchControl({
-    mapElement,
-    activeMapType: options.activeMapType,
-    onChange: options.onMapTypeChange,
-    fallbackId: 'tanvis-species-map'
-  }));
+  const rowChildren = [];
+  if (options.showMapTypeSwitch) {
+    rowChildren.push(createMapTypeSwitchControl({
+      mapElement,
+      activeMapType: options.activeMapType,
+      onChange: options.onMapTypeChange,
+      fallbackId: 'tanvis-species-map'
+    }));
+  }
+
+  if (showDownloadButton) {
+    rowChildren.push(createDownloadButton({ map: options.map }));
+  }
+
+  controls.appendChild(createControlsRow(rowChildren));
 }
 
 function clearControlSubscription(element) {

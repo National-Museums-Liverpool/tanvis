@@ -16,6 +16,8 @@ describe('species info block', () => {
           occurrences_count: 123,
           grid_square_count: 45,
           taxon__conservation_status: 'Near Threatened',
+          frequency_trend_state: 'Increasing',
+          last_record_date: '2025-06-01',
           geographic_region__higher_geography: null
         }]
       })
@@ -37,17 +39,31 @@ describe('species info block', () => {
     expect(url.searchParams.get('include')).toBe('taxon');
     expect(url.searchParams.get('limit')).toBe('10000');
     const rows = element.querySelectorAll('tr');
-    expect(rows).toHaveLength(3);
+    expect(rows).toHaveLength(7);
     expect(rows[0].children[0]?.textContent).toBe('Status:');
-    expect(rows[1].children[0]?.textContent).toBe('Occurrences:');
-    expect(rows[2].children[0]?.textContent).toBe('Tetrads:');
+    expect(rows[1].children[0]?.textContent).toBe('Rarity category:');
+    expect(rows[2].children[0]?.textContent).toBe('Occurrences:');
+    expect(rows[3].children[0]?.textContent).toBe('Tetrads:');
+    expect(rows[4].children[0]?.textContent).toBe('Frequency trend:');
+    expect(rows[5].children[0]?.textContent).toBe('Last record:');
+    expect(rows[6].children[0]?.textContent).toBe('Recs per year:');
     expect(rows[0].children[0]?.style.textAlign).toBe('right');
     expect(rows[1].children[0]?.style.textAlign).toBe('right');
     expect(rows[2].children[0]?.style.textAlign).toBe('right');
+    expect(rows[3].children[0]?.style.textAlign).toBe('right');
+    expect(rows[4].children[0]?.style.textAlign).toBe('right');
+    expect(rows[5].children[0]?.style.textAlign).toBe('right');
+    expect(rows[6].children[0]?.style.textAlign).toBe('right');
     expect(rows[0].children[1]?.textContent).toBe('Near Threatened');
     expect(rows[0].children[1]?.querySelector('em')?.textContent).toBe('Near Threatened');
-    expect(rows[1].children[1]?.textContent).toBe('123 (vc58)');
-    expect(rows[2].children[1]?.textContent).toBe('45 (vc58)');
+    expect(rows[0].children[1]?.querySelector('strong em')?.textContent).toBe('Near Threatened');
+    expect(rows[1].children[1]?.textContent).toBe('None specified');
+    expect(rows[1].children[1]?.querySelector('strong em')?.textContent).toBe('None specified');
+    expect(rows[2].children[1]?.textContent).toBe('123 (vc58)');
+    expect(rows[3].children[1]?.textContent).toBe('45 (vc58)');
+    expect(rows[4].children[1]?.textContent).toBe('Increasing (vc58)');
+    expect(rows[5].children[1]?.textContent).toBe('2025-06-01 (vc58)');
+    expect(rows[6].children[1]?.textContent).toBe('12 (vc58)');
   });
 
   it('does not use higher_geography_identifier filter when region is empty (all VCs)', async () => {
@@ -77,8 +93,11 @@ describe('species info block', () => {
 
     const rows = element.querySelectorAll('tr');
     expect(rows[0].children[1]?.textContent).toBe('Least Concern');
-    expect(rows[1].children[1]?.textContent).toBe('18 (all VCs), 5 (vc58), 6 (vc59), 7 (vc60)');
-    expect(rows[2].children[1]?.textContent).toBe('9 (all VCs), 2 (vc58), 3 (vc59), 4 (vc60)');
+    expect(rows[2].children[1]?.textContent).toBe('18 (all VCs), 5 (vc58), 6 (vc59), 7 (vc60)');
+    expect(rows[3].children[1]?.textContent).toBe('9 (all VCs), 2 (vc58), 3 (vc59), 4 (vc60)');
+    expect(rows[4].children[1]?.textContent).toBe('None specified (all VCs), None specified (vc58), None specified (vc59), None specified (vc60)');
+    expect(rows[5].children[1]?.textContent).toBe('None specified (all VCs), None specified (vc58), None specified (vc59), None specified (vc60)');
+    expect(rows[6].children[1]?.textContent).toBe('2 (all VCs), 1 (vc58), 1 (vc59), 1 (vc60)');
   });
 
   it('uses the selected VC label when a filtered query returns no rows', async () => {
@@ -97,8 +116,11 @@ describe('species info block', () => {
     await new Promise((resolve) => setTimeout(resolve, 0));
 
     const rows = element.querySelectorAll('tr');
-    expect(rows[1].children[1]?.textContent).toBe('0 (vc59)');
     expect(rows[2].children[1]?.textContent).toBe('0 (vc59)');
+    expect(rows[3].children[1]?.textContent).toBe('0 (vc59)');
+    expect(rows[4].children[1]?.textContent).toBe('None specified (vc59)');
+    expect(rows[5].children[1]?.textContent).toBe('None specified (vc59)');
+    expect(rows[6].children[1]?.textContent).toBe('0 (vc59)');
   });
 
   it('updates taxon from taxonIdSource taxon-identified events', async () => {
@@ -135,7 +157,7 @@ describe('species info block', () => {
 
     await new Promise((resolve) => setTimeout(resolve, 0));
     const initialRows = element.querySelectorAll('tr');
-    expect(initialRows[1].children[1]?.textContent).toBe('1 (vc58)');
+    expect(initialRows[2].children[1]?.textContent).toBe('1 (vc58)');
 
     source.dispatchEvent(new CustomEvent('taxon-identified', {
       detail: { speciesId: 'NHMSYS0000000200' }
@@ -143,7 +165,7 @@ describe('species info block', () => {
 
     await new Promise((resolve) => setTimeout(resolve, 0));
     const updatedRows = element.querySelectorAll('tr');
-    expect(updatedRows[1].children[1]?.textContent).toBe('9 (vc58)');
+    expect(updatedRows[2].children[1]?.textContent).toBe('9 (vc58)');
     expect(element.dataset.visTaxonid).toBe('NHMSYS0000000200');
   });
 
