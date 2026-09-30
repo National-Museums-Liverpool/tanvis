@@ -12,7 +12,8 @@ const TAXON_STATS_RESOURCE = 'taxon-stats';
 const DEFAULT_PAGE_SIZE = 10;
 const columns = [
   { title: 'Scientific', field: 'scientificName', formatter: 'html', headerSort: false },
-  { title: 'Vernacular', field: 'commonName', headerSort: false , responsive: 8 },
+  { title: 'Vernacular', field: 'commonName', headerSort: false },
+  { title: 'Group', field: 'taxonGroup', headerSort: false },
   { title: 'Verified', field: 'verifiedStatus', headerSort: false, 
     formatter: "tickCross", hozAlign: "center", formatterParams: {
       allowTruthy: true,     // Allows any non-empty/truthy value to show a tick
@@ -21,9 +22,11 @@ const columns = [
     }
   },
   { title: 'First record', field: 'firstRecordDate', headerSort: false  },
-  { title: 'Group', field: 'taxonGroup', headerSort: false , responsive: 9 },
-  { title: 'TVK', field: 'speciesId', headerSort: false , responsive: 10 },
-];
+  { title: 'First recorder', field: 'firstRecorder', headerSort: false  },
+  { title: 'Records', field: 'occurrencesCount', headerSort: false },
+  { title: 'Tetrads', field: 'gridSquareCount', headerSort: false },
+  { title: 'TVK', field: 'speciesId', visible: false } 
+  ];
 
 export function createNewSpeciesTableAdapter() {
   return {
@@ -326,6 +329,9 @@ async function buildNewSpeciesRecordsPage({ apiBase, startDate, endDate, higherG
         scientificName: `<i>${row.taxon__scientific_name}</i>`,
         commonName: row.taxon__vernacular_name || '',
         firstRecordDate: row.first_record_date,
+        firstRecorder: row.first_recorder,
+        occurrencesCount: row.occurrences_count,
+        gridSquareCount: row.grid_square_count,
         taxonGroup: formatGroupName({title: row.taxon_group__title, friendly: row.taxon_group__friendly}, labelMode),
         taxonGroupTitle: row.taxon_group__title,
         taxonGroupFriendly: row.taxon_group__friendly,

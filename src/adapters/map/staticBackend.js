@@ -140,6 +140,7 @@ function createStaticMapOptions(element, config, options) {
       : { gridLineStyle: 'none' }),
     mapTypesSel: options.mapTypesSel,
     mapTypesKey: options.mapTypesKey,
+    ...(options.onclick ? { onclick: options.onclick } : {})
   };
 }
 

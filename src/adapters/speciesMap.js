@@ -282,6 +282,7 @@ function renderMapBackend(element, config, hostElement, previousRows = []) {
   const mapTypesSel = {
     [OCCURRENCES_MAP_TYPE_KEY]: () => createOccurrenceData(occurrenceState.rows, pointOpacity, dotStyleOptions),
   };
+  const onMapClick = (gridReference) => dispatchTetradClicked(hostElement, gridReference);
 
   let map;
 
@@ -290,7 +291,8 @@ function renderMapBackend(element, config, hostElement, previousRows = []) {
       idPrefix: 'tanvis-species-map',
       errorMessage: 'Failed to render species map',
       mapTypesSel,
-      mapTypesKey: OCCURRENCES_MAP_TYPE_KEY
+      mapTypesKey: OCCURRENCES_MAP_TYPE_KEY,
+      onclick: onMapClick
     });
   } else {
     map = renderStaticAtlasMap(element, config, {
@@ -298,6 +300,7 @@ function renderMapBackend(element, config, hostElement, previousRows = []) {
       errorMessage: 'Failed to render species map',
       mapTypesSel,
       mapTypesKey: OCCURRENCES_MAP_TYPE_KEY,
+      onclick: onMapClick,
       subscribeToRegionControl: false
     });
   }
@@ -341,6 +344,20 @@ function renderMapBackend(element, config, hostElement, previousRows = []) {
   });
 
   return map;
+}
+
+function dispatchTetradClicked(element, gridReference) {
+  if (!element || typeof element.dispatchEvent !== 'function') {
+    return;
+  }
+
+  element.dispatchEvent(new CustomEvent('tetrad-clicked', {
+    detail: {
+      gridReference,
+      taxonId: element.dataset.visTaxonid || ''
+    },
+    bubbles: true
+  }));
 }
 
 function renderMapControlGroup(mapElement, options) {

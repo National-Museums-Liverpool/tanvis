@@ -12,10 +12,13 @@ const TAXON_STATS_RESOURCE = 'taxon-stats';
 const DEFAULT_PAGE_SIZE = 10;
 const columns = [
   { title: 'Scientific', field: 'scientificName', formatter: 'html', headerSort: false },
-  { title: 'Vernacular', field: 'commonName', headerSort: false, responsive: 9 },
+  { title: 'Vernacular', field: 'commonName', headerSort: false },
+  { title: 'Group', field: 'taxonGroup', headerSort: false },
   { title: 'Last record', field: 'lastRecordDate', headerSort: false },
-  { title: 'Group', field: 'taxonGroup', headerSort: false, responsive: 9 },
-  { title: 'TVK', field: 'speciesId', headerSort: false }
+  { title: 'Last recorder', field: 'lastRecorder', headerSort: false  },
+  { title: 'Records', field: 'occurrencesCount', headerSort: false },
+  { title: 'Tetrads', field: 'gridSquareCount', headerSort: false },
+  { title: 'TVK', field: 'speciesId', visible: false }
 ];
 
 export function createSpeciesAbsentTableAdapter() {
@@ -307,6 +310,9 @@ async function buildSpeciesAbsentTableRecordsPage({ apiBase, year, higherGeograp
         scientificName: `<i>${row.taxon__scientific_name || ''}</i>`,
         commonName: formatVernacularName(row),
         lastRecordDate: row.last_record_date,
+        lastRecorder: row.last_recorder,
+        occurrencesCount: row.occurrences_count,
+        gridSquareCount: row.grid_square_count,
         taxonGroup: formatGroupName({ title: row.taxon_group__title, friendly: row.taxon_group__friendly }, labelMode),
         taxonGroupTitle: row.taxon_group__title,
         taxonGroupFriendly: row.taxon_group__friendly,

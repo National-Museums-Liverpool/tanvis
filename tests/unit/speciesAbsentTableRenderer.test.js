@@ -53,7 +53,7 @@ describe('renderSpeciesAbsentTable', () => {
     expect(String(fetchMock.mock.calls[0][0])).toContain('limit=10');
     expect(String(fetchMock.mock.calls[0][0])).toContain('offset=0');
     expect(tabulatorCalls).toHaveLength(1);
-    expect(tabulatorCalls[0].options.columns).toHaveLength(5);
+    expect(tabulatorCalls[0].options.columns).toHaveLength(8);
     expect(tabulatorCalls[0].options.data).toBeUndefined();
     expect(element.querySelector('[data-tabulator-mounted="true"]')).not.toBeNull();
     expect(element.textContent).toContain('on or before 2024');

@@ -678,6 +678,20 @@ const RULES = {
     info: `Whether to include the scientific name authority 
       if the scientific name is shown in the species name block.
       The value is ignored if the scientific name is not shown.`
+  }),
+  sort: createRule({
+    key: 'sort',
+    datasetName: 'visSort',
+    allowedValues: ['default', 'records', 'tetrads', 'group'],
+    defaultValue: 'default',
+    parseAndValidate: parseAndValidateSet,
+    info: `The column by which to sort the table. If 'default' is selected, 
+      the column used for sorting depends on the table thus: the inreasing species
+      table is sorted on trend (descending), the new species table is sorted first record
+      date (descending), and the species absent table is sorted last record date (descending).
+      If 'records' or 'tetrads' is selected, the table will be sorted by the corresponding 
+      column (descending) and if 'group' is selected, the table will be sorted by the group 
+      column (ascending).`
   })
 };
 
@@ -689,9 +703,9 @@ const VIS_TYPE_RULE_SETS = {
   'species-map': ['taxonId', 'taxonIdSource', 'control', 'region', 'hectads', 'mapType', 'boundaries', 'dotShape', 'dotColour', 'transformation', 'dotShape', 'expand', 'width', 'height'],
   'grid-stats-map': ['gridStatsType', 'control', 'region', 'hectads', 'mapType', 'boundaries', 'dotShape', 'dotColour', 'transformation', 'expand', 'width', 'height'],
   'temporal-year-chart': ['taxonId', 'temporalStatsType', 'taxonIdSource', 'chartType', 'recordsColour', 'squaresColour','startYear', 'endYear', 'region', 'control', 'expand', 'width', 'height'],
-  'new-species-table': ['startDate', 'endDate', 'region', 'groupId', 'language','control', 'pageSize'],
-  'increasing-species-table': ['topN', 'region', 'groupId', 'language','control', 'pageSize'],
-  'species-absent-table': ['year', 'region', 'groupId', 'language','control', 'pageSize'],
+  'new-species-table': ['startDate', 'endDate', 'region', 'groupId', 'language','control', 'pageSize', 'sort'],
+  'increasing-species-table': ['topN', 'region', 'groupId', 'language','control', 'pageSize', 'sort'],
+  'species-absent-table': ['year', 'region', 'groupId', 'language','control', 'pageSize', 'sort'],
   'species-name-block': ['taxonId', 'taxonIdSource', 'primaryName', 'secondaryName', 'authority'],
   'species-remarks-block': ['taxonId', 'taxonIdSource'],
   'species-info-block': ['taxonId', 'taxonIdSource', 'control', 'region'],

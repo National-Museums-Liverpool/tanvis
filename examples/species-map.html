@@ -7,8 +7,11 @@
     <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
     <script src="https://d3js.org/d3.v7.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/gh/biologicalrecordscentre/brc-atlas/dist/brcatlas.umd.js"></script>
+    <!-- <script src="https://cdn.jsdelivr.net/gh/biologicalrecordscentre/brc-atlas/dist/brcatlas.umd.js"></script> -->
+    <script src="../dependencies/brcatlas.min.umd.js"></script>
     <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/gh/biologicalrecordscentre/brc-atlas/dist/brcatlas.umd.css" />
+    <script src="https://unpkg.com/tabulator-tables@6.3.0/dist/js/tabulator.min.js"></script>
+    <link rel="stylesheet" href="https://unpkg.com/tabulator-tables@6.3.0/dist/css/tabulator.min.css" />
     <style>
       body {
         font-family: Arial, sans-serif;
@@ -38,6 +41,7 @@
 
     <div
       class="tanvis"
+      id="species-map"
       data-vis-type="species-map"
       data-vis-map-type="switch"
       data-vis-control="vc-control"
@@ -52,9 +56,25 @@
       data-vis-dot-shape="circle"
     ></div>
 
+    <div
+      class="tanvis"
+      data-vis-type="records-table"
+      data-vis-taxon-id-source="species-map"
+      data-vis-page-size="15"
+    ></div>
+
     <script src="../dist/tanvis.iife.js"></script>
     <script type="module">
       window.Tanvis.init();
+
+      // Listen for events from the species map
+      const speciesMap = document.getElementById('species-map');
+      speciesMap.addEventListener('tetrad-clicked', (event) => {
+        console.log('Tetrad clicked:', event.detail);
+      });
+      speciesMap.addEventListener('taxon-identified', (event) => {
+        console.log('Taxon identified:', event.detail);
+      });
     </script>
   </body>
 </html>

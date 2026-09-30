@@ -69,16 +69,27 @@ export function createRecordsTableAdapter() {
       }
 
       if (renderConfig.taxonIdSource) {
-        element.__tanvisTaxonIdSourceCleanup = subscribeToTaxonIdSource(renderConfig.taxonIdSource, (speciesId) => {
-          if (!speciesId || speciesId === element.dataset.visTaxonid) {
-            return;
-          }
+        element.__tanvisTaxonIdSourceCleanup = subscribeToTaxonIdSource(
+          renderConfig.taxonIdSource,
+          (speciesId) => {
+            if (!speciesId || (speciesId === element.dataset.visTaxonid && !renderConfig.gridReference)) {
+              return;
+            }
 
-          createRecordsTableAdapter().render(element, {
-            ...renderConfig,
-            taxonId: speciesId
-          });
-        });
+            createRecordsTableAdapter().render(element, {
+              ...renderConfig,
+              taxonId: speciesId,
+              gridReference: undefined
+            });
+          },
+          ({ taxonId, gridReference }) => {
+            createRecordsTableAdapter().render(element, {
+              ...renderConfig,
+              taxonId,
+              gridReference
+            });
+          }
+        );
       }
 
       if (!taxonIdentifier) {
@@ -97,10 +108,15 @@ export function createRecordsTableAdapter() {
       }
 
       clearElement(element);
-      const summary = createSummary(taxonIdentifier, 0, renderConfig.region);
+      const summary = createSummary(taxonIdentifier, 0, renderConfig.region, renderConfig.gridReference);
       element.appendChild(summary);
       element.__tanvisSummaryElement = summary;
-      element.__tanvisSummaryState = { taxonIdentifier, region: renderConfig.region, count: 0 };
+      element.__tanvisSummaryState = {
+        taxonIdentifier,
+        region: renderConfig.region,
+        gridReference: renderConfig.gridReference,
+        count: 0
+      };
 
       createTableContainer({
         Tabulator,
@@ -110,6 +126,7 @@ export function createRecordsTableAdapter() {
             apiBase,
             taxonIdentifier,
             region: renderConfig.region,
+            gridReference: renderConfig.gridReference,
             pageNumber,
             pageSize: requestedPageSize
           });
@@ -149,12 +166,16 @@ export function createRecordsTableAdapter() {
 }
 
 function resolveTaxonIdentifier(element, config) {
+  const fromConfig = normalizeValue(config?.taxonId);
+  if (fromConfig) {
+    return fromConfig;
+  }
+
   const fromDataset = normalizeValue(element?.dataset?.visTaxonid);
   if (fromDataset) {
     return fromDataset;
   }
-
-  return normalizeValue(config?.taxonId);
+  return '';
 }
 
 function normalizeValue(value) {
@@ -181,15 +202,16 @@ function renderPlaceholder(element) {
   element.appendChild(placeholder);
 }
 
-function createSummary(taxonIdentifier, count, region) {
+function createSummary(taxonIdentifier, count, region, gridReference) {
   const summary = document.createElement('div');
   summary.classList.add('tanvis-table-header-text');
-  summary.textContent = buildSummaryText(taxonIdentifier, count, region);
+  summary.textContent = buildSummaryText(count, region, gridReference);
   return summary;
 }
 
-function buildSummaryText(count, region) {
-  return `${count} recordsin ${formatTableRegionLabel(region)}`;
+function buildSummaryText(count, region, gridReference) {
+  const location = normalizeValue(gridReference) || formatTableRegionLabel(region);
+  return `${count} records in ${location}`;
 }
 
 function refreshSummary(element) {
@@ -199,7 +221,7 @@ function refreshSummary(element) {
     return;
   }
 
-  summary.textContent = buildSummaryText(state.count, state.region);
+  summary.textContent = buildSummaryText(state.count, state.region, state.gridReference);
 }
 
 function formatTableRegionLabel(region) {
@@ -232,6 +254,9 @@ function createTableContainer({ Tabulator, pageSize, requestPage, element, loadI
   const table = new Tabulator(container, {
     autoColumns: true,
     autoColumnsDefinitions: (definitions) => {
+      definitions.forEach((definition) => {
+        definition.headerSort = false;
+      });
       definitions.forEach((definition) => {
         const overrideTitle = COLUMN_TITLE_OVERRIDES[definition.field];
         if (overrideTitle) {
@@ -278,7 +303,7 @@ function getTabulatorGlobal() {
   return window.Tabulator || null;
 }
 
-async function buildRecordsTablePage({ apiBase, taxonIdentifier, region, pageNumber, pageSize }) {
+async function buildRecordsTablePage({ apiBase, taxonIdentifier, region, gridReference, pageNumber, pageSize }) {
   const effectivePageSize = Math.max(1, Math.floor(pageSize ?? DEFAULT_PAGE_SIZE));
   const offset = Math.max(0, (Math.max(1, Math.floor(pageNumber || 1)) - 1) * effectivePageSize);
 
@@ -288,6 +313,10 @@ async function buildRecordsTablePage({ apiBase, taxonIdentifier, region, pageNum
 
   if (region) {
     pageUrl.searchParams.set('higher_geography_identifier[eq]', String(region));
+  }
+
+  if (gridReference) {
+    pageUrl.searchParams.set('grid_ref_2km[eq]', String(gridReference));
   }
 
   pageUrl.searchParams.set('sort', '-to_date');
@@ -425,7 +454,7 @@ function clearTaxonIdSourceSubscription(element) {
   delete element.__tanvisTaxonIdSourceCleanup;
 }
 
-function subscribeToTaxonIdSource(taxonIdSourceId, onSpeciesSelected) {
+function subscribeToTaxonIdSource(taxonIdSourceId, onSpeciesSelected, onTetradClicked) {
   if (typeof document === 'undefined') {
     return undefined;
   }
@@ -444,9 +473,22 @@ function subscribeToTaxonIdSource(taxonIdSourceId, onSpeciesSelected) {
     onSpeciesSelected(speciesId.trim());
   };
 
+  const handleTetradClicked = (event) => {
+    console.log('Tetrad clicked event received:', event);
+    const taxonId = normalizeValue(event?.detail?.taxonId);
+    const gridReference = normalizeValue(event?.detail?.gridReference);
+    if (!taxonId || !gridReference) {
+      return;
+    }
+
+    onTetradClicked?.({ taxonId, gridReference });
+  };
+
   taxonIdSourceElement.addEventListener('taxon-identified', onTaxonIdentified);
+  taxonIdSourceElement.addEventListener('tetrad-clicked', handleTetradClicked);
   return () => {
     taxonIdSourceElement.removeEventListener('taxon-identified', onTaxonIdentified);
+    taxonIdSourceElement.removeEventListener('tetrad-clicked', handleTetradClicked);
   };
 }
 

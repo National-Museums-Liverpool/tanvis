@@ -107,6 +107,7 @@ function createLeafletMapOptions(element, config, options) {
     ...(height !== undefined ? { height } : {}),
     ...(options?.mapTypesSel ? { mapTypesSel: options.mapTypesSel } : {}),
     ...(options?.mapTypesKey ? { mapTypesKey: options.mapTypesKey } : {}),
+    ...(options?.onclick ? { onclick: options.onclick } : {}),
     basemapConfigs: [
       {
         name: 'OpenStreetMap',

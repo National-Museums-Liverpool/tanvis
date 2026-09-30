@@ -57,6 +57,38 @@ describe('species map redraw flow', () => {
     ]);
   });
 
+  it.each([
+    ['static', 'svgMap'],
+    ['leaflet', 'leafletMap']
+  ])('emits a tetrad-clicked event for a %s map with the current taxon id', (mapType, backendName) => {
+    let mapOptions;
+    window.brcatlas = {
+      [backendName]: (options) => {
+        mapOptions = options;
+        return { setMapType() {}, redrawMap() {} };
+      }
+    };
+
+    const element = document.createElement('div');
+    renderSpeciesMap(element, {
+      type: 'species-map',
+      region: 'vc-58',
+      mapType,
+      taxonId: 'ABC123'
+    });
+
+    const eventHandler = vi.fn();
+    element.addEventListener('tetrad-clicked', eventHandler);
+    element.dataset.visTaxonid = 'XYZ999';
+    mapOptions.onclick('SJ58D', 'ignored-id', 'ignored-caption');
+
+    expect(eventHandler).toHaveBeenCalledOnce();
+    expect(eventHandler.mock.calls[0][0].detail).toEqual({
+      gridReference: 'SJ58D',
+      taxonId: 'XYZ999'
+    });
+  });
+
   it('does not recreate the map when the control bus reports the same normalized region', () => {
     let createCount = 0;
 

@@ -12,15 +12,13 @@ const TAXON_STATS_RESOURCE = 'taxon-stats';
 const DEFAULT_PAGE_SIZE = 10;
 const DEFAULT_TOP_N = 50;
 const columns = [
-  
   { title: 'Scientific', field: 'scientificName', formatter: 'html', headerSort: false },
-  { title: 'Vernacular', field: 'commonName', headerSort: false , responsive: 8 },
-  { title: 'Rarity', field: 'rarityCategory', headerSort: false },
+  { title: 'Vernacular', field: 'commonName', headerSort: false },
+  { title: 'Group', field: 'taxonGroup', headerSort: false },
+  { title: 'Trend', field: 'frequencyTrendScore', headerSort: false },
   { title: 'Records', field: 'totalRecords', headerSort: false },
   { title: 'Tetrads', field: 'occupiedGridSquares', headerSort: false },
-  { title: 'Trend', field: 'frequencyTrendScore', headerSort: false },
-  { title: 'Group', field: 'taxonGroup', headerSort: false, responsive: 10 },
-  { title: 'TVK', field: 'speciesId', headerSort: false , responsive: 10 }
+  { title: 'TVK', field: 'speciesId', visible: false }
 ];
 
 export function createIncreasingSpeciesTableAdapter() {
