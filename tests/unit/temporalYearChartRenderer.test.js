@@ -42,7 +42,7 @@ describe('renderTemporalYearChart', () => {
 
     expect(element.textContent).toContain('D3 is not available');
     expect(element.textContent).toContain('d3.v7.min.js');
-    expect(element.textContent).toContain('brccharts.umd.js');
+    expect(element.textContent).toContain('brccharts.min.umd.js');
   });
 
   it('shows an info message when the BRC Charts stylesheet is missing', async () => {

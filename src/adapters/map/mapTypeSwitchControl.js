@@ -1,4 +1,5 @@
 import { createRadioGroup } from '../../controls/radioGroup.js';
+import { resolveAssetBase } from '../../config/assetBase.js';
 
 export function normalizeMapTypeMode(value) {
   const normalized = String(value || '').trim().toLowerCase();
@@ -96,21 +97,7 @@ function getMapTypeSwitchName(mapElement, fallbackId) {
 }
 
 export function createDownloadButton({ map, controlClassName = 'tanvis-map-download-button' } = {}) {
-
-  // Resolve the base path for logo resources which will be the
-  // scriptURL with this stripped off the end: /dist/tanvis.iife.js
-  // This is required because on GitHub pages, the script is served from
-  // a subfolder.
-  let scriptUrl;
-  const scripts = document.getElementsByTagName('script');
-  for (let i = 0; i < scripts.length; i++) {
-    const src = scripts[i].getAttribute('src');
-    if (src && src.includes('tanvis.iife.js')) {
-      scriptUrl = scripts[i].src;
-      break;
-    }
-  }
-  const basePath = scriptUrl ? scriptUrl.substring(0, scriptUrl.indexOf('/dist/tanvis.iife.js') + 1) : '';
+  const basePath = resolveAssetBase();
 
   const button = document.createElement('button');
   button.type = 'button';

@@ -244,6 +244,14 @@
       textarea.selectionStart = textarea.selectionEnd = cursorPos + newContent.length;  
     });
 
+    // Insert a WP shortcode example at the cursor position in the textarea
+    document.addEventListener('tanvis-shortcode-example', function(event) {
+      const textarea = document.getElementById('source');
+      const cursorPos = textarea.selectionStart;
+      textarea.value = textarea.value.substring(0, cursorPos) + event.detail + textarea.value.substring(cursorPos);
+      textarea.selectionStart = textarea.selectionEnd = cursorPos + event.detail.length;
+    });
+
     // Add example taxon IDs as buttons that copy the ID to the clipboard when clicked
     [
       { name: "Wasp Spider", id: "NBNORG0000011061" },

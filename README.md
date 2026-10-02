@@ -84,7 +84,7 @@ A separate `control-block` visualisation can render radio options (`vc58`, `vc59
 
 ```html
 <script src="https://d3js.org/d3.v7.min.js"></script>
-<script src="https://cdn.jsdelivr.net/gh/biologicalrecordscentre/brc-atlas/dist/brcatlas.umd.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/biologicalrecordscentre/brc-atlas/dist/brcatlas.min.umd.js"></script>
 <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/gh/biologicalrecordscentre/brc-atlas/dist/brcatlas.umd.css">
 
 <div
@@ -238,7 +238,7 @@ Include D3 and BRC Charts before Tanvis when using this renderer.
 
 ```html
 <script src="https://d3js.org/d3.v5.min.js"></script>
-<script src="https://cdn.jsdelivr.net/gh/biologicalrecordscentre/brc-charts/dist/brccharts.umd.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/biologicalrecordscentre/brc-charts/dist/brccharts.min.umd.js"></script>
 
 <div
   class="tanvis"

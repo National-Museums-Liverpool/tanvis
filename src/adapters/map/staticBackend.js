@@ -1,4 +1,5 @@
 import { clearElement } from '../../utils/dom.js';
+import { resolveAssetBase } from '../../config/assetBase.js';
 import { normalizeErrorMessage } from '../../utils/apiError.js';
 import { createVisStatusReporter, ensureStylesheetDependency } from '../../utils/visStatus.js';
 import { ensureSharedStyles } from '../../styles/sharedStyles.js';
@@ -28,7 +29,7 @@ export function renderStaticAtlasMap(element, config, options = {}) {
     const brcAtlas = getBrcAtlasGlobal();
 
     if (!brcAtlas || typeof brcAtlas.svgMap !== 'function') {
-      throw new Error('BRC Atlas is not available. Include brcatlas.umd.js before Tanvis.');
+      throw new Error('BRC Atlas is not available. Include brcatlas.min.umd.js before Tanvis.');
     }
 
     const hasStylesheet = ensureStylesheetDependency(status, {
@@ -111,20 +112,7 @@ function createStaticMapOptions(element, config, options) {
 
   const regionSelectionKey = resolveRegionSelectionKey(config.region);
 
-  // Resolve the base path for static map resources which will be the
-  // scriptURL with this stripped off the end: /dist/tanvis.iife.js
-  // This is required because on GitHub pages, the script is served from
-  // a subfolder.
-  let scriptUrl;
-  const scripts = document.getElementsByTagName('script');
-  for (let i = 0; i < scripts.length; i++) {
-    const src = scripts[i].getAttribute('src');
-    if (src && src.includes('tanvis.iife.js')) {
-      scriptUrl = scripts[i].src;
-      break;
-    }
-  }
-  const basePath = scriptUrl ? scriptUrl.substring(0, scriptUrl.indexOf('/dist/tanvis.iife.js') + 1) : '';
+  const basePath = resolveAssetBase();
  
   return {
     selector: `#${element.id}`,

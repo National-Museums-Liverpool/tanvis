@@ -54,6 +54,24 @@ function createVisTypeSection(visType) {
     });
   body.appendChild(exampleButton);
 
+  let exampleShortcode = `[tanvis type="${visType}"`;
+  rules
+    .filter((rule) => rule.key !== 'type')
+    .forEach((rule) => {
+      const name = getDataAttributeName(rule).replace(/^data-vis-/, '');
+      exampleShortcode = `${exampleShortcode} ${name}="${rule.defaultValue || rule.exampleValue || ''}"`;
+    });
+  exampleShortcode = `${exampleShortcode}]`;
+
+  const shortcodeButton = document.createElement('button');
+  shortcodeButton.type = 'button';
+  shortcodeButton.className = 'tanvis-help-block-example-button';
+  shortcodeButton.textContent = 'WP shortcode';
+  shortcodeButton.addEventListener('click', () => {
+    document.dispatchEvent(new CustomEvent('tanvis-shortcode-example', { detail: exampleShortcode }));
+  });
+  body.appendChild(shortcodeButton);
+
 
   const description = getVisTypeDescription(visType);
   if (description) {

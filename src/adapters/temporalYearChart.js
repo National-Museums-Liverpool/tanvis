@@ -201,11 +201,11 @@ async function loadTemporalYearChart(element, config, status) {
   const brcCharts = getBrcChartsGlobal();
 
   if (!brcCharts) {
-    throw new Error('BRC Charts is not available. Include brccharts.umd.js before Tanvis.');
+    throw new Error('BRC Charts is not available. Include brccharts.min.umd.js before Tanvis.');
   }
 
   if (!getD3Global()) {
-    throw new Error('D3 is not available. Include d3.v7.min.js and brccharts.umd.js before using the Tanvis temporal year chart.');
+    throw new Error('D3 is not available. Include d3.v7.min.js and brccharts.min.umd.js before using the Tanvis temporal year chart.');
   }
 
   const hasStylesheet = ensureStylesheetDependency(status, {
@@ -217,7 +217,7 @@ async function loadTemporalYearChart(element, config, status) {
   element.__tanvisTemporalYearChartHasStylesheet = hasStylesheet;
 
   if (typeof brcCharts.temporal !== 'function') {
-    throw new Error('BRC Charts temporal chart is not available. Include a compatible brccharts.umd.js bundle.');
+    throw new Error('BRC Charts temporal chart is not available. Include a compatible brccharts.min.umd.js bundle.');
   }
 
   ensureSharedStyles();

@@ -30,7 +30,7 @@ export function renderLeafletAtlasMap(element, config, options = {}) {
     const brcAtlas = getBrcAtlasGlobal();
 
     if (!brcAtlas || typeof brcAtlas.leafletMap !== 'function') {
-      throw new Error('BRC Atlas is not available. Include brcatlas.umd.js before Tanvis.');
+      throw new Error('BRC Atlas is not available. Include brcatlas.min.umd.js before Tanvis.');
     }
 
     if (typeof window === 'undefined' || typeof window.L === 'undefined') {
