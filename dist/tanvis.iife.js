@@ -215,6 +215,41 @@ var Tanvis = (function (exports) {
     return ret;
   }
 
+  function parseAndValidateLink(value, dataset, config, element, rule) {
+    const ret = {value: undefined, error: undefined, message: undefined};
+
+    const rm = requiredButMissing(value, dataset, config, element, rule);
+    if (rm) return rm;
+
+    if (typeof(value) === 'undefined' || value === null || value === '') {
+      ret.value = rule.defaultValue;
+      return ret;
+    }
+
+    // Split multiple links if they are separated by '^^^'
+    const linkEntries = value.split('^^^').map((entry) => entry.trim()).filter(Boolean);
+
+    // Ensure that each link entry has the format 'Link^^<title>^^<url>', where 
+    // <url> can include query parameters with placeholders like '<tvk>'.
+    let allValid = true;
+    for (const entry of linkEntries) {
+      const parts = entry.split('^^');
+      if (parts.length !== 3) {
+        allValid = false;
+        break;
+      }
+    }
+
+    if (allValid) {
+      ret.value = linkEntries.join('^^^') ;
+    } else {
+      ret.error = true;
+      ret.message = infoString(value, rule);
+    }
+
+    return ret;
+  } 
+
   function createRule({
     key,
     datasetName,
@@ -702,6 +737,19 @@ var Tanvis = (function (exports) {
       If 'records' or 'tetrads' is selected, the table will be sorted by the corresponding 
       column (descending) and if 'group' is selected, the table will be sorted by the group 
       column (ascending).`
+    }),
+    link: createRule({
+      key: 'link',
+      datasetName: 'visLink',
+      parseAndValidate: parseAndValidateLink,
+      exampleValue: 'Link^^Sp. account^^/examples/species-account.html?taxon-id=<tvk>',
+      info: `Specifies links to add to tables. The format of each link is as follows:
+      <column-title>^^<link-text>^^<link-url>. The value of <column-title> will be
+      used as the title of the link column in the table. The value of <link-text> will be
+      displayed as the clickable text for the link, and the value of <link-url> will be
+      used as the URL for the link. The value of <link-url> must include the string '<tvk>'
+      which will be replaced with the actual taxon identifier when the link is rendered.
+      If you want to specify multiple links, separate them with '^^^' (three carets).`
     })
   };
 
@@ -713,9 +761,9 @@ var Tanvis = (function (exports) {
     'species-map': ['taxonId', 'taxonIdSource', 'control', 'region', 'hectads', 'mapType', 'boundaries', 'dotShape', 'dotColour', 'transformation', 'dotShape', 'expand', 'width', 'height'],
     'grid-stats-map': ['gridStatsType', 'control', 'region', 'hectads', 'mapType', 'boundaries', 'dotShape', 'dotColour', 'transformation', 'expand', 'width', 'height'],
     'temporal-year-chart': ['taxonId', 'temporalStatsType', 'taxonIdSource', 'chartType', 'recordsColour', 'squaresColour','startYear', 'endYear', 'region', 'control', 'expand', 'width', 'height'],
-    'new-species-table': ['startDate', 'endDate', 'region', 'groupId', 'language','control', 'pageSize', 'sort'],
-    'increasing-species-table': ['topN', 'region', 'groupId', 'language','control', 'pageSize', 'sort'],
-    'species-absent-table': ['year', 'region', 'groupId', 'language','control', 'pageSize', 'sort'],
+    'new-species-table': ['startDate', 'endDate', 'region', 'groupId', 'language','control', 'pageSize', 'sort', 'link'],
+    'increasing-species-table': ['topN', 'region', 'groupId', 'language','control', 'pageSize', 'sort', 'link'],
+    'species-absent-table': ['year', 'region', 'groupId', 'language','control', 'pageSize', 'sort', 'link'],
     'species-name-block': ['taxonId', 'taxonIdSource', 'primaryName', 'secondaryName', 'authority'],
     'species-remarks-block': ['taxonId', 'taxonIdSource'],
     'species-info-block': ['taxonId', 'taxonIdSource', 'control', 'region'],
@@ -3015,6 +3063,52 @@ div[data-tanvis-controls="species-selector"] {
     speciesIdentifierAdapter.render(element, config);
   }
 
+  const SAFE_PROTOCOLS = new Set(['http:', 'https:']);
+
+  function createLinkColumn(entry) {
+    const [title, text, urlTemplate] = entry.split('^^');
+
+    return {
+      title,
+      field: 'speciesId',
+      headerSort: false,
+      formatter: (cell) => {
+        const speciesId = cell.getValue();
+        if (!speciesId) {
+          return '';
+        }
+
+        const href = urlTemplate.replaceAll('<tvk>', encodeURIComponent(speciesId));
+        let parsed;
+        try {
+          parsed = new URL(href, window.location.href);
+        } catch {
+          return '';
+        }
+        if (!SAFE_PROTOCOLS.has(parsed.protocol)) {
+          return '';
+        }
+
+        const anchor = document.createElement('a');
+        anchor.href = href;
+        anchor.textContent = text;
+        anchor.rel = 'noopener';
+        // Stop the click from also triggering the row's taxon-identified selection.
+        anchor.addEventListener('click', (event) => event.stopPropagation());
+        return anchor;
+      }
+    };
+  }
+
+  // Returns Tabulator column definitions for a '^^^'-separated list of 'Title^^Text^^URL' links.
+  function createLinkColumns(linkValue) {
+    if (typeof linkValue !== 'string' || !linkValue) {
+      return [];
+    }
+
+    return linkValue.split('^^^').map((entry) => entry.trim()).filter(Boolean).map(createLinkColumn);
+  }
+
   const TAXON_STATS_RESOURCE$3 = 'taxon-stats';
   const DEFAULT_PAGE_SIZE$3 = 10;
   const columns$2 = [
@@ -3129,6 +3223,7 @@ div[data-tanvis-controls="species-selector"] {
         createTableContainer$3({
           Tabulator,
           pageSize,
+          link: renderConfig.link,
           requestPage: async ({ pageNumber, pageSize: requestedPageSize }) => {
             const labelModeForRequest = getEffectiveLabelModeForElement$2(element, renderConfig);
             const pageResult = await buildNewSpeciesRecordsPage({
@@ -3256,12 +3351,12 @@ div[data-tanvis-controls="species-selector"] {
     return candidate;
   }
 
-  function createTableContainer$3({ Tabulator, pageSize, requestPage, element, loadId, status }) {
+  function createTableContainer$3({ Tabulator, pageSize, link, requestPage, element, loadId, status }) {
     const container = document.createElement('div');
     element.appendChild(container);
 
     const table = new Tabulator(container, {
-      columns: columns$2,
+      columns: [...columns$2, ...createLinkColumns(link)],
       layout: 'fitDataFill',
       responsiveLayout: 'collapse',
       pagination: true,
@@ -3706,6 +3801,7 @@ div[data-tanvis-controls="species-selector"] {
         createTableContainer$2({
           Tabulator,
           pageSize,
+          link: renderConfig.link,
           requestPage: async ({ pageNumber, pageSize: requestedPageSize }) => {
             const labelModeForRequest = getEffectiveLabelModeForElement$1(element, renderConfig);
             const pageResult = await buildIncreasingSpeciesRecordsPage({
@@ -3830,12 +3926,12 @@ div[data-tanvis-controls="species-selector"] {
     return candidate;
   }
 
-  function createTableContainer$2({ Tabulator, pageSize, requestPage, element, loadId, status }) {
+  function createTableContainer$2({ Tabulator, pageSize, link, requestPage, element, loadId, status }) {
     const container = document.createElement('div');
     element.appendChild(container);
 
     const table = new Tabulator(container, {
-      columns: columns$1,
+      columns: [...columns$1, ...createLinkColumns(link)],
       layout: 'fitDataFill',
       responsiveLayout: 'collapse',
       pagination: true,
@@ -4259,6 +4355,7 @@ div[data-tanvis-controls="species-selector"] {
         createTableContainer$1({
           Tabulator,
           pageSize,
+          link: renderConfig.link,
           requestPage: async ({ pageNumber, pageSize: requestedPageSize }) => {
             const labelModeForRequest = getEffectiveLabelModeForElement(element, renderConfig);
             const pageResult = await buildSpeciesAbsentTableRecordsPage({
@@ -4382,12 +4479,12 @@ div[data-tanvis-controls="species-selector"] {
     return candidate;
   }
 
-  function createTableContainer$1({ Tabulator, pageSize, requestPage, element, loadId, status }) {
+  function createTableContainer$1({ Tabulator, pageSize, link, requestPage, element, loadId, status }) {
     const container = document.createElement('div');
     element.appendChild(container);
 
     const table = new Tabulator(container, {
-      columns,
+      columns: [...columns, ...createLinkColumns(link)],
       layout: 'fitDataFill',
       responsiveLayout: 'collapse',
       pagination: true,

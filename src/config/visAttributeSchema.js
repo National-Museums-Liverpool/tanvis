@@ -204,6 +204,41 @@ function parseAndValidateYear(value, dataset, config, element, rule) {
   return ret;
 }
 
+function parseAndValidateLink(value, dataset, config, element, rule) {
+  const ret = {value: undefined, error: undefined, message: undefined};
+
+  const rm = requiredButMissing(value, dataset, config, element, rule);
+  if (rm) return rm;
+
+  if (typeof(value) === 'undefined' || value === null || value === '') {
+    ret.value = rule.defaultValue;
+    return ret;
+  }
+
+  // Split multiple links if they are separated by '^^^'
+  const linkEntries = value.split('^^^').map((entry) => entry.trim()).filter(Boolean);
+
+  // Ensure that each link entry has the format 'Link^^<title>^^<url>', where 
+  // <url> can include query parameters with placeholders like '<tvk>'.
+  let allValid = true;
+  for (const entry of linkEntries) {
+    const parts = entry.split('^^');
+    if (parts.length !== 3) {
+      allValid = false;
+      break;
+    }
+  }
+
+  if (allValid) {
+    ret.value = linkEntries.join('^^^') ;
+  } else {
+    ret.error = true;
+    ret.message = infoString(value, rule);
+  }
+
+  return ret;
+} 
+
 function createRule({
   key,
   datasetName,
@@ -692,6 +727,19 @@ const RULES = {
       If 'records' or 'tetrads' is selected, the table will be sorted by the corresponding 
       column (descending) and if 'group' is selected, the table will be sorted by the group 
       column (ascending).`
+  }),
+  link: createRule({
+    key: 'link',
+    datasetName: 'visLink',
+    parseAndValidate: parseAndValidateLink,
+    exampleValue: 'Link^^Sp. account^^/examples/species-account.html?taxon-id=<tvk>',
+    info: `Specifies links to add to tables. The format of each link is as follows:
+      <column-title>^^<link-text>^^<link-url>. The value of <column-title> will be
+      used as the title of the link column in the table. The value of <link-text> will be
+      displayed as the clickable text for the link, and the value of <link-url> will be
+      used as the URL for the link. The value of <link-url> must include the string '<tvk>'
+      which will be replaced with the actual taxon identifier when the link is rendered.
+      If you want to specify multiple links, separate them with '^^^' (three carets).`
   })
 };
 
@@ -703,9 +751,9 @@ const VIS_TYPE_RULE_SETS = {
   'species-map': ['taxonId', 'taxonIdSource', 'control', 'region', 'hectads', 'mapType', 'boundaries', 'dotShape', 'dotColour', 'transformation', 'dotShape', 'expand', 'width', 'height'],
   'grid-stats-map': ['gridStatsType', 'control', 'region', 'hectads', 'mapType', 'boundaries', 'dotShape', 'dotColour', 'transformation', 'expand', 'width', 'height'],
   'temporal-year-chart': ['taxonId', 'temporalStatsType', 'taxonIdSource', 'chartType', 'recordsColour', 'squaresColour','startYear', 'endYear', 'region', 'control', 'expand', 'width', 'height'],
-  'new-species-table': ['startDate', 'endDate', 'region', 'groupId', 'language','control', 'pageSize', 'sort'],
-  'increasing-species-table': ['topN', 'region', 'groupId', 'language','control', 'pageSize', 'sort'],
-  'species-absent-table': ['year', 'region', 'groupId', 'language','control', 'pageSize', 'sort'],
+  'new-species-table': ['startDate', 'endDate', 'region', 'groupId', 'language','control', 'pageSize', 'sort', 'link'],
+  'increasing-species-table': ['topN', 'region', 'groupId', 'language','control', 'pageSize', 'sort', 'link'],
+  'species-absent-table': ['year', 'region', 'groupId', 'language','control', 'pageSize', 'sort', 'link'],
   'species-name-block': ['taxonId', 'taxonIdSource', 'primaryName', 'secondaryName', 'authority'],
   'species-remarks-block': ['taxonId', 'taxonIdSource'],
   'species-info-block': ['taxonId', 'taxonIdSource', 'control', 'region'],

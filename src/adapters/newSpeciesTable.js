@@ -1,4 +1,5 @@
 import { clearElement } from '../utils/dom.js';
+import { createLinkColumns } from '../utils/tableLink.js';
 import { getLatestControlEvent, subscribeToControl } from '../controls/controlBus.js';
 import { createApiError, normalizeErrorMessage, parseJsonSafe } from '../utils/apiError.js';
 import { createVisStatusReporter, ensureStylesheetDependency } from '../utils/visStatus.js';
@@ -122,6 +123,7 @@ export function createNewSpeciesTableAdapter() {
       const { container } = createTableContainer({
         Tabulator,
         pageSize,
+        link: renderConfig.link,
         requestPage: async ({ pageNumber, pageSize: requestedPageSize }) => {
           const labelModeForRequest = getEffectiveLabelModeForElement(element, renderConfig);
           const pageResult = await buildNewSpeciesRecordsPage({
@@ -249,12 +251,12 @@ function formatTableRegionLabel(region) {
   return candidate;
 }
 
-function createTableContainer({ Tabulator, pageSize, requestPage, element, loadId, status }) {
+function createTableContainer({ Tabulator, pageSize, link, requestPage, element, loadId, status }) {
   const container = document.createElement('div');
   element.appendChild(container);
 
   const table = new Tabulator(container, {
-    columns,
+    columns: [...columns, ...createLinkColumns(link)],
     layout: 'fitDataFill',
     responsiveLayout: 'collapse',
     pagination: true,
