@@ -123,6 +123,7 @@ export function createIncreasingSpeciesTableAdapter() {
             taxonGroupExternalKey,
             pageNumber,
             pageSize: requestedPageSize,
+            sort: renderConfig.sort,
             labelMode: labelModeForRequest
           });
 
@@ -306,7 +307,7 @@ function getTabulatorGlobal() {
   return window.Tabulator || null;
 }
 
-async function buildIncreasingSpeciesRecordsPage({ apiBase, topN, higherGeographyIdentifier, taxonGroupExternalKey, pageNumber, pageSize, labelMode = 'scientific' }) {
+async function buildIncreasingSpeciesRecordsPage({ apiBase, topN, higherGeographyIdentifier, taxonGroupExternalKey, pageNumber, pageSize, sort, labelMode = 'scientific' }) {
   const effectiveTopN = Math.max(0, Math.floor(topN ?? DEFAULT_TOP_N));
   const effectivePageSize = Math.max(1, Math.floor(pageSize ?? DEFAULT_PAGE_SIZE));
   const offset = (pageNumber - 1) * effectivePageSize;
@@ -322,7 +323,7 @@ async function buildIncreasingSpeciesRecordsPage({ apiBase, topN, higherGeograph
   }
 
   const limit = Math.min(effectivePageSize, Math.max(1, effectiveTopN - offset));
-  const payload = await fetchTaxonStats({ apiBase, topN, higherGeographyIdentifier, taxonGroupExternalKey, limit, offset });
+  const payload = await fetchTaxonStats({ apiBase, topN, higherGeographyIdentifier, taxonGroupExternalKey, sort, limit, offset });
   const taxonStatsRows = getListData(payload);
   const rankedRows = taxonStatsRows.slice(0, effectiveTopN - offset);
 
@@ -389,7 +390,7 @@ async function fetchTaxonGroupsMap(apiBase) {
   }
 }
 
-async function fetchTaxonStats({ apiBase, topN, higherGeographyIdentifier, taxonGroupExternalKey, limit, offset }) {
+async function fetchTaxonStats({ apiBase, topN, higherGeographyIdentifier, taxonGroupExternalKey, sort, limit, offset }) {
   const resourceUrl = resolveResourceUrl(apiBase, TAXON_STATS_RESOURCE);
   const pageUrl = new URL(resourceUrl.toString());
   pageUrl.searchParams.set('include', 'taxon, taxon-group, taxon-rank');
@@ -399,7 +400,7 @@ async function fetchTaxonStats({ apiBase, topN, higherGeographyIdentifier, taxon
     pageUrl.searchParams.set('taxon_group__external_key[eq]', taxonGroupExternalKey);
   }
   pageUrl.searchParams.set('taxon_rank__rank[eq]', 'Species');
-  pageUrl.searchParams.set('sort', '-frequency_trend');
+  pageUrl.searchParams.set('sort', sort === 'records' ? '-occurrences_count' : sort === 'tetrads' ? '-grid_square_count' : sort === 'group' ? 'taxon_group__title' : '-frequency_trend');
   pageUrl.searchParams.set('limit', String(limit));
   pageUrl.searchParams.set('offset', String(offset));
 

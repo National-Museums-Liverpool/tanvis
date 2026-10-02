@@ -132,6 +132,7 @@ export function createNewSpeciesTableAdapter() {
             taxonGroupExternalKey,
             pageNumber,
             pageSize: requestedPageSize,
+            sort: renderConfig.sort,
             labelMode: labelModeForRequest
           });
 
@@ -304,7 +305,7 @@ function getCurrentIsoDate() {
   return new Date().toISOString().slice(0, 10);
 }
 
-async function buildNewSpeciesRecordsPage({ apiBase, startDate, endDate, higherGeographyIdentifier, taxonGroupExternalKey, pageNumber, pageSize, labelMode = 'scientific' }) {
+async function buildNewSpeciesRecordsPage({ apiBase, startDate, endDate, higherGeographyIdentifier, taxonGroupExternalKey, pageNumber, pageSize, sort, labelMode = 'scientific' }) {
   const offset = (pageNumber - 1) * pageSize;
   const payload = await fetchTaxonStatsInRange({
     apiBase,
@@ -312,6 +313,7 @@ async function buildNewSpeciesRecordsPage({ apiBase, startDate, endDate, higherG
     endDate,
     higherGeographyIdentifier,
     taxonGroupExternalKey,
+    sort,
     limit: pageSize,
     offset
   });
@@ -384,7 +386,7 @@ async function fetchTaxonGroupsMap(apiBase) {
   }
 }
 
-async function fetchTaxonStatsInRange({ apiBase, startDate, endDate, higherGeographyIdentifier, taxonGroupExternalKey, limit, offset }) {
+async function fetchTaxonStatsInRange({ apiBase, startDate, endDate, higherGeographyIdentifier, taxonGroupExternalKey, sort, limit, offset }) {
   const resourceUrl = resolveResourceUrl(apiBase, TAXON_STATS_RESOURCE);
   const pageUrl = new URL(resourceUrl.toString());
   pageUrl.searchParams.set('first_record_date[gte]', startDate);
@@ -398,7 +400,7 @@ async function fetchTaxonStatsInRange({ apiBase, startDate, endDate, higherGeogr
   pageUrl.searchParams.set('taxon_rank__rank[eq]', 'Species');
   pageUrl.searchParams.set('limit', String(limit));
   pageUrl.searchParams.set('offset', String(offset));
-  pageUrl.searchParams.set('sort', '-first_record_date');
+  pageUrl.searchParams.set('sort', sort === 'records' ? '-occurrences_count' : sort === 'tetrads' ? '-grid_square_count' : sort === 'group' ? 'taxon_group__title' : '-first_record_date');
 
   const payload = await fetchJson(pageUrl.toString(), 'Failed to load taxon-stats');
   return payload || {};

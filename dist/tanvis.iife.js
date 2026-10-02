@@ -688,6 +688,20 @@ var Tanvis = (function (exports) {
       info: `Whether to include the scientific name authority 
       if the scientific name is shown in the species name block.
       The value is ignored if the scientific name is not shown.`
+    }),
+    sort: createRule({
+      key: 'sort',
+      datasetName: 'visSort',
+      allowedValues: ['default', 'records', 'tetrads', 'group'],
+      defaultValue: 'default',
+      parseAndValidate: parseAndValidateSet,
+      info: `The column by which to sort the table. If 'default' is selected, 
+      the column used for sorting depends on the table thus: the inreasing species
+      table is sorted on trend (descending), the new species table is sorted first record
+      date (descending), and the species absent table is sorted last record date (descending).
+      If 'records' or 'tetrads' is selected, the table will be sorted by the corresponding 
+      column (descending) and if 'group' is selected, the table will be sorted by the group 
+      column (ascending).`
     })
   };
 
@@ -699,9 +713,9 @@ var Tanvis = (function (exports) {
     'species-map': ['taxonId', 'taxonIdSource', 'control', 'region', 'hectads', 'mapType', 'boundaries', 'dotShape', 'dotColour', 'transformation', 'dotShape', 'expand', 'width', 'height'],
     'grid-stats-map': ['gridStatsType', 'control', 'region', 'hectads', 'mapType', 'boundaries', 'dotShape', 'dotColour', 'transformation', 'expand', 'width', 'height'],
     'temporal-year-chart': ['taxonId', 'temporalStatsType', 'taxonIdSource', 'chartType', 'recordsColour', 'squaresColour','startYear', 'endYear', 'region', 'control', 'expand', 'width', 'height'],
-    'new-species-table': ['startDate', 'endDate', 'region', 'groupId', 'language','control', 'pageSize'],
-    'increasing-species-table': ['topN', 'region', 'groupId', 'language','control', 'pageSize'],
-    'species-absent-table': ['year', 'region', 'groupId', 'language','control', 'pageSize'],
+    'new-species-table': ['startDate', 'endDate', 'region', 'groupId', 'language','control', 'pageSize', 'sort'],
+    'increasing-species-table': ['topN', 'region', 'groupId', 'language','control', 'pageSize', 'sort'],
+    'species-absent-table': ['year', 'region', 'groupId', 'language','control', 'pageSize', 'sort'],
     'species-name-block': ['taxonId', 'taxonIdSource', 'primaryName', 'secondaryName', 'authority'],
     'species-remarks-block': ['taxonId', 'taxonIdSource'],
     'species-info-block': ['taxonId', 'taxonIdSource', 'control', 'region'],
@@ -3125,6 +3139,7 @@ div[data-tanvis-controls="species-selector"] {
               taxonGroupExternalKey,
               pageNumber,
               pageSize: requestedPageSize,
+              sort: renderConfig.sort,
               labelMode: labelModeForRequest
             });
 
@@ -3297,7 +3312,7 @@ div[data-tanvis-controls="species-selector"] {
     return new Date().toISOString().slice(0, 10);
   }
 
-  async function buildNewSpeciesRecordsPage({ apiBase, startDate, endDate, higherGeographyIdentifier, taxonGroupExternalKey, pageNumber, pageSize, labelMode = 'scientific' }) {
+  async function buildNewSpeciesRecordsPage({ apiBase, startDate, endDate, higherGeographyIdentifier, taxonGroupExternalKey, pageNumber, pageSize, sort, labelMode = 'scientific' }) {
     const offset = (pageNumber - 1) * pageSize;
     const payload = await fetchTaxonStatsInRange({
       apiBase,
@@ -3305,6 +3320,7 @@ div[data-tanvis-controls="species-selector"] {
       endDate,
       higherGeographyIdentifier,
       taxonGroupExternalKey,
+      sort,
       limit: pageSize,
       offset
     });
@@ -3377,7 +3393,7 @@ div[data-tanvis-controls="species-selector"] {
     }
   }
 
-  async function fetchTaxonStatsInRange({ apiBase, startDate, endDate, higherGeographyIdentifier, taxonGroupExternalKey, limit, offset }) {
+  async function fetchTaxonStatsInRange({ apiBase, startDate, endDate, higherGeographyIdentifier, taxonGroupExternalKey, sort, limit, offset }) {
     const resourceUrl = resolveResourceUrl$7(apiBase, TAXON_STATS_RESOURCE$3);
     const pageUrl = new URL(resourceUrl.toString());
     pageUrl.searchParams.set('first_record_date[gte]', startDate);
@@ -3391,7 +3407,7 @@ div[data-tanvis-controls="species-selector"] {
     pageUrl.searchParams.set('taxon_rank__rank[eq]', 'Species');
     pageUrl.searchParams.set('limit', String(limit));
     pageUrl.searchParams.set('offset', String(offset));
-    pageUrl.searchParams.set('sort', '-first_record_date');
+    pageUrl.searchParams.set('sort', sort === 'records' ? '-occurrences_count' : sort === 'tetrads' ? '-grid_square_count' : sort === 'group' ? 'taxon_group__title' : '-first_record_date');
 
     const payload = await fetchJson$a(pageUrl.toString(), 'Failed to load taxon-stats');
     return payload || {};
@@ -3588,7 +3604,6 @@ div[data-tanvis-controls="species-selector"] {
   const DEFAULT_PAGE_SIZE$2 = 10;
   const DEFAULT_TOP_N = 50;
   const columns$1 = [
-    
     { title: 'Scientific', field: 'scientificName', formatter: 'html', headerSort: false },
     { title: 'Vernacular', field: 'commonName', headerSort: false },
     { title: 'Group', field: 'taxonGroup', headerSort: false },
@@ -3700,6 +3715,7 @@ div[data-tanvis-controls="species-selector"] {
               taxonGroupExternalKey,
               pageNumber,
               pageSize: requestedPageSize,
+              sort: renderConfig.sort,
               labelMode: labelModeForRequest
             });
 
@@ -3883,7 +3899,7 @@ div[data-tanvis-controls="species-selector"] {
     return window.Tabulator || null;
   }
 
-  async function buildIncreasingSpeciesRecordsPage({ apiBase, topN, higherGeographyIdentifier, taxonGroupExternalKey, pageNumber, pageSize, labelMode = 'scientific' }) {
+  async function buildIncreasingSpeciesRecordsPage({ apiBase, topN, higherGeographyIdentifier, taxonGroupExternalKey, pageNumber, pageSize, sort, labelMode = 'scientific' }) {
     const effectiveTopN = Math.max(0, Math.floor(topN ?? DEFAULT_TOP_N));
     const effectivePageSize = Math.max(1, Math.floor(pageSize ?? DEFAULT_PAGE_SIZE$2));
     const offset = (pageNumber - 1) * effectivePageSize;
@@ -3899,7 +3915,7 @@ div[data-tanvis-controls="species-selector"] {
     }
 
     const limit = Math.min(effectivePageSize, Math.max(1, effectiveTopN - offset));
-    const payload = await fetchTaxonStats$1({ apiBase, topN, higherGeographyIdentifier, taxonGroupExternalKey, limit, offset });
+    const payload = await fetchTaxonStats$1({ apiBase, topN, higherGeographyIdentifier, taxonGroupExternalKey, sort, limit, offset });
     const taxonStatsRows = getListData$5(payload);
     const rankedRows = taxonStatsRows.slice(0, effectiveTopN - offset);
 
@@ -3966,7 +3982,7 @@ div[data-tanvis-controls="species-selector"] {
     }
   }
 
-  async function fetchTaxonStats$1({ apiBase, topN, higherGeographyIdentifier, taxonGroupExternalKey, limit, offset }) {
+  async function fetchTaxonStats$1({ apiBase, topN, higherGeographyIdentifier, taxonGroupExternalKey, sort, limit, offset }) {
     const resourceUrl = resolveResourceUrl$6(apiBase, TAXON_STATS_RESOURCE$2);
     const pageUrl = new URL(resourceUrl.toString());
     pageUrl.searchParams.set('include', 'taxon, taxon-group, taxon-rank');
@@ -3976,7 +3992,7 @@ div[data-tanvis-controls="species-selector"] {
       pageUrl.searchParams.set('taxon_group__external_key[eq]', taxonGroupExternalKey);
     }
     pageUrl.searchParams.set('taxon_rank__rank[eq]', 'Species');
-    pageUrl.searchParams.set('sort', '-frequency_trend');
+    pageUrl.searchParams.set('sort', sort === 'records' ? '-occurrences_count' : sort === 'tetrads' ? '-grid_square_count' : sort === 'group' ? 'taxon_group__title' : '-frequency_trend');
     pageUrl.searchParams.set('limit', String(limit));
     pageUrl.searchParams.set('offset', String(offset));
 
@@ -4252,6 +4268,7 @@ div[data-tanvis-controls="species-selector"] {
               taxonGroupExternalKey,
               pageNumber,
               pageSize: requestedPageSize,
+              sort: renderConfig.sort,
               labelMode: labelModeForRequest
             });
 
@@ -4416,7 +4433,7 @@ div[data-tanvis-controls="species-selector"] {
     return { container, table };
   }
 
-  async function buildSpeciesAbsentTableRecordsPage({ apiBase, year, higherGeographyIdentifier, taxonGroupExternalKey, pageNumber, pageSize, labelMode = 'scientific' }) {
+  async function buildSpeciesAbsentTableRecordsPage({ apiBase, year, higherGeographyIdentifier, taxonGroupExternalKey, pageNumber, pageSize, sort, labelMode = 'scientific' }) {
     const cutoffDate = `${year}-12-31`;
     const offset = (pageNumber - 1) * pageSize;
     const payload = await fetchTaxonStatsAbsentSince({
@@ -4424,6 +4441,7 @@ div[data-tanvis-controls="species-selector"] {
       cutoffDate,
       higherGeographyIdentifier,
       taxonGroupExternalKey,
+      sort,
       limit: pageSize,
       offset
     });
@@ -4453,7 +4471,7 @@ div[data-tanvis-controls="species-selector"] {
     };
   }
 
-  async function fetchTaxonStatsAbsentSince({ apiBase, cutoffDate, higherGeographyIdentifier, taxonGroupExternalKey, limit, offset }) {
+  async function fetchTaxonStatsAbsentSince({ apiBase, cutoffDate, higherGeographyIdentifier, taxonGroupExternalKey, sort, limit, offset }) {
     const resourceUrl = resolveResourceUrl$5(apiBase, TAXON_STATS_RESOURCE$1);
     const pageUrl = new URL(resourceUrl.toString());
     pageUrl.searchParams.set('last_record_date[lte]', cutoffDate);
@@ -4466,7 +4484,7 @@ div[data-tanvis-controls="species-selector"] {
     }
     pageUrl.searchParams.set('limit', String(limit));
     pageUrl.searchParams.set('offset', String(offset));
-    pageUrl.searchParams.set('sort', '-last_record_date');
+    pageUrl.searchParams.set('sort', sort === 'records' ? '-occurrences_count' : sort === 'tetrads' ? '-grid_square_count' : sort === 'group' ? 'taxon_group__title' : '-last_record_date');
 
     const payload = await fetchJson$8(pageUrl.toString(), 'Failed to load taxon-stats');
     return payload || {};

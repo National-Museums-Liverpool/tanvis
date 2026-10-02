@@ -123,6 +123,7 @@ export function createSpeciesAbsentTableAdapter() {
             taxonGroupExternalKey,
             pageNumber,
             pageSize: requestedPageSize,
+            sort: renderConfig.sort,
             labelMode: labelModeForRequest
           });
 
@@ -287,7 +288,7 @@ function createTableContainer({ Tabulator, pageSize, requestPage, element, loadI
   return { container, table };
 }
 
-async function buildSpeciesAbsentTableRecordsPage({ apiBase, year, higherGeographyIdentifier, taxonGroupExternalKey, pageNumber, pageSize, labelMode = 'scientific' }) {
+async function buildSpeciesAbsentTableRecordsPage({ apiBase, year, higherGeographyIdentifier, taxonGroupExternalKey, pageNumber, pageSize, sort, labelMode = 'scientific' }) {
   const cutoffDate = `${year}-12-31`;
   const offset = (pageNumber - 1) * pageSize;
   const payload = await fetchTaxonStatsAbsentSince({
@@ -295,6 +296,7 @@ async function buildSpeciesAbsentTableRecordsPage({ apiBase, year, higherGeograp
     cutoffDate,
     higherGeographyIdentifier,
     taxonGroupExternalKey,
+    sort,
     limit: pageSize,
     offset
   });
@@ -324,7 +326,7 @@ async function buildSpeciesAbsentTableRecordsPage({ apiBase, year, higherGeograp
   };
 }
 
-async function fetchTaxonStatsAbsentSince({ apiBase, cutoffDate, higherGeographyIdentifier, taxonGroupExternalKey, limit, offset }) {
+async function fetchTaxonStatsAbsentSince({ apiBase, cutoffDate, higherGeographyIdentifier, taxonGroupExternalKey, sort, limit, offset }) {
   const resourceUrl = resolveResourceUrl(apiBase, TAXON_STATS_RESOURCE);
   const pageUrl = new URL(resourceUrl.toString());
   pageUrl.searchParams.set('last_record_date[lte]', cutoffDate);
@@ -337,7 +339,7 @@ async function fetchTaxonStatsAbsentSince({ apiBase, cutoffDate, higherGeography
   }
   pageUrl.searchParams.set('limit', String(limit));
   pageUrl.searchParams.set('offset', String(offset));
-  pageUrl.searchParams.set('sort', '-last_record_date');
+  pageUrl.searchParams.set('sort', sort === 'records' ? '-occurrences_count' : sort === 'tetrads' ? '-grid_square_count' : sort === 'group' ? 'taxon_group__title' : '-last_record_date');
 
   const payload = await fetchJson(pageUrl.toString(), 'Failed to load taxon-stats');
   return payload || {};
