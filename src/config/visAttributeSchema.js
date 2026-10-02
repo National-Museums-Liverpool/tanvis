@@ -795,7 +795,9 @@ const VIS_TYPE_DESCRIPTIONS = {
   'species-absent-table': `A table showing species not recorded since a given year. The table can 
     be filtered by geographic region and taxon group, either directly or via a linked control block.`,
   'records-table': `A table showing records for a species. The table can be filtered by geographic 
-    region either directly or via a linked control block.`,
+    region either directly or via a linked control block. This table can also be linked to a species map 
+    visualisation (via the data-vis-taxon-id-source attribute) so that it responds to the user clicking on
+    a tetrad dot in the map. When that happens, the table will update to show records for the selected tetrad. `,
   'species-name-block': `A block visualisation showing the name of a species. Some default
     styling is applied to the name, but it can be overridden with CSS. The block can show either
     the scientific name or the vernacular name first, and can optionally show the other name in parentheses.
