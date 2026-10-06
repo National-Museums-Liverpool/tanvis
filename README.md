@@ -1,6 +1,6 @@
 # tanvis
 
-Browser-first visualisation library scaffold.
+Browser-first visualisation library to display data and information from TanHub.
 
 ## Examples
 An index of example pages demonstrating the visualisations can be found at [examples/examples-index.html](examples/examples-index.html).
@@ -15,6 +15,7 @@ An index of example pages demonstrating the visualisations can be found at [exam
 ## Scripts
 
 - `npm run build` - build the browser bundle
+- `npm run build:wp` - build the WordPress bundle
 - `npm run build:watch` - rebuild while developing
 - `npm run test:unit` - run unit tests with Vitest
 - `npm run test:e2e` - run browser tests with Playwright
@@ -306,5 +307,3 @@ The table containing the text in the species-info-table can be targetted with th
   /* Your styles here */
 }
 ```
-
-
