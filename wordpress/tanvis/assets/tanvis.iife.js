@@ -750,6 +750,13 @@ var Tanvis = (function (exports) {
       used as the URL for the link. The value of <link-url> must include the string '<tvk>'
       which will be replaced with the actual taxon identifier when the link is rendered.
       If you want to specify multiple links, separate them with '^^^' (three carets).`
+    }),
+    downloadButton: createRule({
+      key: 'downloadButton',
+      datasetName: 'visDownloadButton',
+      parseAndValidate: parseAndValidateBoolean,
+      defaultValue: false,
+      info: `Indicates whether the download button should be displayed.`
     })
   };
 
@@ -758,8 +765,8 @@ var Tanvis = (function (exports) {
   const VIS_TYPE_RULE_SETS = {
     'control-block': ['region', 'groupId', 'language','controlElements', 'showDataOptsToggle', 'showDataOptsExpanded'],
     'species-identifier': ['taxonId'],
-    'species-map': ['taxonId', 'taxonIdSource', 'control', 'region', 'hectads', 'mapType', 'boundaries', 'dotShape', 'dotColour', 'transformation', 'dotShape', 'expand', 'width', 'height'],
-    'grid-stats-map': ['gridStatsType', 'control', 'region', 'hectads', 'mapType', 'boundaries', 'dotShape', 'dotColour', 'transformation', 'expand', 'width', 'height'],
+    'species-map': ['taxonId', 'taxonIdSource', 'control', 'region', 'downloadButton', 'hectads', 'mapType', 'boundaries', 'dotShape', 'dotColour', 'transformation', 'expand', 'width', 'height'],
+    'grid-stats-map': ['gridStatsType', 'control', 'region', 'downloadButton', 'hectads', 'mapType', 'boundaries', 'dotShape', 'dotColour', 'transformation', 'expand', 'width', 'height'],
     'temporal-year-chart': ['taxonId', 'temporalStatsType', 'taxonIdSource', 'chartType', 'recordsColour', 'squaresColour','startYear', 'endYear', 'region', 'control', 'expand', 'width', 'height'],
     'new-species-table': ['startDate', 'endDate', 'region', 'groupId', 'language','control', 'pageSize', 'sort', 'link'],
     'increasing-species-table': ['topN', 'region', 'groupId', 'language','control', 'pageSize', 'sort', 'link'],
@@ -5922,6 +5929,7 @@ div[data-tanvis-controls="species-selector"] {
       map,
       activeMapType,
       showMapTypeSwitch: shouldShowMapTypeSwitch,
+      showDownloadButton: config.downloadButton === true,
       onMapTypeChange: (nextMapType) => {
         element.dataset.tanvisSpeciesMapActiveMapType = nextMapType;
         if (hostElement) {
@@ -5971,7 +5979,7 @@ div[data-tanvis-controls="species-selector"] {
     const controls = ensureMapControlsContainer(hostElement);
     clearElement(controls);
 
-    const showDownloadButton = options.activeMapType === 'static';
+    const showDownloadButton = options.showDownloadButton && options.activeMapType === 'static';
 
     if (!options.showMapTypeSwitch && !showDownloadButton) {
       controls.remove();
@@ -6384,6 +6392,7 @@ div[data-tanvis-controls="species-selector"] {
       selectedMapTypeKey,
       showMapTypeSwitch,
       showGridStatsSwitch,
+      showDownloadButton: config.downloadButton === true,
       onMapTypeChange: (nextMapType) => {
         mapElement.dataset.tanvisGridStatsActiveMapType = nextMapType;
         if (mapElement.parentElement) {
@@ -6414,7 +6423,7 @@ div[data-tanvis-controls="species-selector"] {
     const controls = ensureMapControlsContainer(hostElement);
     clearElement(controls);
 
-    const showDownloadButton = options.activeMapType === 'static';
+    const showDownloadButton = options.showDownloadButton && options.activeMapType === 'static';
 
     if (!options.showMapTypeSwitch && !options.showGridStatsSwitch && !showDownloadButton) {
       controls.remove();
@@ -8771,7 +8780,7 @@ div[data-tanvis-controls="species-selector"] {
     rules
       .filter((rule) => rule.key !== 'type')
       .forEach((rule) => {
-          exampleHtml = `${exampleHtml} ${getDataAttributeName(rule)}="${rule.defaultValue || rule.exampleValue || ''}"`;
+          exampleHtml = `${exampleHtml} ${getDataAttributeName(rule)}="${rule.defaultValue ?? rule.exampleValue ?? ''}"`;
         });
     exampleHtml = `${exampleHtml}></div>`;
 
@@ -8792,7 +8801,7 @@ div[data-tanvis-controls="species-selector"] {
       .filter((rule) => rule.key !== 'type')
       .forEach((rule) => {
         const name = getDataAttributeName(rule).replace(/^data-vis-/, '');
-        exampleShortcode = `${exampleShortcode} ${name}="${rule.defaultValue || rule.exampleValue || ''}"`;
+        exampleShortcode = `${exampleShortcode} ${name}="${rule.defaultValue ?? rule.exampleValue ?? ''}"`;
       });
     exampleShortcode = `${exampleShortcode}]`;
 

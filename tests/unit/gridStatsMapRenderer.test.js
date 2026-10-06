@@ -217,7 +217,8 @@ describe('renderGridStatsMap', () => {
       type: 'grid-stats-map',
       mapType: 'switch',
       region: 'vc-58',
-      gridStatsType: 'switch'
+      gridStatsType: 'switch',
+      downloadButton: true
     });
 
     await new Promise((resolve) => setTimeout(resolve, 0));

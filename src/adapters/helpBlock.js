@@ -38,7 +38,7 @@ function createVisTypeSection(visType) {
   rules
     .filter((rule) => rule.key !== 'type')
     .forEach((rule) => {
-        exampleHtml = `${exampleHtml} ${getDataAttributeName(rule)}="${rule.defaultValue || rule.exampleValue || ''}"`;
+        exampleHtml = `${exampleHtml} ${getDataAttributeName(rule)}="${rule.defaultValue ?? rule.exampleValue ?? ''}"`;
       });
   exampleHtml = `${exampleHtml}></div>`;
 
@@ -59,7 +59,7 @@ function createVisTypeSection(visType) {
     .filter((rule) => rule.key !== 'type')
     .forEach((rule) => {
       const name = getDataAttributeName(rule).replace(/^data-vis-/, '');
-      exampleShortcode = `${exampleShortcode} ${name}="${rule.defaultValue || rule.exampleValue || ''}"`;
+      exampleShortcode = `${exampleShortcode} ${name}="${rule.defaultValue ?? rule.exampleValue ?? ''}"`;
     });
   exampleShortcode = `${exampleShortcode}]`;
 

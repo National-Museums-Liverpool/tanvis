@@ -155,6 +155,7 @@ function renderMapBackend(mapElement, config, hostElement) {
     selectedMapTypeKey,
     showMapTypeSwitch,
     showGridStatsSwitch,
+    showDownloadButton: config.downloadButton === true,
     onMapTypeChange: (nextMapType) => {
       mapElement.dataset.tanvisGridStatsActiveMapType = nextMapType;
       if (mapElement.parentElement) {
@@ -185,7 +186,7 @@ function renderMapControlGroup(mapElement, options) {
   const controls = ensureMapControlsContainer(hostElement);
   clearElement(controls);
 
-  const showDownloadButton = options.activeMapType === 'static';
+  const showDownloadButton = options.showDownloadButton && options.activeMapType === 'static';
 
   if (!options.showMapTypeSwitch && !options.showGridStatsSwitch && !showDownloadButton) {
     controls.remove();

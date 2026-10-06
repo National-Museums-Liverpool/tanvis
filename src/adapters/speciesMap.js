@@ -325,6 +325,7 @@ function renderMapBackend(element, config, hostElement, previousRows = []) {
     map,
     activeMapType,
     showMapTypeSwitch: shouldShowMapTypeSwitch,
+    showDownloadButton: config.downloadButton === true,
     onMapTypeChange: (nextMapType) => {
       element.dataset.tanvisSpeciesMapActiveMapType = nextMapType;
       if (hostElement) {
@@ -374,7 +375,7 @@ function renderMapControlGroup(mapElement, options) {
   const controls = ensureMapControlsContainer(hostElement);
   clearElement(controls);
 
-  const showDownloadButton = options.activeMapType === 'static';
+  const showDownloadButton = options.showDownloadButton && options.activeMapType === 'static';
 
   if (!options.showMapTypeSwitch && !showDownloadButton) {
     controls.remove();

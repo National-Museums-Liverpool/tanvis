@@ -740,6 +740,13 @@ const RULES = {
       used as the URL for the link. The value of <link-url> must include the string '<tvk>'
       which will be replaced with the actual taxon identifier when the link is rendered.
       If you want to specify multiple links, separate them with '^^^' (three carets).`
+  }),
+  downloadButton: createRule({
+    key: 'downloadButton',
+    datasetName: 'visDownloadButton',
+    parseAndValidate: parseAndValidateBoolean,
+    defaultValue: false,
+    info: `Indicates whether the download button should be displayed.`
   })
 };
 
@@ -748,8 +755,8 @@ const RULES = {
 const VIS_TYPE_RULE_SETS = {
   'control-block': ['region', 'groupId', 'language','controlElements', 'showDataOptsToggle', 'showDataOptsExpanded'],
   'species-identifier': ['taxonId'],
-  'species-map': ['taxonId', 'taxonIdSource', 'control', 'region', 'hectads', 'mapType', 'boundaries', 'dotShape', 'dotColour', 'transformation', 'dotShape', 'expand', 'width', 'height'],
-  'grid-stats-map': ['gridStatsType', 'control', 'region', 'hectads', 'mapType', 'boundaries', 'dotShape', 'dotColour', 'transformation', 'expand', 'width', 'height'],
+  'species-map': ['taxonId', 'taxonIdSource', 'control', 'region', 'downloadButton', 'hectads', 'mapType', 'boundaries', 'dotShape', 'dotColour', 'transformation', 'expand', 'width', 'height'],
+  'grid-stats-map': ['gridStatsType', 'control', 'region', 'downloadButton', 'hectads', 'mapType', 'boundaries', 'dotShape', 'dotColour', 'transformation', 'expand', 'width', 'height'],
   'temporal-year-chart': ['taxonId', 'temporalStatsType', 'taxonIdSource', 'chartType', 'recordsColour', 'squaresColour','startYear', 'endYear', 'region', 'control', 'expand', 'width', 'height'],
   'new-species-table': ['startDate', 'endDate', 'region', 'groupId', 'language','control', 'pageSize', 'sort', 'link'],
   'increasing-species-table': ['topN', 'region', 'groupId', 'language','control', 'pageSize', 'sort', 'link'],
