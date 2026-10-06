@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Tanvis
  * Description: Embed Tanvis biological record visualisations using the [tanvis] shortcode.
- * Version: 0.4.0
+ * Version: 1.0.0
  * License: GPL-3.0-only
  * Text Domain: tanvis
  */
@@ -11,7 +11,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-const TANVIS_WP_VERSION     = '0.4.0';
+const TANVIS_WP_VERSION     = '1.0.0';
 const TANVIS_WP_DEFAULT_API = 'https://tanhub.biodiverseit.co.uk/api/v1';
 const TANVIS_WP_OPTION      = 'tanvis_api_base';
 
