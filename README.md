@@ -1,11 +1,11 @@
-# tanvis
+﻿# tanvis
 
 Browser-first visualisation library to display data and information from TanHub.
 
 ## Examples
 An index of example pages demonstrating the visualisations can be found at [examples/examples-index.html](examples/examples-index.html).
 
-## Goals
+## Architectural overview
 
 - Plain JavaScript source code
 - Rollup-built browser bundle
@@ -44,203 +44,250 @@ console.log(window.Tanvis.version);
 
 ## Renderers
 
-Tanvis currently registers these renderer types:
+Tanvis registers the following renderer types. Add an element with class `tanvis` and `data-vis-type="<type>"` and call `Tanvis.init()`.
 
-- `control-block`
-- `new-species-table`
-- `increasing-species-table`
-- `species-absent-table`
-- `species-map`
-- `grid-stats-map`
-- `temporal-year-chart`
+| Type | Purpose |
+| --- | --- |
+| `control-block` | A control block that allows users to set region (vice county), taxon group, language (vernacular or scientific) and species. Other visualisations can subscribe to this control and respond to user actions. |
+| `species-identifier` | Hidden element that supplies a taxon id to other visualisations. This provides a place where the taxon id can be set once and all visualisations on a page that subscribe to it, will respond to the value set. |
+| `species-map` | Distribution map for a single taxon. |
+| `grid-stats-map` | Map of grid-square statistics (species, records or rarity). |
+| `temporal-year-chart` | Bar or line chart showing records / squares per year for a taxon. |
+| `new-species-table` | Species recorded for the first time within a date range. |
+| `increasing-species-table` | Top species by frequency trend. |
+| `species-absent-table` | Species not recorded since a given year. |
+| `records-table` | Occurrence records for a taxon (and optionally a given tetrad). |
+| `species-name-block` | Scientific and/or vernacular names of a taxon. |
+| `species-remarks-block` | Displays the remarks for a taxon that are stored in TabHub. |
+| `species-info-block` | Conservation status and record summary for a taxon. |
+| `species-image` | Image (with caption, attribution, licence) for a taxon. |
+| `general-info-block` | Fixed information text describing the data sources. |
+| `help-block` | Generated documentation of every renderer's data attributes, with example HTML and shortcodes. |
 
-### Species Map Renderer (BRC Atlas)
+The authoritative list of attributes, defaults and descriptions for each renderer is defined in `src/config/visAttributeSchema.js` and is displayed by the `help-block` renderer (see `examples/help.html` and `examples/interactive.html`).
 
-Use `data-vis-type="species-map"`.
+### Common behaviour
 
-Supported attributes:
+- **API base**: all renderers use `window.TANVIS_CONFIG.apiBase` if set, otherwise `https://tanhub.biodiverseit.co.uk/api/v1`.
+- **Region**: `data-vis-region` is one of `vc-58`, `vc-59`, `vc-60`, `vc-all` (default `vc-all`).
+- **Control block**: `data-vis-control="<id>"` subscribes a visualisation to a `control-block` element with that id. The control block's current selection takes precedence over the visualisation's own `data-vis-region`, `data-vis-groupid` and `data-vis-language`, both initially and on later changes. Controls communicate with `region-change`, `taxon-group-change` and `language-change` events.
+- **Taxon source**: `data-vis-taxon-id-source="<id>"` subscribes a taxon-based visualisation to `taxon-identified` events (`detail.speciesId`) raised by another element - a `species-identifier`, a table (on row click) or a control block species search. `data-vis-taxonid` sets the initial taxon.
+- **Sizing**: `data-vis-expand` (`true`/`false`), `data-vis-width` and `data-vis-height` (pixels) are available on maps, the chart and the image.
+- **Invalid attributes**: values are validated against the schema and an error message is reported in the page for invalid or missing required attributes.
 
-- `data-vis-source`: optional source string passed to `setIdentfier(...)`
-- `data-vis-area`: one of `vc-58`, `vc-59`, `vc-60`, `vc-all` (default: `vc-all`)
-- `data-vis-control`: optional id of a `control-block` element used to drive area changes
-- `data-vis-hectads`: `true`/`false` to include hectad grid (default: `true`)
-- `data-vis-expand`: `true`/`false` (optional)
-- `data-vis-width`: positive number in pixels (optional)
+### Control Block (`control-block`)
 
-A separate `control-block` visualisation can render radio options (`vc58`, `vc59`, `vc60`, `all`) and any visualisation with `data-vis-control` set to that block id responds to selections.
+Attributes: `data-vis-region`, `data-vis-groupid`, `data-vis-language` (`scientific`/`vernacular`), `data-vis-control-elements` (space-separated subset of `region groups language species`, default all four), `data-vis-show-data-opts-toggle` and `data-vis-show-data-opts-expanded` (both default `true`).
+
+The block must have an `id`. It renders region radio buttons, a taxon-group dropdown (first option `All groups`; Scientific/Vernacular radio buttons switch the labels between the `title` and `friendly` fields) and a species search. The section can be collapsed with the data options toggle.
 
 ```html
-<script src="https://d3js.org/d3.v7.min.js"></script>
-<script src="https://cdn.jsdelivr.net/gh/biologicalrecordscentre/brc-atlas/dist/brcatlas.min.umd.js"></script>
-<link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/gh/biologicalrecordscentre/brc-atlas/dist/brcatlas.umd.css">
+<div id="vc-control" class="tanvis" data-vis-type="control-block"></div>
+```
 
-<div
-  id="vc-control"
-  class="tanvis"
-  data-vis-type="control-block"
-  data-vis-area="vc-all"
-></div>
+### Species Identifier (`species-identifier`)
 
+Renders nothing. Raises a `taxon-identified` event on load using the `taxon-id` URL query parameter, or its `data-vis-taxonid` attribute if the parameter is absent. Other visualisations subscribe with `data-vis-taxon-id-source`.
+
+```html
+<div id="species" class="tanvis" data-vis-type="species-identifier" data-vis-taxonid="NBNORG0000008963"></div>
+```
+
+### Species Map (`species-map`)
+
+Attributes: `data-vis-taxonid`, `data-vis-taxon-id-source`, `data-vis-control`, `data-vis-region`, `data-vis-map-type`, `data-vis-hectads`, `data-vis-boundaries`, `data-vis-download-button`, `data-vis-dot-shape`, `data-vis-dot-colour`, `data-vis-transformation`, `data-vis-expand`, `data-vis-width`, `data-vis-height`.
+
+- `data-vis-map-type`: `static` (classic atlas map, default), `leaflet` (interactive) or `switch` (user can switch between the two).
+- `data-vis-hectads`: hectad grid lines (static maps only). 
+- `data-vis-boundaries`: VC boundaries (Leaflet maps only; always shown on the static map).
+- `data-vis-download-button`: `true` shows a download button on static maps (default `false`).
+- `data-vis-dot-shape`: `circle` or `square`. 
+- `data-vis-dot-colour`: any CSS colour, or `viridis` / `cividis` to colour dots by record count. 
+- `data-vis-transformation`: applies a transformation to the metric used to colour the dots. This is useful to mitigate the skewing effect of outliers (e.g. extreme high record or species counts for a single tetrad): `none`, `deciles`, `sqrt`, `cbrt`, `log10` or `log`.
+
+Occurrences are fetched from the TanHub `occurrences` API for the taxon and region. Clicking a tetrad raises a `tetrad-clicked` event (used by `records-table`). Requires D3 and BRC Atlas (plus Leaflet for Leaflet maps) before Tanvis.
+
+```html
 <div
   class="tanvis"
   data-vis-type="species-map"
-  data-vis-source="/example-hectads-1.csv"
-  data-vis-area="vc-all"
-  data-vis-control="vc-control"
-  data-vis-hectads="true"
-  data-vis-width="600"
+  data-vis-taxonid="NBNORG0000008963"
+  data-vis-map-type="switch"
+  data-vis-download-button="true"
+  data-vis-dot-colour="viridis"
+  data-vis-transformation="deciles"
 ></div>
 ```
 
-The static map renderer calls `brcatlas.svgMap(...)` and then `setIdentfier(...)` and `redrawMap()` when available.
+### Grid Stats Map (`grid-stats-map`)
 
-`control-block` elements must have an `id` attribute. Any visualisation with `data-vis-control="<id>"` subscribes to that block.
-
-The control block currently renders VC selection controls plus a taxon-group dropdown populated from `taxon-groups`, with Scientific/Vernacular radio buttons that switch the dropdown labels between the `title` and `friendly` fields. The first dropdown option is `All groups`, and option values map to `external_key`.
-
-When a visualisation is subscribed to a control block, the control block's current `data-vis-area` value takes precedence over the visualisation's own `data-vis-area` both on initial render and on later control changes.
-
-### Species Map / Grid Stats Map Renderers
-
-Use `data-vis-type="species-map"` or `data-vis-type="grid-stats-map"`.
-
-Supported attributes:
-
-- `data-vis-year`: required cutoff year; rows with `last_record_date` on or before this year are included
-- `data-vis-map-type`: optional map backend selector; use `static` or `leaflet` (defaults to `static`)
-- `data-vis-source`: optional API base URL; defaults to `/api/v1`
-- `data-vis-control`: optional id of a `control-block`; when set, VC selections filter `taxon-stats` by `geographic_region_identifier[eq]`
-
-Include Tabulator before Tanvis when using these renderers.
+Uses the same map, control, dot and sizing attributes as the species map (including `data-vis-download-button`), plus `data-vis-grid-stats-type`: `species` (default), `records`, `rarity` or `switch` (user can switch statistic). It has no taxon attributes and raises no events. Data is fetched from `grid-square-stats` for the region.
 
 ```html
-<link rel="stylesheet" href="https://unpkg.com/tabulator-tables@6.3.0/dist/css/tabulator.min.css" />
-<script src="https://unpkg.com/tabulator-tables@6.3.0/dist/js/tabulator.min.js"></script>
-
-<div
+<div 
   class="tanvis"
-  data-vis-type="species-map"
-  data-vis-year="2024"
-  data-vis-map-type="leaflet"
+  data-vis-type="grid-stats-map" 
+  data-vis-grid-stats-type="switch"
+  data-vis-dot-colour="viridis"
+  data-vis-transformation="deciles"
 ></div>
 ```
 
-Tanvis queries `taxon-stats` with `last_record_date[lte]` and `include=taxon`, renders the returned records in a table, and draws the map using the backend selected by `data-vis-map-type`.
+### Temporal Year Chart (`temporal-year-chart`)
 
-Rows emit `taxon-identified` events with `detail.speciesId` when clicked.
+Attributes: `data-vis-taxonid`, `data-vis-taxon-id-source`, `data-vis-control`, `data-vis-region`, `data-vis-temporal-stats-type` (`records`, `squares` or `switch`), `data-vis-chart-type` (`line` or `bar`), `data-vis-records-colour`, `data-vis-squares-colour`, `data-vis-start-year` (default `year-11`), `data-vis-end-year` (default `year-1`), `data-vis-expand`, `data-vis-width`, `data-vis-height`.
 
-### New Species Table Renderer
-
-Use `data-vis-type="new-species-table"`.
-
-Supported attributes:
-
-- `data-vis-start-date`: required start date in `YYYY-MM-DD` format
-- `data-vis-end-date`: optional end date in `YYYY-MM-DD` format; defaults to the current date when omitted
-- `data-vis-source`: optional API base URL; defaults to `/api/v1`
-
-Include Tabulator before Tanvis when using this renderer.
+Years may be given as `yyyy` or relative `year-n`. Data is fetched from `taxon-year-stats` and drawn with `brccharts.temporal`; the chart updates in place when the taxon or region changes. Requires D3 and BRC Charts before Tanvis.
 
 ```html
-<link rel="stylesheet" href="https://unpkg.com/tabulator-tables@6.3.0/dist/css/tabulator.min.css" />
-<script src="https://unpkg.com/tabulator-tables@6.3.0/dist/js/tabulator.min.js"></script>
-
 <div
   class="tanvis"
-  data-vis-type="new-species-table"
-  data-vis-start-date="2025-01-01"
+  data-vis-type="temporal-year-chart"
+  data-vis-taxonid="NBNORG0000008963"
+  data-vis-chart-type="bar"
+  data-vis-temporal-stats-type="switch"
+  data-vis-start-year="2000"
+  data-vis-end-year="year-1"
+  data-vis-region="vc-all"
+  data-vis-control="my-control-block"
+  data-vis-expand="false"
+  data-vis-width="800"
+  data-vis-height="600"
+></div>
+```
+
+### Species tables
+
+The three species tables use Tabulator with remote pagination (include Tabulator and its CSS before Tanvis). They query the TanHub `taxon-stats` API filtered to species rank, by region and, if set, taxon group, and show a summary caption above the table. They respond to `region-change`, `taxon-group-change` and `language-change` events from a linked control block, and raise `taxon-identified` events with `detail.speciesId` when a row is clicked.
+
+Shared attributes: `data-vis-region`, `data-vis-groupid`, `data-vis-language`, `data-vis-control`, `data-vis-page-size` (default `15`), `data-vis-sort` (`default`, `records`, `tetrads` or `group`) and `data-vis-link`.
+
+`data-vis-link` adds link columns using `<column-title>^^<link-text>^^<link-url>`; the URL must contain `<tvk>`, which is replaced by the taxon id. Separate multiple links with `^^^`.
+
+#### New Species Table (`new-species-table`)
+
+Additional attributes: `data-vis-start-date` and `data-vis-end-date` to specify the date range within which to list new species. Dates may be explicity specified as `yyyy-mm-dd` or relative as `month-n` or `year-n`. Lists species whose first record (`first_record_date`) falls in the date range, sorted by first record date, descending, by default.
+
+```html
+<div 
+  class="tanvis" 
+  data-vis-type="new-species-table" 
+  data-vis-start-date="2025-01-01" 
   data-vis-end-date="2025-12-31"
 ></div>
 ```
 
-Tanvis queries `taxon-stats` with `first_record_date[gte]`, `first_record_date[lte]`, and `include=taxon`, then renders the returned records as an HTML table.
+#### Increasing Species Table (`increasing-species-table`)
 
-### Increasing Species Table Renderer
-
-Use `data-vis-type="increasing-species-table"`.
-
-Supported attributes:
-
-- `data-vis-top-n`: optional positive integer; defaults to `50` when omitted
-- `data-vis-source`: optional API base URL; defaults to `/api/v1`
-- `data-vis-control`: optional id of a `control-block`; when set, VC selections filter `taxon-stats` by `geographic_region_identifier[eq]`
-
-Include Tabulator before Tanvis when using this renderer.
+Additional attribute: `data-vis-top-n` (default `50`). Lists the top N species ranked by `frequency_trend`, sorted by trend descending by default.
 
 ```html
-<link rel="stylesheet" href="https://unpkg.com/tabulator-tables@6.3.0/dist/css/tabulator.min.css" />
-<script src="https://unpkg.com/tabulator-tables@6.3.0/dist/js/tabulator.min.js"></script>
-
-<div
-  class="tanvis"
-  data-vis-type="increasing-species-table"
+<div 
+  class="tanvis" 
+  data-vis-type="increasing-species-table" 
   data-vis-top-n="25"
 ></div>
 ```
 
-Tanvis queries `taxon-stats` with `include=taxon`, reads the joined taxonomic fields from each row, ranks rows by the `frequency_trend` field, applies `data-vis-top-n`, and renders the result in descending `frequencyTrendScore` order.
+#### Species Absent Since Table (`species-absent-table`)
 
-When a subscribed control block selects `vc-58`, `vc-59`, or `vc-60`, Tanvis adds `geographic_region_identifier[eq]=58|59|60` to the `taxon-stats` request. When `all` is selected, that filter is omitted.
-
-### Species Absent Since Table Renderer
-
-Use `data-vis-type="species-absent-table"`.
-
-Supported attributes:
-
-- `data-vis-year`: required cutoff year. Species with `last_record_date` in or before this year are returned.
-- `data-vis-source`: optional API base URL; defaults to `/api/v1`
-- `data-vis-control`: optional id of a `control-block`; when set, VC selections filter `taxon-stats` by `geographic_region_identifier[eq]`
-
-Include Tabulator before Tanvis when using this renderer.
+Additional attribute: `data-vis-year` (default `2000`; `yyyy` or `year-n`). Lists species whose last record (`last_record_date`) falls on or before the end of that year; sorted by last record date, descending, by default.
 
 ```html
-<link rel="stylesheet" href="https://unpkg.com/tabulator-tables@6.3.0/dist/css/tabulator.min.css" />
-<script src="https://unpkg.com/tabulator-tables@6.3.0/dist/js/tabulator.min.js"></script>
-
 <div
-  class="tanvis"
-  data-vis-type="species-absent-table"
-  data-vis-year="2024"
+  class="tanvis"  
+  data-vis-type="species-absent-table"  
+  data-vis-year="2000"
 ></div>
 ```
 
-Tanvis queries `taxon-stats` with `last_record_date[lte]=YYYY-12-31` and `include=taxon`, then renders the returned records as an HTML table.
+### Records Table (`records-table`)
 
-Rows emit a `taxon-identified` event with `detail.speciesId` when clicked.
-
-### Temporal Year Chart Renderer
-
-Use `data-vis-type="temporal-year-chart"`.
-
-Supported attributes:
-
-- `data-vis-taxonid`: required taxon identifier string
-- `data-vis-start-year`: optional positive integer year
-- `data-vis-end-year`: optional positive integer year
-- `data-vis-source`: optional API base URL; defaults to `/api/v1`
-- `data-vis-linked-table`: optional id of a linked table element that emits `taxon-identified` events with `detail.speciesId`
-
-Include D3 and BRC Charts before Tanvis when using this renderer.
+Attributes: `data-vis-taxonid`, `data-vis-taxon-id-source`, `data-vis-control`, `data-vis-region`, `data-vis-page-size`. Uses Tabulator to list `occurrences` for the taxon and region. When `data-vis-taxon-id-source` points at a species map, clicking a tetrad on the map (`tetrad-clicked`) filters the table to that tetrad.
 
 ```html
-<script src="https://d3js.org/d3.v5.min.js"></script>
-<script src="https://cdn.jsdelivr.net/gh/biologicalrecordscentre/brc-charts/dist/brccharts.min.umd.js"></script>
-
-<div
-  class="tanvis"
-  data-vis-type="temporal-year-chart"
-  data-vis-taxonid="NHMSYS0001234567"
-  data-vis-start-year="1970"
-  data-vis-end-year="2024"
+<div 
+  class="tanvis" 
+  data-vis-type="records-table" 
+  data-vis-taxonid="NBNORG0000008963"
+  data-vis-taxon-id-source="species-map-1" 
+  data-vis-control="vc-control"
+  data-vis-region="vc-58"
 ></div>
 ```
 
-Tanvis queries `taxon-year-stats` for the selected `taxon_identifier`, reshapes the returned rows for `brccharts.temporal`, and renders a two-line yearly chart for `occurrences_count` and `grid_square_count`.
+### Species blocks
 
-When `data-vis-linked-table` is set, Tanvis listens for `taxon-identified` events on that element and rerenders the chart using the emitted `detail.speciesId`.
+All of these can take `data-vis-taxonid` or `data-vis-taxon-id-source`.
 
-See `examples/static-map.html`, `examples/shared-control-maps.html`, `examples/new-species-table.html`, `examples/increasing-species-table.html`, `examples/species-absent-table.html`, `examples/species-map.html`, `examples/grid-stats-map.html`, and `examples/temporal-year-chart.html` for ready-to-run pages.
+#### Species Name Block (`species-name-block`)
+
+Additional attributes: `data-vis-primary-name` (`scientific`/`vernacular`, default `scientific`), `data-vis-secondary-name` (`scientific`/`vernacular`/`none`, default `vernacular`, shown in parentheses) and `data-vis-authority` (default `true`; only applies when the scientific name is shown).
+
+```html
+<div
+  class="tanvis"
+  data-vis-type="species-name-block"
+  data-vis-taxonid="NBNORG0000008963"
+  data-vis-taxon-id-source="species"
+  data-vis-primary-name="scientific"
+  data-vis-secondary-name="vernacular"
+  data-vis-authority="true"
+></div>
+```
+
+#### Species Remarks Block (`species-remarks-block`)
+
+No additional attributes. Shows the taxon's remarks, or "No species remarks available."
+
+```html
+<div
+  class="tanvis"
+  data-vis-type="species-remarks-block"
+  data-vis-taxonid="NBNORG0000008994"
+  data-vis-taxon-id-source="species"
+></div>
+```
+
+#### Species Info Block (`species-info-block`)
+
+Additional attributes: `data-vis-control` and `data-vis-region`. Shows conservation status, number of records, number of grid squares and average records per year (for the last 10 years) for the region.
+
+```html
+<div
+  class="tanvis"
+  data-vis-type="species-info-block"
+  data-vis-taxonid="NBNORG0000008994"
+  data-vis-taxon-id-source="species"
+  data-vis-control="vc-control"
+  data-vis-region="vc-all"
+></div>
+```
+
+#### Species Image (`species-image`)
+
+Shows an image from the taxon's `taxa` media. Additional attributes: `data-vis-image-variant` (`none`, `large`, `thumbnail`), `data-vis-uuid` (a specific image, ignoring sort order and primary flag), `data-vis-show-image-caption`, `data-vis-show-image-attribution`, `data-vis-show-image-license` (all default `true`), `data-vis-expand`, `data-vis-width` and `data-vis-height`.
+
+```html
+<div
+  class="tanvis"
+  data-vis-type="species-image"
+  data-vis-taxonid="NBNORG0000008994"
+  data-vis-image-variant="large"
+  data-vis-show-image-caption="true"
+  data-vis-show-image-attribution="true"
+  data-vis-show-image-license="true"
+  data-vis-width="400"
+></div>
+```
+
+### Information blocks
+
+- `general-info-block`: fixed text describing the data sources.
+- `help-block`: lists every renderer with its description, example HTML and WordPress shortcode; the Example buttons dispatch `tanvis-example` and `tanvis-shortcode-example` events.
+
+### Examples
+See the pages in `examples/` (indexed by `examples/examples-index.html`) for ready-to-run examples, e.g. `species-map.html`, `grid-stats-map.html`, `new-species-table.html`, `increasing-species-table.html`, `species-absent-table.html`, `records-table.html`, `temporal-year-chart.html`, `species-image.html`, `species-info.html`, `species-account.html`, `table-linked-chart.html`, `table-linked-species-map.html` and `help.html`.
 
 ## Styling options
 ### Styling under the control of data attributes
