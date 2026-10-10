@@ -2587,12 +2587,12 @@ div[data-tanvis-controls="species-selector"] {
   }
 
   async function fetchTaxonGroups(apiBase) {
-    const resourceUrl = resolveResourceUrl$9(apiBase, 'taxon-groups');
-    const payload = await fetchJson$c(resourceUrl.toString(), 'Failed to load taxon groups');
-    return getListData$8(payload);
+    const resourceUrl = resolveResourceUrl$8(apiBase, 'taxon-groups');
+    const payload = await fetchJson$b(resourceUrl.toString(), 'Failed to load taxon groups');
+    return getListData$7(payload);
   }
 
-  function resolveResourceUrl$9(apiBase, resourceName) {
+  function resolveResourceUrl$8(apiBase, resourceName) {
     const baseUrl = new URL(apiBase, window.location.origin);
     const pathname = baseUrl.pathname.endsWith('/') ? baseUrl.pathname : `${baseUrl.pathname}/`;
     baseUrl.pathname = `${pathname}${resourceName}`;
@@ -2601,7 +2601,7 @@ div[data-tanvis-controls="species-selector"] {
     return baseUrl;
   }
 
-  async function fetchJson$c(url, defaultErrorMessage) {
+  async function fetchJson$b(url, defaultErrorMessage) {
     logApiRequest(url, { method: 'GET' });
 
     let response;
@@ -2620,7 +2620,7 @@ div[data-tanvis-controls="species-selector"] {
     return payload || {};
   }
 
-  function getListData$8(payload) {
+  function getListData$7(payload) {
     if (Array.isArray(payload)) {
       return payload;
     }
@@ -2846,7 +2846,7 @@ div[data-tanvis-controls="species-selector"] {
       return [];
     }
 
-    const resourceUrl = resolveResourceUrl$8(apiBase, 'taxa');
+    const resourceUrl = resolveResourceUrl$7(apiBase, 'taxa');
     const url = new URL(resourceUrl.toString());
     url.searchParams.set(`${searchField}[contains]`, query);
     if (taxonGroupExternalKey) {
@@ -2855,11 +2855,11 @@ div[data-tanvis-controls="species-selector"] {
     }
     url.searchParams.set('limit', String(SPECIES_SEARCH_LIMIT));
 
-    const payload = await fetchJson$b(url.toString(), 'Failed to search taxa');
-    return getListData$7(payload);
+    const payload = await fetchJson$a(url.toString(), 'Failed to search taxa');
+    return getListData$6(payload);
   }
 
-  function resolveResourceUrl$8(apiBase, resourceName) {
+  function resolveResourceUrl$7(apiBase, resourceName) {
     const baseUrl = new URL(apiBase, window.location.origin);
     const pathname = baseUrl.pathname.endsWith('/') ? baseUrl.pathname : `${baseUrl.pathname}/`;
     baseUrl.pathname = `${pathname}${resourceName}`;
@@ -2868,7 +2868,7 @@ div[data-tanvis-controls="species-selector"] {
     return baseUrl;
   }
 
-  async function fetchJson$b(url, defaultErrorMessage) {
+  async function fetchJson$a(url, defaultErrorMessage) {
     logApiRequest(url, { method: 'GET' });
 
     let response;
@@ -2887,7 +2887,7 @@ div[data-tanvis-controls="species-selector"] {
     return payload || {};
   }
 
-  function getListData$7(payload) {
+  function getListData$6(payload) {
     if (Array.isArray(payload)) {
       return payload;
     }
@@ -3445,7 +3445,7 @@ div[data-tanvis-controls="species-selector"] {
 
     //console.log('Fetched verified dates:', payload.data.map((row) => row.first_verified_record_date));
 
-    const rows = getListData$6(payload);
+    const rows = getListData$5(payload);
     const totalRows = getTotalCount$2(payload);
     const totalPages = Math.max(1, Math.ceil(totalRows / pageSize));
 
@@ -3496,9 +3496,9 @@ div[data-tanvis-controls="species-selector"] {
 
   async function fetchTaxonGroupsMap$2(apiBase) {
     try {
-      const resourceUrl = resolveResourceUrl$7(apiBase, 'taxon-groups');
-      const payload = await fetchJson$a(resourceUrl.toString(), 'Failed to load taxon groups');
-      const groups = getListData$6(payload);
+      const resourceUrl = resolveResourceUrl$6(apiBase, 'taxon-groups');
+      const payload = await fetchJson$9(resourceUrl.toString(), 'Failed to load taxon groups');
+      const groups = getListData$5(payload);
       const map = new Map();
       for (const group of groups) {
         if (group?.external_key) {
@@ -3512,7 +3512,7 @@ div[data-tanvis-controls="species-selector"] {
   }
 
   async function fetchTaxonStatsInRange({ apiBase, startDate, endDate, higherGeographyIdentifier, taxonGroupExternalKey, sort, limit, offset }) {
-    const resourceUrl = resolveResourceUrl$7(apiBase, TAXON_STATS_RESOURCE$3);
+    const resourceUrl = resolveResourceUrl$6(apiBase, TAXON_STATS_RESOURCE$3);
     const pageUrl = new URL(resourceUrl.toString());
     pageUrl.searchParams.set('first_record_date[gte]', startDate);
     pageUrl.searchParams.set('first_record_date[lte]', endDate);
@@ -3527,11 +3527,11 @@ div[data-tanvis-controls="species-selector"] {
     pageUrl.searchParams.set('offset', String(offset));
     pageUrl.searchParams.set('sort', sort === 'records' ? '-occurrences_count' : sort === 'tetrads' ? '-grid_square_count' : sort === 'group' ? 'taxon_group__title' : '-first_record_date');
 
-    const payload = await fetchJson$a(pageUrl.toString(), 'Failed to load taxon-stats');
+    const payload = await fetchJson$9(pageUrl.toString(), 'Failed to load taxon-stats');
     return payload || {};
   }
 
-  function resolveResourceUrl$7(apiBase, resourceName) {
+  function resolveResourceUrl$6(apiBase, resourceName) {
     const baseUrl = new URL(apiBase, window.location.origin);
     const pathname = baseUrl.pathname.endsWith('/') ? baseUrl.pathname : `${baseUrl.pathname}/`;
     baseUrl.pathname = `${pathname}${resourceName}`;
@@ -3540,7 +3540,7 @@ div[data-tanvis-controls="species-selector"] {
     return baseUrl;
   }
 
-  async function fetchJson$a(url, defaultErrorMessage) {
+  async function fetchJson$9(url, defaultErrorMessage) {
     logApiRequest(url, { method: 'GET' });
 
     let response;
@@ -3559,7 +3559,7 @@ div[data-tanvis-controls="species-selector"] {
     return payload || {};
   }
 
-  function getListData$6(payload) {
+  function getListData$5(payload) {
     if (Array.isArray(payload)) {
       return payload;
     }
@@ -3588,7 +3588,7 @@ div[data-tanvis-controls="species-selector"] {
       return Number(payload.last_row);
     }
 
-    return getListData$6(payload).length;
+    return getListData$5(payload).length;
   }
 
   function regionToHigherGeographyIdentifier$2(region) {
@@ -4035,7 +4035,7 @@ div[data-tanvis-controls="species-selector"] {
 
     const limit = Math.min(effectivePageSize, Math.max(1, effectiveTopN - offset));
     const payload = await fetchTaxonStats$1({ apiBase, topN, higherGeographyIdentifier, taxonGroupExternalKey, sort, limit, offset });
-    const taxonStatsRows = getListData$5(payload);
+    const taxonStatsRows = getListData$4(payload);
     const rankedRows = taxonStatsRows.slice(0, effectiveTopN - offset);
 
     return {
@@ -4086,9 +4086,9 @@ div[data-tanvis-controls="species-selector"] {
 
   async function fetchTaxonGroupsMap$1(apiBase) {
     try {
-      const resourceUrl = resolveResourceUrl$6(apiBase, 'taxon-groups');
-      const payload = await fetchJson$9(resourceUrl.toString(), 'Failed to load taxon groups');
-      const groups = getListData$5(payload);
+      const resourceUrl = resolveResourceUrl$5(apiBase, 'taxon-groups');
+      const payload = await fetchJson$8(resourceUrl.toString(), 'Failed to load taxon groups');
+      const groups = getListData$4(payload);
       const map = new Map();
       for (const group of groups) {
         if (group?.external_key) {
@@ -4102,7 +4102,7 @@ div[data-tanvis-controls="species-selector"] {
   }
 
   async function fetchTaxonStats$1({ apiBase, topN, higherGeographyIdentifier, taxonGroupExternalKey, sort, limit, offset }) {
-    const resourceUrl = resolveResourceUrl$6(apiBase, TAXON_STATS_RESOURCE$2);
+    const resourceUrl = resolveResourceUrl$5(apiBase, TAXON_STATS_RESOURCE$2);
     const pageUrl = new URL(resourceUrl.toString());
     pageUrl.searchParams.set('include', 'taxon, taxon-group, taxon-rank');
     const vcId = higherGeographyIdentifier === undefined ? null : higherGeographyIdentifier;
@@ -4115,10 +4115,10 @@ div[data-tanvis-controls="species-selector"] {
     pageUrl.searchParams.set('limit', String(limit));
     pageUrl.searchParams.set('offset', String(offset));
 
-    const payload = await fetchJson$9(pageUrl.toString(), 'Failed to load taxon-stats');
+    const payload = await fetchJson$8(pageUrl.toString(), 'Failed to load taxon-stats');
     return payload || {};
   }
-  function resolveResourceUrl$6(apiBase, resourceName) {
+  function resolveResourceUrl$5(apiBase, resourceName) {
     const baseUrl = new URL(apiBase, window.location.origin);
     const pathname = baseUrl.pathname.endsWith('/') ? baseUrl.pathname : `${baseUrl.pathname}/`;
     baseUrl.pathname = `${pathname}${resourceName}`;
@@ -4127,7 +4127,7 @@ div[data-tanvis-controls="species-selector"] {
     return baseUrl;
   }
 
-  async function fetchJson$9(url, defaultErrorMessage) {
+  async function fetchJson$8(url, defaultErrorMessage) {
     logApiRequest(url, { method: 'GET' });
 
     let response;
@@ -4146,7 +4146,7 @@ div[data-tanvis-controls="species-selector"] {
     return payload || {};
   }
 
-  function getListData$5(payload) {
+  function getListData$4(payload) {
     if (Array.isArray(payload)) {
       return payload;
     }
@@ -4566,7 +4566,7 @@ div[data-tanvis-controls="species-selector"] {
       offset
     });
 
-    const taxonStatsRows = getListData$4(payload);
+    const taxonStatsRows = getListData$3(payload);
     const totalRows = getTotalCount$1(payload);
     const totalPages = Math.max(1, Math.ceil(totalRows / pageSize));
 
@@ -4592,7 +4592,7 @@ div[data-tanvis-controls="species-selector"] {
   }
 
   async function fetchTaxonStatsAbsentSince({ apiBase, cutoffDate, higherGeographyIdentifier, taxonGroupExternalKey, sort, limit, offset }) {
-    const resourceUrl = resolveResourceUrl$5(apiBase, TAXON_STATS_RESOURCE$1);
+    const resourceUrl = resolveResourceUrl$4(apiBase, TAXON_STATS_RESOURCE$1);
     const pageUrl = new URL(resourceUrl.toString());
     pageUrl.searchParams.set('last_record_date[lte]', cutoffDate);
     pageUrl.searchParams.set('include', 'taxon,taxon-group,taxon-rank');
@@ -4606,11 +4606,11 @@ div[data-tanvis-controls="species-selector"] {
     pageUrl.searchParams.set('offset', String(offset));
     pageUrl.searchParams.set('sort', sort === 'records' ? '-occurrences_count' : sort === 'tetrads' ? '-grid_square_count' : sort === 'group' ? 'taxon_group__title' : '-last_record_date');
 
-    const payload = await fetchJson$8(pageUrl.toString(), 'Failed to load taxon-stats');
+    const payload = await fetchJson$7(pageUrl.toString(), 'Failed to load taxon-stats');
     return payload || {};
   }
 
-  function resolveResourceUrl$5(apiBase, resourceName) {
+  function resolveResourceUrl$4(apiBase, resourceName) {
     const baseUrl = new URL(apiBase, window.location.origin);
     const pathname = baseUrl.pathname.endsWith('/') ? baseUrl.pathname : `${baseUrl.pathname}/`;
     baseUrl.pathname = `${pathname}${resourceName}`;
@@ -4619,7 +4619,7 @@ div[data-tanvis-controls="species-selector"] {
     return baseUrl;
   }
 
-  async function fetchJson$8(url, defaultErrorMessage) {
+  async function fetchJson$7(url, defaultErrorMessage) {
     logApiRequest(url, { method: 'GET' });
 
     let response;
@@ -4638,7 +4638,7 @@ div[data-tanvis-controls="species-selector"] {
     return payload || {};
   }
 
-  function getListData$4(payload) {
+  function getListData$3(payload) {
     if (Array.isArray(payload)) {
       return payload;
     }
@@ -4667,7 +4667,7 @@ div[data-tanvis-controls="species-selector"] {
       return Number(payload.last_row);
     }
 
-    return getListData$4(payload).length;
+    return getListData$3(payload).length;
   }
 
   function formatVernacularName(taxon) {
@@ -4705,9 +4705,9 @@ div[data-tanvis-controls="species-selector"] {
 
   async function fetchTaxonGroupsMap(apiBase) {
     try {
-      const resourceUrl = resolveResourceUrl$5(apiBase, 'taxon-groups');
-      const payload = await fetchJson$8(resourceUrl.toString(), 'Failed to load taxon groups');
-      const groups = getListData$4(payload);
+      const resourceUrl = resolveResourceUrl$4(apiBase, 'taxon-groups');
+      const payload = await fetchJson$7(resourceUrl.toString(), 'Failed to load taxon groups');
+      const groups = getListData$3(payload);
       const map = new Map();
       for (const group of groups) {
         if (group?.external_key) {
@@ -4845,6 +4845,82 @@ div[data-tanvis-controls="species-selector"] {
     speciesAbsentTableAdapter.render(element, config);
   }
 
+  function resolveResourceUrl$3(apiBase, resourceName) {
+    const baseUrl = new URL(apiBase, window.location.origin);
+    const pathname = baseUrl.pathname.endsWith('/') ? baseUrl.pathname : `${baseUrl.pathname}/`;
+    baseUrl.pathname = `${pathname}${resourceName}`;
+    baseUrl.search = '';
+    baseUrl.hash = '';
+    return baseUrl;
+  }
+
+  async function fetchJson$6(url, defaultErrorMessage) {
+    logApiRequest(url, { method: 'GET' });
+
+    let response;
+    try {
+      response = await fetch(url);
+    } catch (cause) {
+      throw createApiError({ defaultMessage: defaultErrorMessage, cause });
+    }
+
+    const payload = await parseJsonSafe(response);
+
+    if (!response.ok) {
+      throw createApiError({ response, payload, defaultMessage: defaultErrorMessage });
+    }
+
+    return payload || {};
+  }
+
+  function getListData$2(payload) {
+    if (Array.isArray(payload)) {
+      return payload;
+    }
+
+    if (Array.isArray(payload?.data)) {
+      return payload.data;
+    }
+
+    if (Array.isArray(payload?.records)) {
+      return payload.records;
+    }
+
+    return [];
+  }
+
+  async function fetchTaxonInfo(apiBase, taxonIdentifier) {
+    if (!taxonIdentifier) {
+      return null;
+    }
+
+    const taxonUrl = resolveResourceUrl$3(apiBase, `taxa/${encodeURIComponent(taxonIdentifier)}`);
+    taxonUrl.searchParams.set('include', 'taxon-rank');
+    const payload = await fetchJson$6(taxonUrl.toString(), 'Failed to load taxon rank');
+    const taxon = Array.isArray(payload?.data)
+      ? payload.data[0]
+      : payload?.data ?? payload;
+
+    return {
+      rank: taxon?.taxon_rank__rank ?? null,
+      scientificName: taxon?.taxon__scientific_name ?? taxon?.scientific_name ?? null
+    };
+  }
+
+  function applyTaxonOccurrenceFilter(pageUrl, taxonIdentifier, taxonInfo) {
+    const rank = taxonInfo?.rank;
+    const scientificName = taxonInfo?.scientificName;
+
+    if (rank && rank !== 'Species' && scientificName) {
+      pageUrl.searchParams.set('include', 'taxon,parent-taxa');
+      pageUrl.searchParams.set(`${rank.toLowerCase()}__scientific_name`, scientificName);
+    } else {
+      pageUrl.searchParams.set('taxon_identifier[eq]', taxonIdentifier);
+    }
+
+    return pageUrl;
+  }
+
   const OCCURRENCES_RESOURCE$1 = 'occurrences';
   const DEFAULT_PAGE_SIZE = 10;
   const DEFAULT_PLACEHOLDER_TEXT$3 = 'No species selected.';
@@ -4888,6 +4964,13 @@ div[data-tanvis-controls="species-selector"] {
         element.dataset.visRegion = normalizeRegionDatasetValue$1(renderConfig.region);
         element.dataset.visTaxonid = taxonIdentifier;
         const pageSize = getConfiguredPageSize(renderConfig);
+        let taxonInfoPromise;
+        const getTaxonInfoForRender = () => {
+          if (!taxonInfoPromise) {
+            taxonInfoPromise = fetchTaxonInfo(apiBase, taxonIdentifier).catch(() => null);
+          }
+          return taxonInfoPromise;
+        };
 
         if (renderConfig.control) {
           element.__tanvisControlCleanup = subscribeToControl(renderConfig.control, (event) => {
@@ -4961,9 +5044,19 @@ div[data-tanvis-controls="species-selector"] {
           Tabulator,
           pageSize,
           requestPage: async ({ pageNumber, pageSize: requestedPageSize }) => {
+            const taxonInfo = await getTaxonInfoForRender();
+            if (element.__tanvisRecordsTableLoadId !== loadId) {
+              return {
+                data: [],
+                last_page: 1,
+                last_row: 0
+              };
+            }
+
             const pageResult = await buildRecordsTablePage({
               apiBase,
               taxonIdentifier,
+              taxonInfo,
               region: renderConfig.region,
               gridReference: renderConfig.gridReference,
               pageNumber,
@@ -5142,13 +5235,13 @@ div[data-tanvis-controls="species-selector"] {
     return window.Tabulator || null;
   }
 
-  async function buildRecordsTablePage({ apiBase, taxonIdentifier, region, gridReference, pageNumber, pageSize }) {
+  async function buildRecordsTablePage({ apiBase, taxonIdentifier, taxonInfo, region, gridReference, pageNumber, pageSize }) {
     const effectivePageSize = Math.max(1, Math.floor(pageSize ?? DEFAULT_PAGE_SIZE));
     const offset = Math.max(0, (Math.max(1, Math.floor(pageNumber || 1)) - 1) * effectivePageSize);
 
-    const resourceUrl = resolveResourceUrl$4(apiBase, OCCURRENCES_RESOURCE$1);
+    const resourceUrl = resolveResourceUrl$3(apiBase, OCCURRENCES_RESOURCE$1);
     const pageUrl = new URL(resourceUrl.toString());
-    pageUrl.searchParams.set('taxon_identifier[eq]', taxonIdentifier);
+    applyTaxonOccurrenceFilter(pageUrl, taxonIdentifier, taxonInfo);
 
     if (region) {
       pageUrl.searchParams.set('higher_geography_identifier[eq]', String(region));
@@ -5162,8 +5255,8 @@ div[data-tanvis-controls="species-selector"] {
     pageUrl.searchParams.set('limit', String(effectivePageSize));
     pageUrl.searchParams.set('offset', String(offset));
 
-    const payload = await fetchJson$7(pageUrl.toString(), 'Failed to load occurrences');
-    const records = getListData$3(payload).map(transformRecordForDisplay);
+    const payload = await fetchJson$6(pageUrl.toString(), 'Failed to load occurrences');
+    const records = getListData$2(payload).map(transformRecordForDisplay);
     const totalRows = getTotalCount(payload) || records.length;
     const totalPages = Math.max(1, Math.ceil(totalRows / effectivePageSize));
 
@@ -5215,50 +5308,6 @@ div[data-tanvis-controls="species-selector"] {
     return `${fromDate} to ${toDate}`;
   }
 
-  function resolveResourceUrl$4(apiBase, resourceName) {
-    const baseUrl = new URL(apiBase, window.location.origin);
-    const pathname = baseUrl.pathname.endsWith('/') ? baseUrl.pathname : `${baseUrl.pathname}/`;
-    baseUrl.pathname = `${pathname}${resourceName}`;
-    baseUrl.search = '';
-    baseUrl.hash = '';
-    return baseUrl;
-  }
-
-  async function fetchJson$7(url, defaultErrorMessage) {
-    logApiRequest(url, { method: 'GET' });
-
-    let response;
-    try {
-      response = await fetch(url);
-    } catch (cause) {
-      throw createApiError({ defaultMessage: defaultErrorMessage, cause });
-    }
-
-    const payload = await parseJsonSafe(response);
-
-    if (!response.ok) {
-      throw createApiError({ response, payload, defaultMessage: defaultErrorMessage });
-    }
-
-    return payload || {};
-  }
-
-  function getListData$3(payload) {
-    if (Array.isArray(payload)) {
-      return payload;
-    }
-
-    if (Array.isArray(payload?.data)) {
-      return payload.data;
-    }
-
-    if (Array.isArray(payload?.records)) {
-      return payload.records;
-    }
-
-    return [];
-  }
-
   function getTotalCount(payload) {
     if (Number.isFinite(payload?.meta?.total)) {
       return Number(payload.meta.total);
@@ -5272,7 +5321,7 @@ div[data-tanvis-controls="species-selector"] {
       return Number(payload.last_row);
     }
 
-    return getListData$3(payload).length;
+    return getListData$2(payload).length;
   }
 
   function clearControlSubscription$3(element) {
@@ -5689,6 +5738,15 @@ div[data-tanvis-controls="species-selector"] {
         const speciesCode = currentSpeciesFromElement || renderConfig.species || renderConfig.taxonId || '';
         const apiBase = resolveApiBase();
         const regionValue = normalizeRegionContractValue(renderConfig.region ?? '');
+        const cachedOccurrenceRows = element.__tanvisSpeciesMapOccurrenceRows;
+        const cachedOccurrenceContext = element.__tanvisSpeciesMapOccurrenceContext;
+        const canReuseOccurrenceData = Boolean(
+          config.reuseOccurrenceData &&
+          Array.isArray(cachedOccurrenceRows) &&
+          cachedOccurrenceContext?.speciesCode === speciesCode &&
+          cachedOccurrenceContext?.region === regionValue &&
+          cachedOccurrenceContext?.apiBase === apiBase
+        );
 
         logSpeciesMapDebug('render:start', {
           loadId: (element.__tanvisSpeciesMapLoadId || 0) + 1,
@@ -5810,10 +5868,24 @@ div[data-tanvis-controls="species-selector"] {
           species: speciesCode
         });
 
+        if (canReuseOccurrenceData) {
+          element.__tanvisSpeciesRank = cachedOccurrenceContext.rank ?? null;
+          applyOccurrenceDataToMap(map, cachedOccurrenceRows, {
+            loadId,
+            region: renderConfig.region ?? '',
+            species: speciesCode,
+            mapInstanceId: map?.__tanvisMapInstanceId,
+            mapRegion: map?.__tanvisMapRegion,
+            elementId: element.id
+          });
+          return;
+        }
+
         const loadSpeciesMapData = async () => {
           let taxonInfo = null;
           try {
-            taxonInfo = await getTaxonInfo(speciesCode, apiBase);
+            console.log('Fetching taxon info for species code:', speciesCode);
+            taxonInfo = await fetchTaxonInfo(apiBase, speciesCode);
           } catch (error) {
             logSpeciesMapDebug('taxon-rank:error', {
               species: speciesCode,
@@ -5848,6 +5920,12 @@ div[data-tanvis-controls="species-selector"] {
 
             const occurrenceRows = Array.isArray(rows) ? rows : [];
             element.__tanvisSpeciesMapOccurrenceRows = occurrenceRows;
+            element.__tanvisSpeciesMapOccurrenceContext = {
+              apiBase,
+              speciesCode,
+              region: regionValue,
+              rank: taxonInfo?.rank ?? null
+            };
 
             logSpeciesMapDebug('fetch:resolved', {
               loadId,
@@ -5971,7 +6049,8 @@ div[data-tanvis-controls="species-selector"] {
           mapType: 'switch',
           taxonIdSource: config.taxonIdSource,
           control: config.control,
-          forceCreateMap: true
+          forceCreateMap: true,
+          reuseOccurrenceData: true
         });
       }
     });
@@ -6168,14 +6247,7 @@ div[data-tanvis-controls="species-selector"] {
 
     while (true) {
       const pageUrl = new URL(resourceUrl.toString());
-      const rank = taxonInfo?.rank;
-      const scientificName = taxonInfo?.scientificName;
-      if (rank && rank !== 'Species' && scientificName) {
-        pageUrl.searchParams.set('include', 'taxon,parent-taxa');
-        pageUrl.searchParams.set(`${rank.toLowerCase()}__scientific_name`, scientificName);
-      } else {
-        pageUrl.searchParams.set('taxon_identifier[eq]', speciesCode);
-      }
+      applyTaxonOccurrenceFilter(pageUrl, speciesCode, taxonInfo);
 
       if (region) {
         pageUrl.searchParams.set('higher_geography_identifier[eq]', String(region));
@@ -6196,50 +6268,6 @@ div[data-tanvis-controls="species-selector"] {
     }
 
     return rows;
-  }
-
-  function resolveResourceUrl$3(apiBase, resourceName) {
-    const baseUrl = new URL(apiBase, window.location.origin);
-    const pathname = baseUrl.pathname.endsWith('/') ? baseUrl.pathname : `${baseUrl.pathname}/`;
-    baseUrl.pathname = `${pathname}${resourceName}`;
-    baseUrl.search = '';
-    baseUrl.hash = '';
-    return baseUrl;
-  }
-
-  async function fetchJson$6(url, defaultErrorMessage) {
-    logApiRequest(url, { method: 'GET' });
-
-    let response;
-    try {
-      response = await fetch(url);
-    } catch (cause) {
-      throw createApiError({ defaultMessage: defaultErrorMessage, cause });
-    }
-
-    const payload = await parseJsonSafe(response);
-
-    if (!response.ok) {
-      throw createApiError({ response, payload, defaultMessage: defaultErrorMessage });
-    }
-
-    return payload || {};
-  }
-
-  function getListData$2(payload) {
-    if (Array.isArray(payload)) {
-      return payload;
-    }
-
-    if (Array.isArray(payload?.data)) {
-      return payload.data;
-    }
-
-    if (Array.isArray(payload?.records)) {
-      return payload.records;
-    }
-
-    return [];
   }
 
   function createOccurrenceData(rows = [], opacity = 1, options = {}) {
@@ -6289,29 +6317,6 @@ div[data-tanvis-controls="species-selector"] {
 
       resolve({ records: recs, size: 1, precision: 2000, shape, opacity });
     });
-  }
-
-  async function getTaxonInfo(speciesCode, apiBase) {
-
-    console.log('Fetching taxon info for species code:', speciesCode);
-
-    if (!speciesCode) {
-      return null;
-    }
-
-    const taxonUrl = resolveResourceUrl$3(apiBase, `taxa/${encodeURIComponent(speciesCode)}`);
-    taxonUrl.searchParams.set('include', 'taxon-rank');
-    const payload = await fetchJson$6(taxonUrl.toString(), 'Failed to load taxon rank');
-    const taxon = Array.isArray(payload?.data)
-      ? payload.data[0]
-      : payload?.data ?? payload;
-
-    console.log('Fetched taxon info:', taxon);
-
-    return {
-      rank: taxon?.taxon_rank__rank ?? null,
-      scientificName: taxon?.taxon__scientific_name ?? taxon?.scientific_name ?? null
-    };
   }
 
   const speciesMapAdapter = createSpeciesMapAdapter();

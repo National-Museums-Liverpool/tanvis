@@ -1,9 +1,10 @@
 import { clearElement } from '../utils/dom.js';
 import { getLatestControlEvent, subscribeToControl } from '../controls/controlBus.js';
-import { createApiError, normalizeErrorMessage, parseJsonSafe } from '../utils/apiError.js';
+import { normalizeErrorMessage } from '../utils/apiError.js';
 import { createVisStatusReporter, ensureStylesheetDependency } from '../utils/visStatus.js';
 import { resolveApiBase } from '../config/apiBase.js';
-import { logApiRequest } from '../utils/apiRequest.js';
+import { fetchJson, getListData, resolveResourceUrl } from '../utils/api.js';
+import { applyTaxonOccurrenceFilter, fetchTaxonInfo } from '../utils/taxonOccurrenceQuery.js';
 import { normalizeRegionContractValue } from '../controls/regionControls.js';
 
 const OCCURRENCES_RESOURCE = 'occurrences';
@@ -49,6 +50,13 @@ export function createRecordsTableAdapter() {
       element.dataset.visRegion = normalizeRegionDatasetValue(renderConfig.region);
       element.dataset.visTaxonid = taxonIdentifier;
       const pageSize = getConfiguredPageSize(renderConfig);
+      let taxonInfoPromise;
+      const getTaxonInfoForRender = () => {
+        if (!taxonInfoPromise) {
+          taxonInfoPromise = fetchTaxonInfo(apiBase, taxonIdentifier).catch(() => null);
+        }
+        return taxonInfoPromise;
+      };
 
       if (renderConfig.control) {
         element.__tanvisControlCleanup = subscribeToControl(renderConfig.control, (event) => {
@@ -122,9 +130,19 @@ export function createRecordsTableAdapter() {
         Tabulator,
         pageSize,
         requestPage: async ({ pageNumber, pageSize: requestedPageSize }) => {
+          const taxonInfo = await getTaxonInfoForRender();
+          if (element.__tanvisRecordsTableLoadId !== loadId) {
+            return {
+              data: [],
+              last_page: 1,
+              last_row: 0
+            };
+          }
+
           const pageResult = await buildRecordsTablePage({
             apiBase,
             taxonIdentifier,
+            taxonInfo,
             region: renderConfig.region,
             gridReference: renderConfig.gridReference,
             pageNumber,
@@ -303,13 +321,13 @@ function getTabulatorGlobal() {
   return window.Tabulator || null;
 }
 
-async function buildRecordsTablePage({ apiBase, taxonIdentifier, region, gridReference, pageNumber, pageSize }) {
+async function buildRecordsTablePage({ apiBase, taxonIdentifier, taxonInfo, region, gridReference, pageNumber, pageSize }) {
   const effectivePageSize = Math.max(1, Math.floor(pageSize ?? DEFAULT_PAGE_SIZE));
   const offset = Math.max(0, (Math.max(1, Math.floor(pageNumber || 1)) - 1) * effectivePageSize);
 
   const resourceUrl = resolveResourceUrl(apiBase, OCCURRENCES_RESOURCE);
   const pageUrl = new URL(resourceUrl.toString());
-  pageUrl.searchParams.set('taxon_identifier[eq]', taxonIdentifier);
+  applyTaxonOccurrenceFilter(pageUrl, taxonIdentifier, taxonInfo);
 
   if (region) {
     pageUrl.searchParams.set('higher_geography_identifier[eq]', String(region));
@@ -374,50 +392,6 @@ function formatDateRange(fromDate, toDate) {
   }
 
   return `${fromDate} to ${toDate}`;
-}
-
-function resolveResourceUrl(apiBase, resourceName) {
-  const baseUrl = new URL(apiBase, window.location.origin);
-  const pathname = baseUrl.pathname.endsWith('/') ? baseUrl.pathname : `${baseUrl.pathname}/`;
-  baseUrl.pathname = `${pathname}${resourceName}`;
-  baseUrl.search = '';
-  baseUrl.hash = '';
-  return baseUrl;
-}
-
-async function fetchJson(url, defaultErrorMessage) {
-  logApiRequest(url, { method: 'GET' });
-
-  let response;
-  try {
-    response = await fetch(url);
-  } catch (cause) {
-    throw createApiError({ defaultMessage: defaultErrorMessage, cause });
-  }
-
-  const payload = await parseJsonSafe(response);
-
-  if (!response.ok) {
-    throw createApiError({ response, payload, defaultMessage: defaultErrorMessage });
-  }
-
-  return payload || {};
-}
-
-function getListData(payload) {
-  if (Array.isArray(payload)) {
-    return payload;
-  }
-
-  if (Array.isArray(payload?.data)) {
-    return payload.data;
-  }
-
-  if (Array.isArray(payload?.records)) {
-    return payload.records;
-  }
-
-  return [];
 }
 
 function getTotalCount(payload) {

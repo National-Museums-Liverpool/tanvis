@@ -449,6 +449,61 @@ describe('species map redraw flow', () => {
     expect(element.querySelector('input[type="radio"][value="leaflet"]')).not.toBeNull();
   });
 
+  it('reuses fetched occurrence rows when switching map backends', async () => {
+    const createdMaps = [];
+    const requestedUrls = [];
+    const createMap = () => {
+      const map = {
+        setMapType() {},
+        redrawMap() {},
+        redrawCount: 0
+      };
+      map.setMapType = () => { map.redrawCount += 1; };
+      map.redrawMap = () => { map.redrawCount += 1; };
+      createdMaps.push(map);
+      return map;
+    };
+
+    window.brcatlas = {
+      svgMap: () => createMap(),
+      leafletMap: () => createMap()
+    };
+    vi.spyOn(globalThis, 'fetch').mockImplementation(async (url) => {
+      const parsedUrl = new URL(url);
+      requestedUrls.push(parsedUrl);
+      return {
+        ok: true,
+        json: async () => parsedUrl.pathname.includes('/taxa/')
+          ? { data: { taxon_rank__rank: 'Species', taxon__scientific_name: 'Test species' } }
+          : { data: [{ grid_ref_2km: 'SJ58D' }] }
+      };
+    });
+
+    const element = document.createElement('div');
+    renderSpeciesMap(element, {
+      type: 'species-map',
+      mapType: 'switch',
+      region: 'vc-58',
+      taxonId: 'CACHE-TEST-TAXON'
+    });
+
+    await vi.waitFor(() => {
+      expect(requestedUrls.filter((url) => url.pathname.endsWith('/occurrences') && url.searchParams.get('taxon_identifier[eq]') === 'CACHE-TEST-TAXON')).toHaveLength(1);
+      expect(element.__tanvisSpeciesMapOccurrenceContext?.speciesCode).toBe('CACHE-TEST-TAXON');
+      expect(createdMaps[0].redrawCount).toBeGreaterThan(0);
+    });
+
+    const leafletInput = element.querySelector('input[type="radio"][value="leaflet"]');
+    leafletInput.checked = true;
+    leafletInput.dispatchEvent(new Event('change', { bubbles: true }));
+
+    await vi.waitFor(() => expect(createdMaps).toHaveLength(2));
+
+    expect(createdMaps[1].redrawCount).toBeGreaterThan(0);
+    expect(requestedUrls.filter((url) => url.pathname.endsWith('/taxa/CACHE-TEST-TAXON'))).toHaveLength(1);
+    expect(requestedUrls.filter((url) => url.pathname.endsWith('/occurrences') && url.searchParams.get('taxon_identifier[eq]') === 'CACHE-TEST-TAXON')).toHaveLength(1);
+  });
+
   it('re-renders the species map after a linked table row selection', async () => {
     const mapTypeHandlers = {};
     const requestedSpecies = [];

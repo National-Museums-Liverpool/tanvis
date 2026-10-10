@@ -1,8 +1,9 @@
 import { clearElement } from '../utils/dom.js';
 import { getLatestControlEvent, subscribeToControl } from '../controls/controlBus.js';
-import { createApiError, normalizeErrorMessage, parseJsonSafe } from '../utils/apiError.js';
+import { normalizeErrorMessage } from '../utils/apiError.js';
 import { createVisStatusReporter } from '../utils/visStatus.js';
-import { logApiRequest } from '../utils/apiRequest.js';
+import { fetchJson, getListData, resolveResourceUrl } from '../utils/api.js';
+import { applyTaxonOccurrenceFilter, fetchTaxonInfo } from '../utils/taxonOccurrenceQuery.js';
 import { renderLeafletAtlasMap } from './map/leafletBackend.js';
 import { renderStaticAtlasMap } from './map/staticBackend.js';
 import { normalizeRegionContractValue } from '../controls/regionControls.js';
@@ -80,6 +81,15 @@ export function createSpeciesMapAdapter() {
       const speciesCode = currentSpeciesFromElement || renderConfig.species || renderConfig.taxonId || '';
       const apiBase = resolveApiBase();
       const regionValue = normalizeRegionContractValue(renderConfig.region ?? '');
+      const cachedOccurrenceRows = element.__tanvisSpeciesMapOccurrenceRows;
+      const cachedOccurrenceContext = element.__tanvisSpeciesMapOccurrenceContext;
+      const canReuseOccurrenceData = Boolean(
+        config.reuseOccurrenceData &&
+        Array.isArray(cachedOccurrenceRows) &&
+        cachedOccurrenceContext?.speciesCode === speciesCode &&
+        cachedOccurrenceContext?.region === regionValue &&
+        cachedOccurrenceContext?.apiBase === apiBase
+      );
 
       logSpeciesMapDebug('render:start', {
         loadId: (element.__tanvisSpeciesMapLoadId || 0) + 1,
@@ -201,10 +211,24 @@ export function createSpeciesMapAdapter() {
         species: speciesCode
       });
 
+      if (canReuseOccurrenceData) {
+        element.__tanvisSpeciesRank = cachedOccurrenceContext.rank ?? null;
+        applyOccurrenceDataToMap(map, cachedOccurrenceRows, {
+          loadId,
+          region: renderConfig.region ?? '',
+          species: speciesCode,
+          mapInstanceId: map?.__tanvisMapInstanceId,
+          mapRegion: map?.__tanvisMapRegion,
+          elementId: element.id
+        });
+        return;
+      }
+
       const loadSpeciesMapData = async () => {
         let taxonInfo = null;
         try {
-          taxonInfo = await getTaxonInfo(speciesCode, apiBase);
+          console.log('Fetching taxon info for species code:', speciesCode);
+          taxonInfo = await fetchTaxonInfo(apiBase, speciesCode);
         } catch (error) {
           logSpeciesMapDebug('taxon-rank:error', {
             species: speciesCode,
@@ -239,6 +263,12 @@ export function createSpeciesMapAdapter() {
 
           const occurrenceRows = Array.isArray(rows) ? rows : [];
           element.__tanvisSpeciesMapOccurrenceRows = occurrenceRows;
+          element.__tanvisSpeciesMapOccurrenceContext = {
+            apiBase,
+            speciesCode,
+            region: regionValue,
+            rank: taxonInfo?.rank ?? null
+          };
 
           logSpeciesMapDebug('fetch:resolved', {
             loadId,
@@ -362,7 +392,8 @@ function renderMapBackend(element, config, hostElement, previousRows = []) {
         mapType: 'switch',
         taxonIdSource: config.taxonIdSource,
         control: config.control,
-        forceCreateMap: true
+        forceCreateMap: true,
+        reuseOccurrenceData: true
       });
     }
   });
@@ -559,14 +590,7 @@ async function fetchSpeciesOccurrences({ apiBase, speciesCode, region, taxonInfo
 
   while (true) {
     const pageUrl = new URL(resourceUrl.toString());
-    const rank = taxonInfo?.rank;
-    const scientificName = taxonInfo?.scientificName;
-    if (rank && rank !== 'Species' && scientificName) {
-      pageUrl.searchParams.set('include', 'taxon,parent-taxa');
-      pageUrl.searchParams.set(`${rank.toLowerCase()}__scientific_name`, scientificName);
-    } else {
-      pageUrl.searchParams.set('taxon_identifier[eq]', speciesCode);
-    }
+    applyTaxonOccurrenceFilter(pageUrl, speciesCode, taxonInfo);
 
     if (region) {
       pageUrl.searchParams.set('higher_geography_identifier[eq]', String(region));
@@ -587,50 +611,6 @@ async function fetchSpeciesOccurrences({ apiBase, speciesCode, region, taxonInfo
   }
 
   return rows;
-}
-
-function resolveResourceUrl(apiBase, resourceName) {
-  const baseUrl = new URL(apiBase, window.location.origin);
-  const pathname = baseUrl.pathname.endsWith('/') ? baseUrl.pathname : `${baseUrl.pathname}/`;
-  baseUrl.pathname = `${pathname}${resourceName}`;
-  baseUrl.search = '';
-  baseUrl.hash = '';
-  return baseUrl;
-}
-
-async function fetchJson(url, defaultErrorMessage) {
-  logApiRequest(url, { method: 'GET' });
-
-  let response;
-  try {
-    response = await fetch(url);
-  } catch (cause) {
-    throw createApiError({ defaultMessage: defaultErrorMessage, cause });
-  }
-
-  const payload = await parseJsonSafe(response);
-
-  if (!response.ok) {
-    throw createApiError({ response, payload, defaultMessage: defaultErrorMessage });
-  }
-
-  return payload || {};
-}
-
-function getListData(payload) {
-  if (Array.isArray(payload)) {
-    return payload;
-  }
-
-  if (Array.isArray(payload?.data)) {
-    return payload.data;
-  }
-
-  if (Array.isArray(payload?.records)) {
-    return payload.records;
-  }
-
-  return [];
 }
 
 export function createOccurrenceData(rows = [], opacity = 1, options = {}) {
@@ -682,25 +662,3 @@ export function createOccurrenceData(rows = [], opacity = 1, options = {}) {
   });
 }
 
-async function getTaxonInfo(speciesCode, apiBase) {
-
-  console.log('Fetching taxon info for species code:', speciesCode);
-
-  if (!speciesCode) {
-    return null;
-  }
-
-  const taxonUrl = resolveResourceUrl(apiBase, `taxa/${encodeURIComponent(speciesCode)}`);
-  taxonUrl.searchParams.set('include', 'taxon-rank');
-  const payload = await fetchJson(taxonUrl.toString(), 'Failed to load taxon rank');
-  const taxon = Array.isArray(payload?.data)
-    ? payload.data[0]
-    : payload?.data ?? payload;
-
-  console.log('Fetched taxon info:', taxon);
-
-  return {
-    rank: taxon?.taxon_rank__rank ?? null,
-    scientificName: taxon?.taxon__scientific_name ?? taxon?.scientific_name ?? null
-  };
-}
