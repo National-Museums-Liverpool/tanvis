@@ -341,7 +341,7 @@ function ensureContentStructure(element) {
   const body = doc.createElement('tbody');
 
   const conservationValueCell = appendInfoRow(doc, body, 'Status');
-  const rarityCategoryValueCell = appendInfoRow(doc, body, 'Rarity category');
+  const rarityCategoryValueCell = appendInfoRow(doc, body, 'Regional frequency');
   const occurrencesValueCell = appendInfoRow(doc, body, 'Occurrences');
   const gridSquaresValueCell = appendInfoRow(doc, body, 'Tetrads');
   const frequencyTrendValueCell = appendInfoRow(doc, body, 'Frequency trend');
@@ -377,7 +377,7 @@ function renderSpeciesInfoText(content, statsRows, region, aveRecsRows) {
   renderCountCell(content, nodes.lastRecordValueCell, sortedRows, 'last_record_date', region, toDisplayValue);
   renderCountCell(content, nodes.aveRecsValueCell, aveRecsRows, 'average_records_per_year', region, toDisplayAverage);
   const conservationStatus = toDisplayStatus(firstRow?.taxon__conservation_status);
-  const rarityCategory = toDisplayValue(firstRow?.taxon__rarity_category);
+  const rarityCategory = toDisplayRarity(firstRow?.taxon__rarity_category);
 
   renderItalicCell(nodes.conservationValueCell, content, conservationStatus);
   renderItalicCell(nodes.rarityCategoryValueCell, content, rarityCategory);
@@ -567,6 +567,26 @@ function toDisplayStatus(value) {
       return 'Nationally Rare';
     case 'NS':
       return 'Nationally Scarce';
+    default:
+      return String(value);
+  }
+}
+
+function toDisplayRarity(value) {
+  if (value === undefined || value === null || value === '') {
+    return 'None specified';
+  }
+  switch(value) {
+    case '1':
+      return 'Rare';
+    case '2':
+      return 'Scarce';
+    case '3':
+      return 'Uncommon';
+    case '4':
+      return 'Frequent';
+    case '5':
+      return 'Common';
     default:
       return String(value);
   }

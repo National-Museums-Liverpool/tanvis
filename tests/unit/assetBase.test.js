@@ -28,4 +28,24 @@ describe('assetBase config', () => {
 
     expect(resolveAssetBase()).toBe(new URL('/wp-content/plugins/tanvis/assets/', window.location.href).href);
   });
+
+  it('derives the asset base from the project root for a local dist script', () => {
+    window.Tanvis = {};
+    const script = document.createElement('script');
+    script.dataset.assetBaseTest = '';
+    script.src = '/tanvis/dist/tanvis.iife.js';
+    document.head.appendChild(script);
+
+    expect(resolveAssetBase()).toBe(new URL('/tanvis/', window.location.href).href);
+  });
+
+  it('derives the project root for the GitHub Pages site', () => {
+    window.Tanvis = {};
+    const script = document.createElement('script');
+    script.dataset.assetBaseTest = '';
+    script.src = 'https://national-museums-liverpool.github.io/tanvis/dist/tanvis.iife.js';
+    document.head.appendChild(script);
+
+    expect(resolveAssetBase()).toBe('https://national-museums-liverpool.github.io/tanvis/');
+  });
 });

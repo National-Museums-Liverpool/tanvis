@@ -1078,7 +1078,7 @@
 
   // Returns the URL (with trailing slash) of the folder containing the data/ resources.
   // Hosts can set window.Tanvis.config.assetBase; otherwise it is derived from the
-  // directory containing tanvis.iife.js.
+  // directory containing tanvis.iife.js, except local dist builds use the parent folder.
   function resolveAssetBase() {
     const override = typeof window !== 'undefined' ? window.Tanvis?.config?.assetBase : undefined;
     if (typeof override === 'string' && override) {
@@ -1089,7 +1089,13 @@
     for (let i = 0; i < scripts.length; i++) {
       const src = scripts[i].getAttribute('src');
       if (src && src.includes('tanvis.iife.js')) {
-        return new URL('.', scripts[i].src).href;
+        const scriptDirectory = new URL('.', scripts[i].src);
+        if (scriptDirectory.pathname.endsWith('/dist/')) {
+          scriptDirectory.pathname = scriptDirectory.pathname.slice(0, -'/dist/'.length) + '/';
+        }
+        scriptDirectory.search = '';
+        scriptDirectory.hash = '';
+        return scriptDirectory.href;
       }
     }
     return '';
@@ -8159,7 +8165,7 @@ div[data-tanvis-controls="species-selector"] {
     const body = doc.createElement('tbody');
 
     const conservationValueCell = appendInfoRow(doc, body, 'Status');
-    const rarityCategoryValueCell = appendInfoRow(doc, body, 'Rarity category');
+    const rarityCategoryValueCell = appendInfoRow(doc, body, 'Regional frequency');
     const occurrencesValueCell = appendInfoRow(doc, body, 'Occurrences');
     const gridSquaresValueCell = appendInfoRow(doc, body, 'Tetrads');
     const frequencyTrendValueCell = appendInfoRow(doc, body, 'Frequency trend');
@@ -8195,7 +8201,7 @@ div[data-tanvis-controls="species-selector"] {
     renderCountCell(content, nodes.lastRecordValueCell, sortedRows, 'last_record_date', region, toDisplayValue);
     renderCountCell(content, nodes.aveRecsValueCell, aveRecsRows, 'average_records_per_year', region, toDisplayAverage);
     const conservationStatus = toDisplayStatus(firstRow?.taxon__conservation_status);
-    const rarityCategory = toDisplayValue(firstRow?.taxon__rarity_category);
+    const rarityCategory = toDisplayRarity(firstRow?.taxon__rarity_category);
 
     renderItalicCell(nodes.conservationValueCell, content, conservationStatus);
     renderItalicCell(nodes.rarityCategoryValueCell, content, rarityCategory);
@@ -8385,6 +8391,26 @@ div[data-tanvis-controls="species-selector"] {
         return 'Nationally Rare';
       case 'NS':
         return 'Nationally Scarce';
+      default:
+        return String(value);
+    }
+  }
+
+  function toDisplayRarity(value) {
+    if (value === undefined || value === null || value === '') {
+      return 'None specified';
+    }
+    switch(value) {
+      case '1':
+        return 'Rare';
+      case '2':
+        return 'Scarce';
+      case '3':
+        return 'Uncommon';
+      case '4':
+        return 'Frequent';
+      case '5':
+        return 'Common';
       default:
         return String(value);
     }

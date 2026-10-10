@@ -41,7 +41,7 @@ describe('species info block', () => {
     const rows = element.querySelectorAll('tr');
     expect(rows).toHaveLength(7);
     expect(rows[0].children[0]?.textContent).toBe('Status:');
-    expect(rows[1].children[0]?.textContent).toBe('Rarity category:');
+    expect(rows[1].children[0]?.textContent).toBe('Regional frequency:');
     expect(rows[2].children[0]?.textContent).toBe('Occurrences:');
     expect(rows[3].children[0]?.textContent).toBe('Tetrads:');
     expect(rows[4].children[0]?.textContent).toBe('Frequency trend:');
