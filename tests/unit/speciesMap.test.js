@@ -4,6 +4,22 @@ import { createOccurrenceData, applyOccurrenceDataToMap } from '../../src/adapte
 import { renderSpeciesMap } from '../../src/renderers/speciesMap.js';
 import { publishControlEvent } from '../../src/controls/controlBus.js';
 
+function mockSpeciesTaxonInfoResponse(url) {
+  if (!new URL(url).pathname.includes('/taxa/')) {
+    return null;
+  }
+
+  return {
+    ok: true,
+    json: async () => ({
+      data: {
+        taxon_rank__rank: 'Species',
+        taxon__scientific_name: 'Test species'
+      }
+    })
+  };
+}
+
 describe('species map redraw flow', () => {
   beforeEach(() => {
     globalThis.d3 = d3;
@@ -36,6 +52,77 @@ describe('species map redraw flow', () => {
 
     expect(element.textContent).toContain('D3 is not available');
     expect(element.textContent).toContain('d3.v7.min.js');
+  });
+
+  it('uses the exact taxon identifier for Species occurrences', async () => {
+    window.brcatlas = {
+      svgMap: () => ({ setMapType() {}, redrawMap() {} })
+    };
+    const requestedUrls = [];
+    vi.spyOn(globalThis, 'fetch').mockImplementation(async (url) => {
+      const parsedUrl = new URL(url);
+      requestedUrls.push(parsedUrl);
+      return {
+        ok: true,
+        json: async () => parsedUrl.pathname.endsWith('/taxa/ABC123')
+          ? { data: { taxon_rank__rank: 'Species', taxon__scientific_name: 'Culex pipiens' } }
+          : { data: [] }
+      };
+    });
+
+    const element = document.createElement('div');
+    renderSpeciesMap(element, {
+      type: 'species-map',
+      region: 'vc-58',
+      taxonId: 'ABC123'
+    });
+
+    await vi.waitFor(() => {
+      expect(element.__tanvisSpeciesRank).toBe('Species');
+    });
+
+    const rankUrl = requestedUrls.find((url) => url.pathname.endsWith('/taxa/ABC123'));
+    expect(rankUrl.searchParams.get('include')).toBe('taxon-rank');
+    await vi.waitFor(() => {
+      expect(requestedUrls.some((url) => url.pathname.endsWith('/occurrences'))).toBe(true);
+    });
+    const occurrencesUrl = requestedUrls.find((url) => url.pathname.endsWith('/occurrences'));
+    expect(occurrencesUrl.searchParams.get('taxon_identifier[eq]')).toBe('ABC123');
+    expect(occurrencesUrl.searchParams.get('include')).toBeNull();
+  });
+
+  it('queries occurrence descendants by the selected higher taxon scientific name', async () => {
+    window.brcatlas = {
+      svgMap: () => ({ setMapType() {}, redrawMap() {} })
+    };
+    const requestedUrls = [];
+    vi.spyOn(globalThis, 'fetch').mockImplementation(async (url) => {
+      const parsedUrl = new URL(url);
+      requestedUrls.push(parsedUrl);
+      return {
+        ok: true,
+        json: async () => parsedUrl.pathname.endsWith('/taxa/ABC123')
+          ? { data: { taxon_rank__rank: 'Family', taxon__scientific_name: 'Culicidae' } }
+          : { data: [] }
+      };
+    });
+
+    const element = document.createElement('div');
+    renderSpeciesMap(element, {
+      type: 'species-map',
+      region: 'vc-58',
+      taxonId: 'ABC123'
+    });
+
+    await vi.waitFor(() => {
+      expect(requestedUrls.some((url) => url.pathname.endsWith('/occurrences'))).toBe(true);
+    });
+
+    const occurrencesUrl = requestedUrls.find((url) => url.pathname.endsWith('/occurrences'));
+    expect(occurrencesUrl.searchParams.get('taxon_identifier[eq]')).toBeNull();
+    expect(occurrencesUrl.searchParams.get('include')).toBe('taxon,parent-taxa');
+    expect(occurrencesUrl.searchParams.get('family__scientific_name')).toBe('Culicidae');
+    expect(occurrencesUrl.searchParams.get('higher_geography_identifier[eq]')).toBe('58');
   });
 
   it('switches the map to the occurrences type and redraws it', () => {
@@ -184,6 +271,11 @@ describe('species map redraw flow', () => {
     };
 
     vi.spyOn(globalThis, 'fetch').mockImplementation(async (url) => {
+      const taxonInfoResponse = mockSpeciesTaxonInfoResponse(url);
+      if (taxonInfoResponse) {
+        return taxonInfoResponse;
+      }
+
       const region = new URL(url).searchParams.get('higher_geography_identifier[eq]');
       if (region === '58') {
         return {
@@ -373,8 +465,15 @@ describe('species map redraw flow', () => {
 
     vi.spyOn(globalThis, 'fetch').mockImplementation(async (url) => {
       const parsedUrl = new URL(url);
+      const taxonInfoResponse = mockSpeciesTaxonInfoResponse(parsedUrl);
+      if (taxonInfoResponse) {
+        return taxonInfoResponse;
+      }
+
       const speciesCode = parsedUrl.searchParams.get('taxon_identifier[eq]');
-      requestedSpecies.push(speciesCode);
+      if (speciesCode) {
+        requestedSpecies.push(speciesCode);
+      }
 
       const payloadRows = speciesCode === 'XYZ999'
         ? [{ grid_ref_2km: 'SJ99A' }]
@@ -498,7 +597,13 @@ describe('species map redraw flow', () => {
     };
 
     vi.spyOn(globalThis, 'fetch').mockImplementation(async (url) => {
-      const speciesCode = new URL(url).searchParams.get('taxon_identifier[eq]');
+      const parsedUrl = new URL(url);
+      const taxonInfoResponse = mockSpeciesTaxonInfoResponse(parsedUrl);
+      if (taxonInfoResponse) {
+        return taxonInfoResponse;
+      }
+
+      const speciesCode = parsedUrl.searchParams.get('taxon_identifier[eq]');
       return {
         ok: true,
         json: async () => ({ data: [{ grid_ref_2km: speciesCode === 'XYZ999' ? 'SJ99A' : 'SJ58D' }] })
@@ -550,8 +655,15 @@ describe('species map redraw flow', () => {
 
     vi.spyOn(globalThis, 'fetch').mockImplementation(async (url) => {
       const parsedUrl = new URL(url);
+      const taxonInfoResponse = mockSpeciesTaxonInfoResponse(parsedUrl);
+      if (taxonInfoResponse) {
+        return taxonInfoResponse;
+      }
+
       const speciesCode = parsedUrl.searchParams.get('taxon_identifier[eq]');
-      requestedSpecies.push(speciesCode);
+      if (speciesCode) {
+        requestedSpecies.push(speciesCode);
+      }
 
       return {
         ok: true,
@@ -596,8 +708,15 @@ describe('species map redraw flow', () => {
 
     vi.spyOn(globalThis, 'fetch').mockImplementation(async (url) => {
       const parsedUrl = new URL(url);
+      const taxonInfoResponse = mockSpeciesTaxonInfoResponse(parsedUrl);
+      if (taxonInfoResponse) {
+        return taxonInfoResponse;
+      }
+
       const speciesCode = parsedUrl.searchParams.get('taxon_identifier[eq]');
-      requestedSpecies.push(speciesCode);
+      if (speciesCode) {
+        requestedSpecies.push(speciesCode);
+      }
 
       return {
         ok: true,
@@ -734,8 +853,15 @@ describe('species map redraw flow', () => {
 
     vi.spyOn(globalThis, 'fetch').mockImplementation(async (url) => {
       const parsedUrl = new URL(url);
+      const taxonInfoResponse = mockSpeciesTaxonInfoResponse(parsedUrl);
+      if (taxonInfoResponse) {
+        return taxonInfoResponse;
+      }
+
       const speciesCode = parsedUrl.searchParams.get('taxon_identifier[eq]');
-      requestedSpecies.push(speciesCode);
+      if (speciesCode) {
+        requestedSpecies.push(speciesCode);
+      }
 
       return {
         ok: true,

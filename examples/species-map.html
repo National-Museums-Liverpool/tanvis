@@ -64,6 +64,8 @@
 
     <script src="../dist/tanvis.iife.js"></script>
     <script type="module">
+      window.Tanvis.config = window.Tanvis.config || {};
+      window.Tanvis.config.apiBase = 'https://tanhub.biodiverseit.co.uk/api/v1';
       window.Tanvis.init();
 
       // Listen for events from the species map

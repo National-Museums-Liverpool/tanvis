@@ -5810,12 +5810,33 @@ div[data-tanvis-controls="species-selector"] {
           species: speciesCode
         });
 
-        fetchSpeciesOccurrences({
-          apiBase,
-          speciesCode,
-          region: renderConfig.region,
-        })
-          .then((rows) => {
+        const loadSpeciesMapData = async () => {
+          let taxonInfo = null;
+          try {
+            taxonInfo = await getTaxonInfo(speciesCode, apiBase);
+          } catch (error) {
+            logSpeciesMapDebug('taxon-rank:error', {
+              species: speciesCode,
+              error: normalizeErrorMessage(error, 'Failed to load taxon rank')
+            });
+          }
+
+          console.log('Fetched taxon info 2:', taxonInfo);
+
+          if (element.__tanvisSpeciesMapLoadId !== loadId) {
+            return;
+          }
+
+          element.__tanvisSpeciesRank = taxonInfo?.rank ?? null;
+
+          try {
+            const rows = await fetchSpeciesOccurrences({
+              apiBase,
+              speciesCode,
+              region: renderConfig.region,
+              taxonInfo
+            });
+
             if (element.__tanvisSpeciesMapLoadId !== loadId) {
               logSpeciesMapDebug('fetch:ignored-stale-response', {
                 loadId,
@@ -5852,8 +5873,7 @@ div[data-tanvis-controls="species-selector"] {
               mapRegion: map?.__tanvisMapRegion,
               elementId: element.id
             });
-          })
-          .catch((error) => {
+          } catch (error) {
             if (element.__tanvisSpeciesMapLoadId !== loadId) {
               return;
             }
@@ -5866,7 +5886,10 @@ div[data-tanvis-controls="species-selector"] {
             });
             console.error('[species-map] failed to fetch occurrences:', error);
             status.showError(normalizeErrorMessage(error, 'Failed to render species map'));
-          });
+          }
+        };
+
+        void loadSpeciesMapData();
       }
     };
   }
@@ -6134,7 +6157,7 @@ div[data-tanvis-controls="species-selector"] {
     return controlElement?.dataset?.visTaxonGroup || '';
   }
 
-  async function fetchSpeciesOccurrences({ apiBase, speciesCode, region }) {
+  async function fetchSpeciesOccurrences({ apiBase, speciesCode, region, taxonInfo }) {
     if (!speciesCode) {
       return [];
     }
@@ -6145,7 +6168,14 @@ div[data-tanvis-controls="species-selector"] {
 
     while (true) {
       const pageUrl = new URL(resourceUrl.toString());
-      pageUrl.searchParams.set('taxon_identifier[eq]', speciesCode);
+      const rank = taxonInfo?.rank;
+      const scientificName = taxonInfo?.scientificName;
+      if (rank && rank !== 'Species' && scientificName) {
+        pageUrl.searchParams.set('include', 'taxon,parent-taxa');
+        pageUrl.searchParams.set(`${rank.toLowerCase()}__scientific_name`, scientificName);
+      } else {
+        pageUrl.searchParams.set('taxon_identifier[eq]', speciesCode);
+      }
 
       if (region) {
         pageUrl.searchParams.set('higher_geography_identifier[eq]', String(region));
@@ -6259,6 +6289,29 @@ div[data-tanvis-controls="species-selector"] {
 
       resolve({ records: recs, size: 1, precision: 2000, shape, opacity });
     });
+  }
+
+  async function getTaxonInfo(speciesCode, apiBase) {
+
+    console.log('Fetching taxon info for species code:', speciesCode);
+
+    if (!speciesCode) {
+      return null;
+    }
+
+    const taxonUrl = resolveResourceUrl$3(apiBase, `taxa/${encodeURIComponent(speciesCode)}`);
+    taxonUrl.searchParams.set('include', 'taxon-rank');
+    const payload = await fetchJson$6(taxonUrl.toString(), 'Failed to load taxon rank');
+    const taxon = Array.isArray(payload?.data)
+      ? payload.data[0]
+      : payload?.data ?? payload;
+
+    console.log('Fetched taxon info:', taxon);
+
+    return {
+      rank: taxon?.taxon_rank__rank ?? null,
+      scientificName: taxon?.taxon__scientific_name ?? taxon?.scientific_name ?? null
+    };
   }
 
   const speciesMapAdapter = createSpeciesMapAdapter();
