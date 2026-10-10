@@ -10,6 +10,7 @@ export default {
     file: 'dist/tanvis.iife.js',
     format: 'iife',
     name: 'Tanvis',
+    extend: true,
     sourcemap: true
   },
   plugins: [

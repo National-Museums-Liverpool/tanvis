@@ -382,4 +382,4 @@ To build the WordPress plugin, use this at the command prompt:
 ```
 npm run build:wp
 ```
-This also creates or replaces `wordpress/tanvis.zip` with the installable plugin.
+This also creates or replaces `wordpress/tanvis.zip` with plugin files at the ZIP root and standard forward-slash paths. WordPress uses the archive name (`tanvis`) for the installed plugin folder.

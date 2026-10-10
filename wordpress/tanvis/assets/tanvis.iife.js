@@ -1,4 +1,4 @@
-var Tanvis = (function (exports) {
+(function (exports) {
   'use strict';
 
   function scan(root, selector = '.tanvis') {
@@ -1078,7 +1078,7 @@ var Tanvis = (function (exports) {
 
   // Returns the URL (with trailing slash) of the folder containing the data/ resources.
   // Hosts can set window.Tanvis.config.assetBase; otherwise it is derived from the
-  // script URL by stripping /dist/tanvis.iife.js (the script may be served from a subfolder).
+  // directory containing tanvis.iife.js.
   function resolveAssetBase() {
     const override = typeof window !== 'undefined' ? window.Tanvis?.config?.assetBase : undefined;
     if (typeof override === 'string' && override) {
@@ -1089,8 +1089,7 @@ var Tanvis = (function (exports) {
     for (let i = 0; i < scripts.length; i++) {
       const src = scripts[i].getAttribute('src');
       if (src && src.includes('tanvis.iife.js')) {
-        const scriptUrl = scripts[i].src;
-        return scriptUrl.substring(0, scriptUrl.indexOf('/dist/tanvis.iife.js') + 1);
+        return new URL('.', scripts[i].src).href;
       }
     }
     return '';
@@ -8934,7 +8933,7 @@ div[data-tanvis-controls="species-selector"] {
     return elements.map((element) => render(element));
   }
 
-  const version = '1.1.0';
+  const version = '1.1.3';
 
   if (typeof window !== 'undefined') {
     window.Tanvis = window.Tanvis || {};
@@ -8946,7 +8945,5 @@ div[data-tanvis-controls="species-selector"] {
   exports.init = init;
   exports.version = version;
 
-  return exports;
-
-})({});
+})(this.Tanvis = this.Tanvis || {});
 //# sourceMappingURL=tanvis.iife.js.map
