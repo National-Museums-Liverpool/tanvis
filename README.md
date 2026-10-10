@@ -54,6 +54,8 @@ window.Tanvis.config = {
 };
 ```
 
+Tanvis normally derives `assetBase` from the URL of its script. It’s configurable for hosts where those files are served from a different location. For example the WordPress plugin packages them under its own assets directory, so it sets `assetBase` to that directory's URL.
+
 ## Renderers
 
 Tanvis registers the following renderer types. Add an element with class `tanvis` and `data-vis-type="<type>"` and call `Tanvis.init()`.
@@ -352,3 +354,32 @@ The table containing the text in the species-info-table can be targetted with th
   /* Your styles here */
 }
 ```
+## Notes for developers
+### Versioning
+To see the current versions of the Node package, JS library and WordPress plugin, use this at the command prompt:
+```
+npm run ver
+```
+
+To set the current versions of the Node package and the JS library (and keep them in line), use this at the command prompt:
+```
+npm run ver -- <version-number>
+```
+
+To set the current version of the WordPress plugin, use this at the command prompt:
+```
+npm run ver:wp -- <version-number>
+```
+
+Since the WordPress plugin packages the JS library, if you rebuild the latter with a new version, you should rebuild and reversion the WordPress plugin too.
+### Building
+To build the JS library, use this at the command prompt:
+```
+npm run build
+```
+
+To build the WordPress plugin, use this at the command prompt:
+```
+npm run build:wp
+```
+This also creates or replaces `wordpress/tanvis.zip` with the installable plugin.

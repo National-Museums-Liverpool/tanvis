@@ -8,11 +8,10 @@
   "scripts": {
     "build": "rollup -c",
     "build:watch": "rollup -c -w",
-    "build:wp": "rollup -c && node -e \"const fs=require('fs');fs.mkdirSync('wordpress/tanvis/assets',{recursive:true});for(const f of fs.readdirSync('dependencies'))fs.copyFileSync('dependencies/'+f,'wordpress/tanvis/assets/'+f);fs.copyFileSync('dist/tanvis.iife.js','wordpress/tanvis/assets/tanvis.iife.js');for(const d of ['vcs/simp-100','vcs/hectad-grids','images'])fs.cpSync('data/'+d,'wordpress/tanvis/assets/data/'+d,{recursive:true})\"",
+    "build:wp": "rollup -c && node -e \"const fs=require('fs');fs.mkdirSync('wordpress/tanvis/assets',{recursive:true});for(const f of fs.readdirSync('dependencies'))fs.copyFileSync('dependencies/'+f,'wordpress/tanvis/assets/'+f);fs.copyFileSync('dist/tanvis.iife.js','wordpress/tanvis/assets/tanvis.iife.js');for(const d of ['vcs/simp-100','vcs/hectad-grids','images'])fs.cpSync('data/'+d,'wordpress/tanvis/assets/data/'+d,{recursive:true})\" && powershell -NoProfile -Command \"Compress-Archive -Path 'wordpress/tanvis' -DestinationPath 'wordpress/tanvis.zip' -Force\"",
     "test:unit": "vitest run",
     "test:e2e": "playwright test",
     "test": "vitest run && playwright test",
-    "version": "node scripts/versions.mjs sync && git add src/version.js",
     "ver": "node scripts/versions.mjs",
     "ver:wp": "node scripts/versions.mjs wp"
   },

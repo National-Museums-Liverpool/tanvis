@@ -8934,7 +8934,7 @@ div[data-tanvis-controls="species-selector"] {
     return elements.map((element) => render(element));
   }
 
-  const version = '1.0.0';
+  const version = '1.1.0';
 
   if (typeof window !== 'undefined') {
     window.Tanvis = window.Tanvis || {};
