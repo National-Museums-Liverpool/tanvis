@@ -230,6 +230,51 @@ const SHARED_STYLES = `
   gap: 0.45rem;
 }
 
+.tanvis-map-data-container {
+  position: relative;
+}
+
+.tanvis-map-loading {
+  position: absolute;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.42);
+  color: #1f2937;
+  pointer-events: none;
+}
+
+.tanvis-map-loading-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.65rem;
+  padding: 0.65rem 0.85rem;
+  border: 1px solid #cbd5e1;
+  background: #ffffff;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.18);
+  font: 500 0.95rem/1.2 system-ui, sans-serif;
+}
+
+.tanvis-map-loading-spinner {
+  width: 1.2rem;
+  height: 1.2rem;
+  border: 2px solid #cbd5e1;
+  border-top-color: #0f766e;
+  border-radius: 50%;
+  animation: tanvis-map-loading-spin 800ms linear infinite;
+}
+
+@keyframes tanvis-map-loading-spin {
+  to { transform: rotate(360deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tanvis-map-loading-spinner {
+    animation: none;
+  }
+}
+
 .tanvis-map-download-button {
   display: inline-flex;
   align-items: center;

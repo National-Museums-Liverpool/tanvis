@@ -205,6 +205,8 @@ export function createSpeciesMapAdapter() {
         return;
       }
 
+      showMapDataBusyIndicator(mapContainer, loadId);
+
       logSpeciesMapDebug('fetch:start', {
         loadId,
         region: renderConfig.region ?? '',
@@ -213,14 +215,18 @@ export function createSpeciesMapAdapter() {
 
       if (canReuseOccurrenceData) {
         element.__tanvisSpeciesRank = cachedOccurrenceContext.rank ?? null;
-        applyOccurrenceDataToMap(map, cachedOccurrenceRows, {
-          loadId,
-          region: renderConfig.region ?? '',
-          species: speciesCode,
-          mapInstanceId: map?.__tanvisMapInstanceId,
-          mapRegion: map?.__tanvisMapRegion,
-          elementId: element.id
-        });
+        try {
+          applyOccurrenceDataToMap(map, cachedOccurrenceRows, {
+            loadId,
+            region: renderConfig.region ?? '',
+            species: speciesCode,
+            mapInstanceId: map?.__tanvisMapInstanceId,
+            mapRegion: map?.__tanvisMapRegion,
+            elementId: element.id
+          });
+        } finally {
+          hideMapDataBusyIndicator(mapContainer, loadId);
+        }
         return;
       }
 
@@ -239,6 +245,7 @@ export function createSpeciesMapAdapter() {
         console.log('Fetched taxon info 2:', taxonInfo);
 
         if (element.__tanvisSpeciesMapLoadId !== loadId) {
+          hideMapDataBusyIndicator(mapContainer, loadId);
           return;
         }
 
@@ -307,12 +314,77 @@ export function createSpeciesMapAdapter() {
           });
           console.error('[species-map] failed to fetch occurrences:', error);
           status.showError(normalizeErrorMessage(error, 'Failed to render species map'));
+        } finally {
+          hideMapDataBusyIndicator(mapContainer, loadId);
         }
       };
 
       void loadSpeciesMapData();
     }
   };
+}
+
+function showMapDataBusyIndicator(mapContainer, loadId) {
+  ensureSharedStyles();
+  mapContainer.classList.add('tanvis-map-data-container');
+  const mapSurface = mapContainer.querySelector('#leafletMap') || mapContainer.querySelector('svg') || mapContainer;
+
+  let indicator = mapContainer.querySelector('[data-tanvis-map-loading]');
+  if (!indicator) {
+    indicator = document.createElement('div');
+    indicator.className = 'tanvis-map-loading';
+    indicator.dataset.tanvisMapLoading = '';
+    indicator.setAttribute('role', 'status');
+    indicator.setAttribute('aria-live', 'polite');
+
+    const content = document.createElement('div');
+    content.className = 'tanvis-map-loading-indicator';
+
+    const spinner = document.createElement('span');
+    spinner.className = 'tanvis-map-loading-spinner';
+    spinner.setAttribute('aria-hidden', 'true');
+
+    const label = document.createElement('span');
+    label.textContent = 'Loading map data...';
+
+    content.append(spinner, label);
+    indicator.appendChild(content);
+    mapContainer.appendChild(indicator);
+  }
+
+  indicator.dataset.loadId = String(loadId);
+  indicator.dataset.mapTarget = mapSurface.id || mapSurface.tagName.toLowerCase();
+
+  if (indicator.__tanvisPositionIndicator) {
+    window.removeEventListener('resize', indicator.__tanvisPositionIndicator);
+  }
+
+  const positionIndicator = () => {
+    if (!mapSurface.isConnected || !mapContainer.isConnected) {
+      return;
+    }
+
+    const surfaceBounds = mapSurface.getBoundingClientRect();
+    const containerBounds = mapContainer.getBoundingClientRect();
+    indicator.style.left = `${surfaceBounds.left - containerBounds.left}px`;
+    indicator.style.top = `${surfaceBounds.top - containerBounds.top}px`;
+    indicator.style.width = `${surfaceBounds.width}px`;
+    indicator.style.height = `${surfaceBounds.height}px`;
+  };
+
+  indicator.__tanvisPositionIndicator = positionIndicator;
+  positionIndicator();
+  window.addEventListener('resize', positionIndicator);
+}
+
+function hideMapDataBusyIndicator(mapContainer, loadId) {
+  const indicator = mapContainer.querySelector('[data-tanvis-map-loading]');
+  if (indicator?.dataset.loadId === String(loadId)) {
+    if (indicator.__tanvisPositionIndicator) {
+      window.removeEventListener('resize', indicator.__tanvisPositionIndicator);
+    }
+    indicator.remove();
+  }
 }
 
 function hasD3Dependency() {

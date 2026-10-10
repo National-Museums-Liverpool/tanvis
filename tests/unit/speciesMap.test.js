@@ -31,6 +31,7 @@ describe('species map redraw flow', () => {
     vi.restoreAllMocks();
     delete window.brcatlas;
     document.querySelectorAll('#linked-table, #control').forEach((node) => node.remove());
+    document.querySelectorAll('[data-busy-indicator-test]').forEach((node) => node.remove());
   });
 
   it('shows an explicit D3 dependency message when D3 is missing', async () => {
@@ -52,6 +53,73 @@ describe('species map redraw flow', () => {
 
     expect(element.textContent).toContain('D3 is not available');
     expect(element.textContent).toContain('d3.v7.min.js');
+  });
+
+  it.each([
+    ['static', 'svgMap', 'svg'],
+    ['leaflet', 'leafletMap', 'leafletMap']
+  ])('centers the busy indicator over the %s map surface while data loads', async (mapType, backendName, surfaceTag) => {
+    const taxonIdentifier = 'BUSY-OVERLAY-TEST-TAXON';
+    let resolveTaxonResponse;
+    let resolveOccurrencesResponse;
+    window.brcatlas = {
+      [backendName]: (options) => {
+        const mapContainer = document.querySelector(options.selector);
+        const surface = document.createElement(surfaceTag);
+        if (surfaceTag === 'leafletMap') {
+          surface.id = 'leafletMap';
+        }
+        surface.getBoundingClientRect = () => ({ left: 70, top: 40, width: 300, height: 180 });
+        mapContainer.getBoundingClientRect = () => ({ left: 0, top: 0, width: 720, height: 320 });
+        mapContainer.appendChild(surface);
+        return { setMapType() {}, redrawMap() {} };
+      }
+    };
+    vi.spyOn(globalThis, 'fetch').mockImplementation((url) => {
+      const parsedUrl = new URL(url);
+      if (parsedUrl.pathname.endsWith(`/taxa/${taxonIdentifier}`)) {
+        return new Promise((resolve) => { resolveTaxonResponse = resolve; });
+      }
+      if (parsedUrl.pathname.endsWith('/occurrences') && parsedUrl.searchParams.get('taxon_identifier[eq]') === taxonIdentifier) {
+        return new Promise((resolve) => { resolveOccurrencesResponse = resolve; });
+      }
+      return Promise.resolve({ ok: true, json: async () => ({ data: [] }) });
+    });
+
+    const element = document.createElement('div');
+    element.dataset.busyIndicatorTest = '';
+    document.body.appendChild(element);
+    renderSpeciesMap(element, {
+      type: 'species-map',
+      mapType,
+      region: 'vc-58',
+      taxonId: taxonIdentifier
+    });
+
+    const indicator = element.querySelector('[data-tanvis-map-loading]');
+    expect(indicator).not.toBeNull();
+    expect(indicator.getAttribute('role')).toBe('status');
+    expect(indicator.textContent).toBe('Loading map data...');
+    expect(indicator.dataset.mapTarget).toBe(surfaceTag === 'leafletMap' ? 'leafletMap' : 'svg');
+    expect(indicator.style.left).toBe('70px');
+    expect(indicator.style.top).toBe('40px');
+    expect(indicator.style.width).toBe('300px');
+    expect(indicator.style.height).toBe('180px');
+
+    await vi.waitFor(() => expect(resolveTaxonResponse).toBeTypeOf('function'));
+    resolveTaxonResponse({
+      ok: true,
+      json: async () => ({ data: { taxon_rank__rank: 'Species', taxon__scientific_name: 'Test species' } })
+    });
+
+    await vi.waitFor(() => expect(resolveOccurrencesResponse).toBeTypeOf('function'));
+    expect(element.querySelector('[data-tanvis-map-loading]')).not.toBeNull();
+    resolveOccurrencesResponse({
+      ok: true,
+      json: async () => ({ data: [{ grid_ref_2km: 'SJ58D' }] })
+    });
+
+    await vi.waitFor(() => expect(element.querySelector('[data-tanvis-map-loading]')).toBeNull());
   });
 
   it('uses the exact taxon identifier for Species occurrences', async () => {
