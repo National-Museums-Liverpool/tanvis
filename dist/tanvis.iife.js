@@ -1077,10 +1077,10 @@ var Tanvis = (function (exports) {
   }
 
   // Returns the URL (with trailing slash) of the folder containing the data/ resources.
-  // Hosts can set window.TANVIS_CONFIG.assetBase; otherwise it is derived from the
+  // Hosts can set window.Tanvis.config.assetBase; otherwise it is derived from the
   // script URL by stripping /dist/tanvis.iife.js (the script may be served from a subfolder).
   function resolveAssetBase() {
-    const override = typeof window !== 'undefined' ? window.TANVIS_CONFIG?.assetBase : undefined;
+    const override = typeof window !== 'undefined' ? window.Tanvis?.config?.assetBase : undefined;
     if (typeof override === 'string' && override) {
       return override.endsWith('/') ? override : `${override}/`;
     }
@@ -2898,11 +2898,11 @@ div[data-tanvis-controls="species-selector"] {
     return [];
   }
 
-  const DEFAULT_API_BASE = 'https://tanhub.biodiverseit.co.uk/api/v1';
+  const DEFAULT_API_BASE = 'https://tanhub.northwestinvertebrates.org.uk/api/v1';
 
-  // Hosts (e.g. the WordPress plugin) can override the default by setting window.TANVIS_CONFIG.apiBase.
+  // Hosts (e.g. the WordPress plugin) can override the default with window.Tanvis.config.apiBase.
   function resolveApiBase() {
-    const override = typeof window !== 'undefined' ? window.TANVIS_CONFIG?.apiBase : undefined;
+    const override = typeof window !== 'undefined' ? window.Tanvis?.config?.apiBase : undefined;
     return typeof override === 'string' && override ? override : DEFAULT_API_BASE;
   }
 
@@ -8934,10 +8934,11 @@ div[data-tanvis-controls="species-selector"] {
     return elements.map((element) => render(element));
   }
 
-  const version = '1.0.0';
+  const version = '1.1.0';
 
   if (typeof window !== 'undefined') {
     window.Tanvis = window.Tanvis || {};
+    window.Tanvis.config = window.Tanvis.config || {};
     window.Tanvis.init = init;
     window.Tanvis.version = version;
   }

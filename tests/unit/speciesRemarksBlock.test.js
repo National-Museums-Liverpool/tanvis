@@ -57,7 +57,7 @@ describe('species remarks block', () => {
     await new Promise((resolve) => setTimeout(resolve, 0));
 
     expect(globalThis.fetch).toHaveBeenCalledWith(
-      'https://tanhub.biodiverseit.co.uk/api/v1/taxa/NHMSYS0000000002'
+      'https://tanhub.northwestinvertebrates.org.uk/api/v1/taxa/NHMSYS0000000002'
     );
     expect(element.textContent).toBe('A scarce species of unimproved grassland.');
   });

@@ -1,8 +1,8 @@
 // Returns the URL (with trailing slash) of the folder containing the data/ resources.
-// Hosts can set window.TANVIS_CONFIG.assetBase; otherwise it is derived from the
+// Hosts can set window.Tanvis.config.assetBase; otherwise it is derived from the
 // script URL by stripping /dist/tanvis.iife.js (the script may be served from a subfolder).
 export function resolveAssetBase() {
-  const override = typeof window !== 'undefined' ? window.TANVIS_CONFIG?.assetBase : undefined;
+  const override = typeof window !== 'undefined' ? window.Tanvis?.config?.assetBase : undefined;
   if (typeof override === 'string' && override) {
     return override.endsWith('/') ? override : `${override}/`;
   }

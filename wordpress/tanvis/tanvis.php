@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Tanvis
  * Description: Embed Tanvis biological record visualisations using the [tanvis] shortcode.
- * Version: 1.0.0
+ * Version: 1.1.0
  * License: GPL-3.0-only
  * Text Domain: tanvis
  */
@@ -11,8 +11,8 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-const TANVIS_WP_VERSION     = '1.0.0';
-const TANVIS_WP_DEFAULT_API = 'https://tanhub.biodiverseit.co.uk/api/v1';
+const TANVIS_WP_VERSION     = '1.1.0';
+const TANVIS_WP_DEFAULT_API = 'https://tanhub.northwestinvertebrates.org.uk/api/v1';
 const TANVIS_WP_OPTION      = 'tanvis_api_base';
 
 function tanvis_wp_api_base() {
@@ -70,6 +70,21 @@ add_action(
 	}
 );
 
+add_filter(
+	'plugin_action_links_' . plugin_basename( __FILE__ ),
+	function ( $links ) {
+		if ( current_user_can( 'manage_options' ) ) {
+			$settings_link = sprintf(
+				'<a href="%s">%s</a>',
+				esc_url( admin_url( 'options-general.php?page=tanvis' ) ),
+				esc_html__( 'Settings', 'tanvis' )
+			);
+			array_unshift( $links, $settings_link );
+		}
+		return $links;
+	}
+);
+
 /* ---------- Assets ---------- */
 
 // Called lazily: shortcodes also render during REST saves, where wp_enqueue_scripts never fires.
@@ -94,7 +109,7 @@ function tanvis_wp_register_assets() {
 	wp_register_script( 'tanvis', $base . 'tanvis.iife.js', array(), $v, true );
 	wp_add_inline_script(
 		'tanvis',
-		'window.TANVIS_CONFIG = ' . wp_json_encode( array( 'apiBase' => tanvis_wp_api_base(), 'assetBase' => $base ) ) . ';',
+		'window.Tanvis = window.Tanvis || {}; window.Tanvis.config = Object.assign(window.Tanvis.config || {}, ' . wp_json_encode( array( 'apiBase' => tanvis_wp_api_base(), 'assetBase' => $base ) ) . ');',
 		'before'
 	);
 	wp_add_inline_script( 'tanvis', 'window.Tanvis.init();' );

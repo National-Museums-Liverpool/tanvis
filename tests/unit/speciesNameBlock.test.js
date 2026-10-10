@@ -59,7 +59,7 @@ describe('species name block', () => {
     await new Promise((resolve) => setTimeout(resolve, 0));
 
     expect(globalThis.fetch).toHaveBeenCalledWith(
-      'https://tanhub.biodiverseit.co.uk/api/v1/taxa/NHMSYS0000000001'
+      'https://tanhub.northwestinvertebrates.org.uk/api/v1/taxa/NHMSYS0000000001'
     );
     expect(element.textContent).toBe('Bombus terrestris Linnaeus, 1758 (Buff-tailed Bumblebee)');
     expect(element.querySelector('em:not([hidden])')?.textContent).toBe('Bombus terrestris');

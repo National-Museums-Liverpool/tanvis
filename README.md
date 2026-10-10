@@ -42,6 +42,18 @@ Library version string.
 console.log(window.Tanvis.version);
 ```
 
+### Configuration
+
+Host pages can set configuration on `window.Tanvis.config`. Set `apiBase` to override the default API URL; `assetBase` optionally overrides the location used to load Tanvis data assets.
+
+```js
+window.Tanvis = window.Tanvis || {};
+window.Tanvis.config = {
+  apiBase: 'https://example.com/api/v1',
+  assetBase: '/tanvis/'
+};
+```
+
 ## Renderers
 
 Tanvis registers the following renderer types. Add an element with class `tanvis` and `data-vis-type="<type>"` and call `Tanvis.init()`.
@@ -68,7 +80,7 @@ The authoritative list of attributes, defaults and descriptions for each rendere
 
 ### Common behaviour
 
-- **API base**: all renderers use `window.TANVIS_CONFIG.apiBase` if set, otherwise `https://tanhub.biodiverseit.co.uk/api/v1`.
+- **API base**: all renderers use `window.Tanvis.config.apiBase` if set, otherwise `https://tanhub.northwestinvertebrates.org.uk/api/v1`.
 - **Region**: `data-vis-region` is one of `vc-58`, `vc-59`, `vc-60`, `vc-all` (default `vc-all`).
 - **Control block**: `data-vis-control="<id>"` subscribes a visualisation to a `control-block` element with that id. The control block's current selection takes precedence over the visualisation's own `data-vis-region`, `data-vis-groupid` and `data-vis-language`, both initially and on later changes. Controls communicate with `region-change`, `taxon-group-change` and `language-change` events.
 - **Taxon source**: `data-vis-taxon-id-source="<id>"` subscribes a taxon-based visualisation to `taxon-identified` events (`detail.speciesId`) raised by another element - a `species-identifier`, a table (on row click) or a control block species search. `data-vis-taxonid` sets the initial taxon.
