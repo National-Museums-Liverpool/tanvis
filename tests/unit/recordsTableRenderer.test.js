@@ -66,11 +66,12 @@ describe('renderRecordsTable', () => {
   });
 
   it('filters higher taxa by scientific name and reuses taxon info across pages', async () => {
+    const pageResults = [];
     window.Tabulator = function Tabulator(container, options) {
       void Promise.all([
         options.ajaxRequestFunc('custom_handler', {}, { page: 1, size: 10 }),
         options.ajaxRequestFunc('custom_handler', {}, { page: 2, size: 10 })
-      ]);
+      ]).then((results) => pageResults.push(...results));
       return { on() {} };
     };
 
@@ -82,7 +83,21 @@ describe('renderRecordsTable', () => {
         ok: true,
         json: async () => parsedUrl.pathname.endsWith('/taxa/FAMILY-1')
           ? { data: { taxon_rank__rank: 'Family', taxon__scientific_name: 'Culicidae' } }
-          : { data: [], meta: { total: 15 } }
+          : {
+              data: [{
+                taxon_identifier: 'RECORD-TAXON',
+                unique_key: 'SOURCE:RECORD-1',
+                from_date: '2025-01-01',
+                to_date: '2025-01-02',
+                grid_ref_2km: 'SJ58D',
+                taxon: { scientific_name: 'Culicidae', taxon_rank__rank: 'Family' },
+                'parent-taxa': [{ scientific_name: 'Diptera' }],
+                taxon__scientific_name: 'Culicidae',
+                parent_taxa__scientific_name: 'Diptera',
+                source__label: 'Imported feed'
+              }],
+              meta: { total: 15 }
+            }
       };
     });
 
@@ -97,6 +112,7 @@ describe('renderRecordsTable', () => {
     const taxonRequests = () => requestedUrls.filter((url) => url.pathname.endsWith('/taxa/FAMILY-1'));
     const occurrenceRequests = () => requestedUrls.filter((url) => url.pathname.endsWith('/occurrences'));
     await vi.waitFor(() => expect(occurrenceRequests()).toHaveLength(2));
+    await vi.waitFor(() => expect(pageResults).toHaveLength(2));
 
     expect(taxonRequests()).toHaveLength(1);
     expect(occurrenceRequests().map((url) => url.searchParams.get('offset'))).toEqual(['0', '10']);
@@ -107,6 +123,17 @@ describe('renderRecordsTable', () => {
       expect(requestUrl.searchParams.get('higher_geography_identifier[eq]')).toBe('58');
       expect(requestUrl.searchParams.get('grid_ref_2km[eq]')).toBe('SJ58D');
       expect(requestUrl.searchParams.get('sort')).toBe('-to_date');
+    }
+
+    for (const pageResult of pageResults) {
+      expect(pageResult.data[0]).toMatchObject({
+        Source: 'SOURCE',
+        Date: '2025-01-01 to 2025-01-02',
+        grid_ref_2km: 'SJ58D'
+      });
+      expect(pageResult.data[0]).not.toHaveProperty('taxon');
+      expect(pageResult.data[0]).not.toHaveProperty('parent-taxa');
+      expect(Object.keys(pageResult.data[0]).some((field) => field.includes('__'))).toBe(false);
     }
   });
 });

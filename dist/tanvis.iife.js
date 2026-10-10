@@ -5329,7 +5329,25 @@ div[data-tanvis-controls="species-selector"] {
       transformed.Date = formatDateRange(from_date, to_date);
     }
 
-    return { ...transformed, ...rest };
+    const occurrenceFields = Object.fromEntries(
+      Object.entries(rest).filter(([field]) => !isHiddenOccurrenceField(field))
+    );
+
+    return { ...transformed, ...occurrenceFields };
+  }
+
+  function isHiddenOccurrenceField(field) {
+    if (field.includes('__')) {
+      return true;
+    }
+
+    const normalizedField = field.toLowerCase().replace(/-/g, '_');
+    return normalizedField === 'taxon'
+      || normalizedField.startsWith('taxon__')
+      || normalizedField.startsWith('taxon.')
+      || normalizedField === 'parent_taxa'
+      || normalizedField.startsWith('parent_taxa__')
+      || normalizedField.startsWith('parent_taxa.');
   }
 
   function extractSourceFromUniqueKey(uniqueKey) {
