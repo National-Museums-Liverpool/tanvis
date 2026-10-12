@@ -436,7 +436,6 @@
         if (typeof(value) === 'undefined' || value === null || value === '') {
           value = rule.defaultValue;
         }      
-
         // Validate and resolve the date -
         // must run on default value in order to parse shorthand date 
         // values like 'month-1' or 'year-1' into a specific date.
@@ -447,7 +446,8 @@
           const now = new Date();
           now.setDate(1);
           now.setMonth(now.getMonth() - n);
-          ret.value = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-31`;
+          const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+          ret.value = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${lastDay}`;
         } else if (/^year-\d+$/.test(value)) {
           const n = parseInt(value.split('-')[1], 10);
           const now = new Date();
@@ -751,6 +751,16 @@
       which will be replaced with the actual taxon identifier when the link is rendered.
       If you want to specify multiple links, separate them with '^^^' (three carets).`
     }),
+    tableResponsive: createRule({
+      key: 'tableResponsive',
+      datasetName: 'visTableResponsive',
+      allowedValues: ['false', 'hide', 'collapse'],
+      defaultValue: 'false',
+      parseAndValidate: parseAndValidateSet,
+      info: `Indicates whether the table should have responsive layout enabled and how it should behave.
+      'false' means responsive layout is disabled, 'hide' means columns will be hidden on smaller screens,
+      and 'collapse' means columns will be collapsed into a list on smaller screens.`
+    }),
     downloadButton: createRule({
       key: 'downloadButton',
       datasetName: 'visDownloadButton',
@@ -768,14 +778,14 @@
     'species-map': ['taxonId', 'taxonIdSource', 'control', 'region', 'downloadButton', 'hectads', 'mapType', 'boundaries', 'dotShape', 'dotColour', 'transformation', 'expand', 'width', 'height'],
     'grid-stats-map': ['gridStatsType', 'control', 'region', 'downloadButton', 'hectads', 'mapType', 'boundaries', 'dotShape', 'dotColour', 'transformation', 'expand', 'width', 'height'],
     'temporal-year-chart': ['taxonId', 'temporalStatsType', 'taxonIdSource', 'chartType', 'recordsColour', 'squaresColour','startYear', 'endYear', 'region', 'control', 'expand', 'width', 'height'],
-    'new-species-table': ['startDate', 'endDate', 'region', 'groupId', 'language','control', 'pageSize', 'sort', 'link'],
-    'increasing-species-table': ['topN', 'region', 'groupId', 'language','control', 'pageSize', 'sort', 'link'],
-    'species-absent-table': ['year', 'region', 'groupId', 'language','control', 'pageSize', 'sort', 'link'],
+    'new-species-table': ['startDate', 'endDate', 'region', 'groupId', 'language','control', 'pageSize', 'sort', 'link', 'tableResponsive'],
+    'increasing-species-table': ['topN', 'region', 'groupId', 'language','control', 'pageSize', 'sort', 'link', 'tableResponsive'],
+    'species-absent-table': ['year', 'region', 'groupId', 'language','control', 'pageSize', 'sort', 'link', 'tableResponsive'],
     'species-name-block': ['taxonId', 'taxonIdSource', 'primaryName', 'secondaryName', 'authority'],
     'species-remarks-block': ['taxonId', 'taxonIdSource'],
     'species-info-block': ['taxonId', 'taxonIdSource', 'control', 'region'],
     'species-image': ['taxonId', 'taxonIdSource', 'imageVariant', 'uuid', 'expand', 'width', 'height', 'showImageCaption', 'showImageAttribution', 'showImageLicense'],
-    'records-table': ['taxonId', 'taxonIdSource', 'control', 'region', 'pageSize'],
+    'records-table': ['taxonId', 'taxonIdSource', 'control', 'region', 'pageSize', 'tableResponsive'],
     'general-info-block': [],
     'help-block': []
   };
@@ -3291,6 +3301,7 @@ div[data-tanvis-controls="species-selector"] {
         createTableContainer$3({
           Tabulator,
           pageSize,
+          tableResponsive: renderConfig.tableResponsive,
           link: renderConfig.link,
           requestPage: async ({ pageNumber, pageSize: requestedPageSize }) => {
             const labelModeForRequest = getEffectiveLabelModeForElement$2(element, renderConfig);
@@ -3419,14 +3430,17 @@ div[data-tanvis-controls="species-selector"] {
     return candidate;
   }
 
-  function createTableContainer$3({ Tabulator, pageSize, link, requestPage, element, loadId, status }) {
+  function createTableContainer$3({ Tabulator, pageSize, tableResponsive, link, requestPage, element, loadId, status }) {
     const container = document.createElement('div');
     element.appendChild(container);
+    const responsiveLayout = tableResponsive === 'false'
+      ? false
+      : tableResponsive ?? false;
 
     const table = new Tabulator(container, {
       columns: [...columns$2, ...createLinkColumns(link)],
       layout: 'fitDataFill',
-      responsiveLayout: 'collapse',
+      responsiveLayout,
       pagination: true,
       paginationMode: 'remote',
       paginationSize: pageSize,
@@ -3869,6 +3883,7 @@ div[data-tanvis-controls="species-selector"] {
         createTableContainer$2({
           Tabulator,
           pageSize,
+          tableResponsive: renderConfig.tableResponsive,
           link: renderConfig.link,
           requestPage: async ({ pageNumber, pageSize: requestedPageSize }) => {
             const labelModeForRequest = getEffectiveLabelModeForElement$1(element, renderConfig);
@@ -3994,14 +4009,17 @@ div[data-tanvis-controls="species-selector"] {
     return candidate;
   }
 
-  function createTableContainer$2({ Tabulator, pageSize, link, requestPage, element, loadId, status }) {
+  function createTableContainer$2({ Tabulator, pageSize, tableResponsive, link, requestPage, element, loadId, status }) {
     const container = document.createElement('div');
     element.appendChild(container);
+    const responsiveLayout = tableResponsive === 'false'
+      ? false
+      : tableResponsive ?? 'collapse';
 
     const table = new Tabulator(container, {
       columns: [...columns$1, ...createLinkColumns(link)],
       layout: 'fitDataFill',
-      responsiveLayout: 'collapse',
+      responsiveLayout,
       pagination: true,
       paginationMode: 'remote',
       paginationSize: pageSize,
@@ -4423,6 +4441,7 @@ div[data-tanvis-controls="species-selector"] {
         createTableContainer$1({
           Tabulator,
           pageSize,
+          tableResponsive: renderConfig.tableResponsive,
           link: renderConfig.link,
           requestPage: async ({ pageNumber, pageSize: requestedPageSize }) => {
             const labelModeForRequest = getEffectiveLabelModeForElement(element, renderConfig);
@@ -4547,14 +4566,17 @@ div[data-tanvis-controls="species-selector"] {
     return candidate;
   }
 
-  function createTableContainer$1({ Tabulator, pageSize, link, requestPage, element, loadId, status }) {
+  function createTableContainer$1({ Tabulator, pageSize, tableResponsive, link, requestPage, element, loadId, status }) {
     const container = document.createElement('div');
     element.appendChild(container);
+    const responsiveLayout = tableResponsive === 'false'
+      ? false
+      : tableResponsive ?? 'collapse';
 
     const table = new Tabulator(container, {
       columns: [...columns, ...createLinkColumns(link)],
       layout: 'fitDataFill',
-      responsiveLayout: 'collapse',
+      responsiveLayout,
       pagination: true,
       paginationMode: 'remote',
       paginationSize: pageSize,
@@ -5088,6 +5110,7 @@ div[data-tanvis-controls="species-selector"] {
         createTableContainer({
           Tabulator,
           pageSize,
+          tableResponsive: renderConfig.tableResponsive,
           requestPage: async ({ pageNumber, pageSize: requestedPageSize }) => {
             const taxonInfo = await getTaxonInfoForRender();
             if (element.__tanvisRecordsTableLoadId !== loadId) {
@@ -5224,9 +5247,12 @@ div[data-tanvis-controls="species-selector"] {
   }
 
   // Columns are not fixed since the table shows whatever attributes the occurrences API returns.
-  function createTableContainer({ Tabulator, pageSize, requestPage, element, loadId, status }) {
+  function createTableContainer({ Tabulator, pageSize, tableResponsive, requestPage, element, loadId, status }) {
     const container = document.createElement('div');
     element.appendChild(container);
+    const responsiveLayout = tableResponsive === 'false'
+      ? false
+      : tableResponsive ?? 'collapse';
 
     const table = new Tabulator(container, {
       autoColumns: true,
@@ -5243,7 +5269,7 @@ div[data-tanvis-controls="species-selector"] {
         return definitions;
       },
       layout: 'fitDataFill',
-      responsiveLayout: 'collapse',
+      responsiveLayout,
       pagination: true,
       paginationMode: 'remote',
       paginationSize: pageSize,
@@ -6065,7 +6091,7 @@ div[data-tanvis-controls="species-selector"] {
       spinner.setAttribute('aria-hidden', 'true');
 
       const label = document.createElement('span');
-      label.textContent = 'Loading map data...';
+      label.textContent = 'Loading occurrence data...';
 
       content.append(spinner, label);
       indicator.appendChild(content);
@@ -7302,7 +7328,7 @@ div[data-tanvis-controls="species-selector"] {
       lineInterpolator: 'curveMonotoneX',
       showLegend: true,
       interactivity: 'none',
-      margin: { left: 40 },
+      margin: { left: 40, right: 20, bottom: 20 },
       minY: 0,
       perRow: 1,
       ...(Number.isFinite(startYear) ? { minPeriod: startYear } : {}),
@@ -9152,7 +9178,7 @@ div[data-tanvis-controls="species-selector"] {
     return elements.map((element) => render(element));
   }
 
-  const version = '1.2.0';
+  const version = '1.3.0';
 
   if (typeof window !== 'undefined') {
     window.Tanvis = window.Tanvis || {};
