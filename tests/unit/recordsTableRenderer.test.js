@@ -9,7 +9,9 @@ describe('renderRecordsTable', () => {
   });
 
   it('filters occurrences by taxon and tetrad after a subscribed tetrad-clicked event', async () => {
+    const tabulatorOptions = [];
     window.Tabulator = function Tabulator(container, options) {
+      tabulatorOptions.push(options);
       void options.ajaxRequestFunc('custom_handler', {}, { page: 1, size: 10 });
       return { on() {} };
     };
@@ -35,10 +37,12 @@ describe('renderRecordsTable', () => {
     renderRecordsTable(element, {
       type: 'records-table',
       taxonId: 'OLD-TAXON',
-      taxonIdSource: 'linked-map'
+      taxonIdSource: 'linked-map',
+      tableResponsive: 'false'
     });
 
     await vi.waitFor(() => expect(occurrenceRequests()).toHaveLength(1));
+    expect(tabulatorOptions[0].responsiveLayout).toBe(false);
 
     taxonIdSource.dispatchEvent(new CustomEvent('tetrad-clicked', {
       detail: {

@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { parseOptions } from '../../src/config/parseOptions.js';
 
 describe('parseOptions', () => {
@@ -142,6 +142,27 @@ describe('parseOptions', () => {
       startDate: '2025-01-01',
       endDate: '2025-12-31'
     });
+  });
+
+  it('resolves relative end dates to the actual last day of the month', () => {
+    vi.useFakeTimers();
+    try {
+      vi.setSystemTime(new Date(2026, 9, 12));
+      const septemberElement = document.createElement('div');
+      septemberElement.dataset.visType = 'new-species-table';
+      septemberElement.dataset.visEndDate = 'month-1';
+      expect(parseOptions(septemberElement).endDate).toBe('2026-09-30');
+
+      const februaryElement = document.createElement('div');
+      februaryElement.dataset.visType = 'new-species-table';
+      februaryElement.dataset.visEndDate = 'month-8';
+      expect(parseOptions(februaryElement).endDate).toBe('2026-02-28');
+
+      vi.setSystemTime(new Date(2024, 9, 12));
+      expect(parseOptions(februaryElement).endDate).toBe('2024-02-29');
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it('parses data-vis-top-n when supplied', () => {

@@ -64,7 +64,8 @@ describe('renderNewSpeciesTable', () => {
     renderNewSpeciesTable(element, {
       type: 'new-species-table',
       startDate: '2025-01-01',
-      endDate: '2025-12-31'
+      endDate: '2025-12-31',
+      tableResponsive: 'false'
     });
 
     await new Promise((resolve) => setTimeout(resolve, 0));
@@ -77,6 +78,7 @@ describe('renderNewSpeciesTable', () => {
     expect(String(fetchMock.mock.calls[0][0])).toContain('offset=0');
     expect(tabulatorCalls).toHaveLength(1);
     expect(tabulatorCalls[0].options.pagination).toBe(true);
+    expect(tabulatorCalls[0].options.responsiveLayout).toBe(false);
     expect(tabulatorCalls[0].options.columns).toHaveLength(9);
     expect(tabulatorCalls[0].options.data).toBeUndefined();
     expect(element.textContent).toContain('1 new species between 2025-01-01 and 2025-12-31');

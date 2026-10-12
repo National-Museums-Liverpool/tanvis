@@ -42,7 +42,8 @@ describe('renderSpeciesAbsentTable', () => {
     const element = document.createElement('div');
     renderSpeciesAbsentTable(element, {
       type: 'species-absent-table',
-      year: 2024
+      year: 2024,
+      tableResponsive: 'collapse'
     });
 
     await new Promise((resolve) => setTimeout(resolve, 0));
@@ -53,6 +54,7 @@ describe('renderSpeciesAbsentTable', () => {
     expect(String(fetchMock.mock.calls[0][0])).toContain('limit=10');
     expect(String(fetchMock.mock.calls[0][0])).toContain('offset=0');
     expect(tabulatorCalls).toHaveLength(1);
+    expect(tabulatorCalls[0].options.responsiveLayout).toBe('collapse');
     expect(tabulatorCalls[0].options.columns).toHaveLength(8);
     expect(tabulatorCalls[0].options.data).toBeUndefined();
     expect(element.querySelector('[data-tabulator-mounted="true"]')).not.toBeNull();

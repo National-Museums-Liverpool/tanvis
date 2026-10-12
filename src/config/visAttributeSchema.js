@@ -426,7 +426,6 @@ const RULES = {
       if (typeof(value) === 'undefined' || value === null || value === '') {
         value = rule.defaultValue;
       }      
-
       // Validate and resolve the date -
       // must run on default value in order to parse shorthand date 
       // values like 'month-1' or 'year-1' into a specific date.
@@ -437,7 +436,8 @@ const RULES = {
         const now = new Date();
         now.setDate(1);
         now.setMonth(now.getMonth() - n);
-        ret.value = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-31`;
+        const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+        ret.value = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${lastDay}`;
       } else if (/^year-\d+$/.test(value)) {
         const n = parseInt(value.split('-')[1], 10);
         const now = new Date();
@@ -741,6 +741,16 @@ const RULES = {
       which will be replaced with the actual taxon identifier when the link is rendered.
       If you want to specify multiple links, separate them with '^^^' (three carets).`
   }),
+  tableResponsive: createRule({
+    key: 'tableResponsive',
+    datasetName: 'visTableResponsive',
+    allowedValues: ['false', 'hide', 'collapse'],
+    defaultValue: 'false',
+    parseAndValidate: parseAndValidateSet,
+    info: `Indicates whether the table should have responsive layout enabled and how it should behave.
+      'false' means responsive layout is disabled, 'hide' means columns will be hidden on smaller screens,
+      and 'collapse' means columns will be collapsed into a list on smaller screens.`
+  }),
   downloadButton: createRule({
     key: 'downloadButton',
     datasetName: 'visDownloadButton',
@@ -758,14 +768,14 @@ const VIS_TYPE_RULE_SETS = {
   'species-map': ['taxonId', 'taxonIdSource', 'control', 'region', 'downloadButton', 'hectads', 'mapType', 'boundaries', 'dotShape', 'dotColour', 'transformation', 'expand', 'width', 'height'],
   'grid-stats-map': ['gridStatsType', 'control', 'region', 'downloadButton', 'hectads', 'mapType', 'boundaries', 'dotShape', 'dotColour', 'transformation', 'expand', 'width', 'height'],
   'temporal-year-chart': ['taxonId', 'temporalStatsType', 'taxonIdSource', 'chartType', 'recordsColour', 'squaresColour','startYear', 'endYear', 'region', 'control', 'expand', 'width', 'height'],
-  'new-species-table': ['startDate', 'endDate', 'region', 'groupId', 'language','control', 'pageSize', 'sort', 'link'],
-  'increasing-species-table': ['topN', 'region', 'groupId', 'language','control', 'pageSize', 'sort', 'link'],
-  'species-absent-table': ['year', 'region', 'groupId', 'language','control', 'pageSize', 'sort', 'link'],
+  'new-species-table': ['startDate', 'endDate', 'region', 'groupId', 'language','control', 'pageSize', 'sort', 'link', 'tableResponsive'],
+  'increasing-species-table': ['topN', 'region', 'groupId', 'language','control', 'pageSize', 'sort', 'link', 'tableResponsive'],
+  'species-absent-table': ['year', 'region', 'groupId', 'language','control', 'pageSize', 'sort', 'link', 'tableResponsive'],
   'species-name-block': ['taxonId', 'taxonIdSource', 'primaryName', 'secondaryName', 'authority'],
   'species-remarks-block': ['taxonId', 'taxonIdSource'],
   'species-info-block': ['taxonId', 'taxonIdSource', 'control', 'region'],
   'species-image': ['taxonId', 'taxonIdSource', 'imageVariant', 'uuid', 'expand', 'width', 'height', 'showImageCaption', 'showImageAttribution', 'showImageLicense'],
-  'records-table': ['taxonId', 'taxonIdSource', 'control', 'region', 'pageSize'],
+  'records-table': ['taxonId', 'taxonIdSource', 'control', 'region', 'pageSize', 'tableResponsive'],
   'general-info-block': [],
   'help-block': []
 };

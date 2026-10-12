@@ -43,7 +43,8 @@ describe('renderIncreasingSpeciesTable', () => {
     const element = document.createElement('div');
     renderIncreasingSpeciesTable(element, {
       type: 'increasing-species-table',
-      topN: 25
+      topN: 25,
+      tableResponsive: 'hide'
     });
 
     await new Promise((resolve) => setTimeout(resolve, 0));
@@ -54,6 +55,7 @@ describe('renderIncreasingSpeciesTable', () => {
     expect(String(fetchMock.mock.calls[0][0])).toContain('limit=10');
     expect(String(fetchMock.mock.calls[0][0])).toContain('offset=0');
     expect(tabulatorCalls).toHaveLength(1);
+    expect(tabulatorCalls[0].options.responsiveLayout).toBe('hide');
     expect(tabulatorCalls[0].options.data).toBeUndefined();
     expect(element.textContent).toContain('Top 25 species by frequency trend');
   });

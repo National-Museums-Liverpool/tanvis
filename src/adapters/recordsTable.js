@@ -129,6 +129,7 @@ export function createRecordsTableAdapter() {
       createTableContainer({
         Tabulator,
         pageSize,
+        tableResponsive: renderConfig.tableResponsive,
         requestPage: async ({ pageNumber, pageSize: requestedPageSize }) => {
           const taxonInfo = await getTaxonInfoForRender();
           if (element.__tanvisRecordsTableLoadId !== loadId) {
@@ -265,9 +266,12 @@ function formatTableRegionLabel(region) {
 }
 
 // Columns are not fixed since the table shows whatever attributes the occurrences API returns.
-function createTableContainer({ Tabulator, pageSize, requestPage, element, loadId, status }) {
+function createTableContainer({ Tabulator, pageSize, tableResponsive, requestPage, element, loadId, status }) {
   const container = document.createElement('div');
   element.appendChild(container);
+  const responsiveLayout = tableResponsive === 'false'
+    ? false
+    : tableResponsive ?? 'collapse';
 
   const table = new Tabulator(container, {
     autoColumns: true,
@@ -284,7 +288,7 @@ function createTableContainer({ Tabulator, pageSize, requestPage, element, loadI
       return definitions;
     },
     layout: 'fitDataFill',
-    responsiveLayout: 'collapse',
+    responsiveLayout,
     pagination: true,
     paginationMode: 'remote',
     paginationSize: pageSize,

@@ -115,6 +115,7 @@ export function createSpeciesAbsentTableAdapter() {
       const { container } = createTableContainer({
         Tabulator,
         pageSize,
+        tableResponsive: renderConfig.tableResponsive,
         link: renderConfig.link,
         requestPage: async ({ pageNumber, pageSize: requestedPageSize }) => {
           const labelModeForRequest = getEffectiveLabelModeForElement(element, renderConfig);
@@ -239,14 +240,17 @@ function formatTableRegionLabel(region) {
   return candidate;
 }
 
-function createTableContainer({ Tabulator, pageSize, link, requestPage, element, loadId, status }) {
+function createTableContainer({ Tabulator, pageSize, tableResponsive, link, requestPage, element, loadId, status }) {
   const container = document.createElement('div');
   element.appendChild(container);
+  const responsiveLayout = tableResponsive === 'false'
+    ? false
+    : tableResponsive ?? 'collapse';
 
   const table = new Tabulator(container, {
     columns: [...columns, ...createLinkColumns(link)],
     layout: 'fitDataFill',
-    responsiveLayout: 'collapse',
+    responsiveLayout,
     pagination: true,
     paginationMode: 'remote',
     paginationSize: pageSize,
