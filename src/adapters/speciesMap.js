@@ -345,7 +345,7 @@ function showMapDataBusyIndicator(mapContainer, loadId) {
     spinner.setAttribute('aria-hidden', 'true');
 
     const label = document.createElement('span');
-    label.textContent = 'Loading map data...';
+    label.textContent = 'Loading occurrence data...';
 
     content.append(spinner, label);
     indicator.appendChild(content);

@@ -99,7 +99,7 @@ describe('species map redraw flow', () => {
     const indicator = element.querySelector('[data-tanvis-map-loading]');
     expect(indicator).not.toBeNull();
     expect(indicator.getAttribute('role')).toBe('status');
-    expect(indicator.textContent).toBe('Loading map data...');
+    expect(indicator.textContent).toBe('Loading occurrence data...');
     expect(indicator.dataset.mapTarget).toBe(surfaceTag === 'leafletMap' ? 'leafletMap' : 'svg');
     expect(indicator.style.left).toBe('70px');
     expect(indicator.style.top).toBe('40px');
