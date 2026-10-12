@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Tanvis
  * Description: Embed Tanvis biological record visualisations using the [tanvis] shortcode.
- * Version: 1.3.2
+ * Version: 1.3.3
  * License: GPL-3.0-only
  * Text Domain: tanvis
  */
@@ -11,7 +11,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-const TANVIS_WP_VERSION     = '1.3.2';
+const TANVIS_WP_VERSION     = '1.3.3';
 const TANVIS_WP_DEFAULT_API = 'https://tanhub.northwestinvertebrates.org.uk/api/v1';
 const TANVIS_WP_OPTION      = 'tanvis_api_base';
 
@@ -89,31 +89,73 @@ add_filter(
 
 // Called lazily: shortcodes also render during REST saves, where wp_enqueue_scripts never fires.
 function tanvis_wp_register_assets() {
-	if ( wp_script_is( 'tanvis', 'registered' ) ) {
-		return;
-	}
-
 	$base = plugin_dir_url( __FILE__ ) . 'assets/';
 	$v    = TANVIS_WP_VERSION;
 
-	wp_register_style( 'tanvis-leaflet', $base . 'leaflet.css', array(), $v );
-	wp_register_style( 'tanvis-tabulator', $base . 'tabulator.min.css', array(), $v );
-	wp_register_style( 'tanvis-brcatlas', $base . 'brcatlas.umd.css', array(), $v );
-	wp_register_style( 'tanvis-brccharts', $base . 'brccharts.umd.css', array(), $v );
-
-	wp_register_script( 'tanvis-d3', $base . 'd3.v7.min.js', array(), $v, true );
-	wp_register_script( 'tanvis-leaflet', $base . 'leaflet.js', array(), $v, true );
-	wp_register_script( 'tanvis-tabulator', $base . 'tabulator.min.js', array(), $v, true );
-	wp_register_script( 'tanvis-brcatlas', $base . 'brcatlas.min.umd.js', array( 'tanvis-d3' ), $v, true );
-	wp_register_script( 'tanvis-brccharts', $base . 'brccharts.min.umd.js', array( 'tanvis-d3' ), $v, true );
-	wp_register_script( 'tanvis', $base . 'tanvis.iife.js', array(), $v, true );
-	wp_add_inline_script(
-		'tanvis',
-		'window.Tanvis = window.Tanvis || {}; window.Tanvis.config = Object.assign(window.Tanvis.config || {}, ' . wp_json_encode( array( 'apiBase' => tanvis_wp_api_base(), 'assetBase' => $base ) ) . ');',
-		'before'
+	$styles = array(
+		'tanvis-leaflet'   => 'leaflet.css',
+		'tanvis-tabulator' => 'tabulator.min.css',
+		'tanvis-brcatlas'  => 'brcatlas.umd.css',
+		'tanvis-brccharts' => 'brccharts.umd.css',
 	);
-	wp_add_inline_script( 'tanvis', 'window.Tanvis.init();' );
+	foreach ( $styles as $handle => $file ) {
+		if ( ! wp_style_is( $handle, 'registered' ) ) {
+			wp_register_style( $handle, $base . $file, array(), $v );
+		}
+	}
+
+	$scripts = array(
+		'tanvis-d3'       => array( 'd3.v7.min.js', array() ),
+		'tanvis-leaflet'  => array( 'leaflet.js', array() ),
+		'tanvis-tabulator'=> array( 'tabulator.min.js', array() ),
+		'tanvis-brcatlas' => array( 'brcatlas.min.umd.js', array( 'tanvis-d3' ) ),
+		'tanvis-brccharts'=> array( 'brccharts.min.umd.js', array( 'tanvis-d3' ) ),
+		'tanvis'          => array( 'tanvis.iife.js', array() ),
+	);
+	foreach ( $scripts as $handle => $script ) {
+		if ( ! wp_script_is( $handle, 'registered' ) ) {
+			wp_register_script( $handle, $base . $script[0], $script[1], $v, true );
+		}
+	}
+
+	static $inline_scripts_added = false;
+	if ( ! $inline_scripts_added ) {
+		wp_add_inline_script(
+			'tanvis',
+			'window.Tanvis = window.Tanvis || {}; window.Tanvis.config = Object.assign(window.Tanvis.config || {}, ' . wp_json_encode( array( 'apiBase' => tanvis_wp_api_base(), 'assetBase' => $base ) ) . ');',
+			'before'
+		);
+		wp_add_inline_script( 'tanvis', 'window.Tanvis.init();' );
+		$inline_scripts_added = true;
+	}
 }
+
+function tanvis_wp_enqueue_content_assets() {
+	if ( ! is_singular() ) {
+		return;
+	}
+
+	$post = get_queried_object();
+	if ( ! $post || empty( $post->post_content ) ) {
+		return;
+	}
+
+	$pattern = '/' . get_shortcode_regex( array( 'tanvis' ) ) . '/';
+	if ( ! preg_match_all( $pattern, $post->post_content, $matches, PREG_SET_ORDER ) ) {
+		return;
+	}
+
+	foreach ( $matches as $match ) {
+		$attributes = shortcode_parse_atts( $match[3] );
+		if ( ! is_array( $attributes ) || empty( $attributes['type'] ) ) {
+			continue;
+		}
+
+		$map_type = isset( $attributes['map-type'] ) ? $attributes['map-type'] : ( $attributes['map_type'] ?? 'static' );
+		tanvis_wp_enqueue( $attributes['type'], $map_type );
+	}
+}
+add_action( 'wp_enqueue_scripts', 'tanvis_wp_enqueue_content_assets', 20 );
 
 // Returns the asset handles (script and style share names) a visualisation needs.
 function tanvis_wp_needs( $type, $map_type ) {
@@ -141,11 +183,18 @@ function tanvis_wp_enqueue( $type, $map_type ) {
 
 	$scripts = wp_scripts();
 	$deps    = array();
+	$styles  = array();
 
 	foreach ( tanvis_wp_needs( $type, $map_type ) as $name ) {
-		wp_enqueue_style( 'tanvis-' . $name );
+		$style = 'tanvis-' . $name;
+		wp_enqueue_style( $style );
+		$styles[] = $style;
 		wp_enqueue_script( 'tanvis-' . $name );
 		$deps[] = 'tanvis-' . $name;
+	}
+
+	if ( did_action( 'wp_head' ) && ! empty( $styles ) ) {
+		wp_print_styles( $styles );
 	}
 
 	if ( in_array( 'tanvis-leaflet', $deps, true ) ) {
