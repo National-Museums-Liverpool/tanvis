@@ -7328,7 +7328,7 @@ div[data-tanvis-controls="species-selector"] {
       lineInterpolator: 'curveMonotoneX',
       showLegend: true,
       interactivity: 'none',
-      margin: { left: 40 },
+      margin: { left: 40, right: 20, bottom: 20 },
       minY: 0,
       perRow: 1,
       ...(Number.isFinite(startYear) ? { minPeriod: startYear } : {}),
