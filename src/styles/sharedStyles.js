@@ -406,7 +406,20 @@ div[data-tanvis-controls="species-selector"] {
   cursor: pointer;
   margin-bottom: 0.5rem;
 }
+
+
+@media only screen and (max-width: 767px) {
+  .tanvis[data-vis-type='species-info-block'] :is(table, thead, tbody, tr, th, td) {
+    display: revert;
+  }
+}
+
 `;
+
+// Note that the @media CSS rule above that reverts table display properties is
+// a special measure for Tanyptera project whose WordPress website includes a
+// rule that sets the display type for tables and their elements to block on
+// small screens, but this screws up the species info table layout.
 
 export function ensureSharedStyles() {
   if (typeof document === 'undefined') {
