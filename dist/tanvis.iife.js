@@ -2790,7 +2790,9 @@ div[data-tanvis-controls="species-selector"] {
 
     function queueSearch(query) {
       const currentRequestToken = ++searchState.activeRequestToken;
-      const searchField = searchState.searchMode === 'vernacular' ? 'vernacular_name' : 'scientific_name';
+      const searchField = searchState.searchMode === 'vernacular'
+        ? 'taxon__vernacular_name'
+        : 'taxon__scientific_name';
       const taxonGroupExternalKey = rootElement?.dataset?.visTaxonGroup || '';
 
       fetchSuggestedTaxa({
@@ -2880,8 +2882,8 @@ div[data-tanvis-controls="species-selector"] {
     }
 
     function formatTaxonLabel(taxon) {
-      const scientificName = taxon.scientific_name || taxon.scientificName || '';
-      const vernacularName = taxon.vernacular_name || taxon.vernacularName || '';
+      const scientificName = taxon.taxon__scientific_name || taxon.scientific_name || taxon.scientificName || '';
+      const vernacularName = taxon.taxon__vernacular_name || taxon.vernacular_name || taxon.vernacularName || '';
       if (searchState.searchMode === 'vernacular' && vernacularName) {
         return `${vernacularName}${scientificName ? ` <em>(${escapeHtml(scientificName)})</em>` : ''}`;
       }
@@ -2924,16 +2926,18 @@ div[data-tanvis-controls="species-selector"] {
       return [];
     }
 
-    const resourceUrl = resolveResourceUrl$7(apiBase, 'taxa');
+    const resourceUrl = resolveResourceUrl$7(apiBase, 'taxon-stats');
     const url = new URL(resourceUrl.toString());
     url.searchParams.set(`${searchField}[contains]`, query);
+    url.searchParams.set('include', taxonGroupExternalKey ? 'taxon,taxon-group' : 'taxon');
+    url.searchParams.set('occurrences_count[gte]', '1');
+    url.searchParams.set('higher_geography_identifier[eq]', 'null');
     if (taxonGroupExternalKey) {
-      url.searchParams.set('include', 'taxon-group');
-      url.searchParams.set('taxon_group__external_key', taxonGroupExternalKey);
+      url.searchParams.set('taxon_group__external_key[eq]', taxonGroupExternalKey);
     }
     url.searchParams.set('limit', String(SPECIES_SEARCH_LIMIT));
 
-    const payload = await fetchJson$b(url.toString(), 'Failed to search taxa');
+    const payload = await fetchJson$b(url.toString(), 'Failed to search taxon stats');
     return getListData$6(payload);
   }
 

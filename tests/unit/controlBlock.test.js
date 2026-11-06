@@ -39,10 +39,10 @@ describe('control block species selector', () => {
         };
       }
 
-      if (requestUrl.includes('/taxa')) {
+      if (requestUrl.includes('/taxon-stats')) {
         return {
           ok: true,
-          json: async () => ({ data: [{ taxon_identifier: 'ABC123', scientific_name: 'Apis mellifera', vernacular_name: 'Honey bee' }] })
+          json: async () => ({ data: [{ taxon_identifier: 'ABC123', taxon__scientific_name: 'Apis mellifera', taxon__vernacular_name: 'Honey bee' }] })
         };
       }
 
@@ -73,7 +73,13 @@ describe('control block species selector', () => {
     await new Promise((resolve) => setTimeout(resolve, 350));
 
     const requestUrl = fetchMock.mock.calls.at(-1)?.[0];
-    expect(String(requestUrl)).toContain('scientific_name%5Bcontains%5D=bee');
+    const url = new URL(requestUrl);
+    expect(url.pathname).toBe('/api/v1/taxon-stats');
+    expect(url.searchParams.get('taxon__scientific_name[contains]')).toBe('bee');
+    expect(url.searchParams.get('include')).toBe('taxon');
+    expect(url.searchParams.get('occurrences_count[gte]')).toBe('1');
+    expect(url.searchParams.get('higher_geography_identifier[eq]')).toBe('null');
+    expect(url.searchParams.get('limit')).toBe('10');
 
     let selectedSpeciesId = null;
     element.addEventListener('taxon-identified', (event) => {
@@ -169,10 +175,10 @@ describe('control block species selector', () => {
         };
       }
 
-      if (requestUrl.includes('/taxa')) {
+      if (requestUrl.includes('/taxon-stats')) {
         return {
           ok: true,
-          json: async () => ({ data: [{ taxon_identifier: 'ABC123', scientific_name: 'Apis mellifera', vernacular_name: 'Honey bee' }] })
+          json: async () => ({ data: [{ taxon_identifier: 'ABC123', taxon__scientific_name: 'Apis mellifera', taxon__vernacular_name: 'Honey bee' }] })
         };
       }
 
@@ -201,9 +207,10 @@ describe('control block species selector', () => {
     await new Promise((resolve) => setTimeout(resolve, 350));
 
     const requestUrl = fetchMock.mock.calls.at(-1)?.[0];
-    expect(String(requestUrl)).toContain('include=taxon-group');
-    expect(String(requestUrl)).toContain('taxon_group__external_key=bees');
-    expect(String(requestUrl)).toContain('scientific_name%5Bcontains%5D=bee');
+    const url = new URL(requestUrl);
+    expect(url.searchParams.get('include')).toBe('taxon,taxon-group');
+    expect(url.searchParams.get('taxon_group__external_key[eq]')).toBe('bees');
+    expect(url.searchParams.get('taxon__scientific_name[contains]')).toBe('bee');
   });
 
   it('keeps the existing results visible while a newer query is pending', async () => {
@@ -222,15 +229,15 @@ describe('control block species selector', () => {
         };
       }
 
-      if (requestUrl.includes('/taxa')) {
-        if (requestUrl.includes('scientific_name%5Bcontains%5D=bee')) {
+      if (requestUrl.includes('/taxon-stats')) {
+        if (requestUrl.includes('taxon__scientific_name%5Bcontains%5D=bee')) {
           return {
             ok: true,
-            json: async () => ({ data: [{ taxon_identifier: 'ABC123', scientific_name: 'Apis mellifera', vernacular_name: 'Honey bee' }] })
+            json: async () => ({ data: [{ taxon_identifier: 'ABC123', taxon__scientific_name: 'Apis mellifera', taxon__vernacular_name: 'Honey bee' }] })
           };
         }
 
-        if (requestUrl.includes('scientific_name%5Bcontains%5D=wasp')) {
+        if (requestUrl.includes('taxon__scientific_name%5Bcontains%5D=wasp')) {
           return {
             ok: true,
             json: async () => secondRequestPromise
@@ -274,7 +281,7 @@ describe('control block species selector', () => {
     expect(visibleResults[0].textContent).toContain('Apis mellifera');
 
     resolveSecondRequest({
-      data: [{ taxon_identifier: 'XYZ999', scientific_name: 'Vespula germanica', vernacular_name: 'German wasp' }]
+      data: [{ taxon_identifier: 'XYZ999', taxon__scientific_name: 'Vespula germanica', taxon__vernacular_name: 'German wasp' }]
     });
 
     await new Promise((resolve) => setTimeout(resolve, 0));
@@ -282,7 +289,7 @@ describe('control block species selector', () => {
 
     const updatedResult = element.querySelector('.tanvis-species-search-result');
     expect(updatedResult?.textContent).toContain('Vespula germanica');
-    expect(String(fetchMock.mock.calls.at(-1)?.[0])).toContain('scientific_name%5Bcontains%5D=wasp');
+    expect(String(fetchMock.mock.calls.at(-1)?.[0])).toContain('taxon__scientific_name%5Bcontains%5D=wasp');
   });
 
   it('does not request taxa again when the search is cleared', async () => {
@@ -296,10 +303,10 @@ describe('control block species selector', () => {
         };
       }
 
-      if (requestUrl.includes('/taxa')) {
+      if (requestUrl.includes('/taxon-stats')) {
         return {
           ok: true,
-          json: async () => ({ data: [{ taxon_identifier: 'ABC123', scientific_name: 'Apis mellifera', vernacular_name: 'Honey bee' }] })
+          json: async () => ({ data: [{ taxon_identifier: 'ABC123', taxon__scientific_name: 'Apis mellifera', taxon__vernacular_name: 'Honey bee' }] })
         };
       }
 
@@ -328,16 +335,16 @@ describe('control block species selector', () => {
 
     await new Promise((resolve) => setTimeout(resolve, 350));
 
-    const taxaRequestsBeforeClear = fetchMock.mock.calls.filter(([requestUrl]) => String(requestUrl).includes('/taxa')).length;
-    expect(taxaRequestsBeforeClear).toBe(1);
+    const taxonStatsRequestsBeforeClear = fetchMock.mock.calls.filter(([requestUrl]) => String(requestUrl).includes('/taxon-stats')).length;
+    expect(taxonStatsRequestsBeforeClear).toBe(1);
 
     searchInput.value = '';
     searchInput.dispatchEvent(new Event('input', { bubbles: true }));
 
     await new Promise((resolve) => setTimeout(resolve, 350));
 
-    const taxaRequestsAfterClear = fetchMock.mock.calls.filter(([requestUrl]) => String(requestUrl).includes('/taxa')).length;
-    expect(taxaRequestsAfterClear).toBe(1);
+    const taxonStatsRequestsAfterClear = fetchMock.mock.calls.filter(([requestUrl]) => String(requestUrl).includes('/taxon-stats')).length;
+    expect(taxonStatsRequestsAfterClear).toBe(1);
     expect(element.querySelector('.tanvis-species-search-result')).toBeNull();
   });
 
@@ -352,10 +359,10 @@ describe('control block species selector', () => {
         };
       }
 
-      if (requestUrl.includes('/taxa')) {
+      if (requestUrl.includes('/taxon-stats')) {
         return {
           ok: true,
-          json: async () => ({ data: [{ taxon_identifier: 'ABC123', scientific_name: 'Apis mellifera', vernacular_name: 'Honey bee' }] })
+          json: async () => ({ data: [{ taxon_identifier: 'ABC123', taxon__scientific_name: 'Apis mellifera', taxon__vernacular_name: 'Honey bee' }] })
         };
       }
 
@@ -393,7 +400,7 @@ describe('control block species selector', () => {
 
     expect(searchInput.value).toBe('');
     expect(element.querySelector('.tanvis-species-search-result')).toBeNull();
-    expect(String(fetchMock.mock.calls.at(-1)?.[0])).toContain('scientific_name%5Bcontains%5D=bee');
+    expect(String(fetchMock.mock.calls.at(-1)?.[0])).toContain('taxon__scientific_name%5Bcontains%5D=bee');
   });
 
   it('shows only the requested control sections when data-vis-control-elements is set', async () => {
@@ -462,10 +469,10 @@ describe('control block species selector', () => {
         };
       }
 
-      if (requestUrl.includes('/taxa')) {
+      if (requestUrl.includes('/taxon-stats')) {
         return {
           ok: true,
-          json: async () => ({ data: [{ taxon_identifier: 'XYZ999', scientific_name: 'Apis mellifera', vernacular_name: 'Honey bee' }] })
+          json: async () => ({ data: [{ taxon_identifier: 'XYZ999', taxon__scientific_name: 'Apis mellifera', taxon__vernacular_name: 'Honey bee' }] })
         };
       }
 
@@ -498,6 +505,6 @@ describe('control block species selector', () => {
     await new Promise((resolve) => setTimeout(resolve, 350));
 
     const requestUrl = fetchMock.mock.calls.at(-1)?.[0];
-    expect(String(requestUrl)).toContain('vernacular_name%5Bcontains%5D=honey');
+    expect(String(requestUrl)).toContain('taxon__vernacular_name%5Bcontains%5D=honey');
   });
 });
