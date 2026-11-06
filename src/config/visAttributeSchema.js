@@ -11,6 +11,7 @@ const KNOWN_VIS_TYPES = [
   'species-name-block',
   'species-remarks-block',
   'species-info-block',
+  'species-taxonomy-block',
   'species-image',
   'general-info-block',
   'help-block',
@@ -714,6 +715,13 @@ const RULES = {
       if the scientific name is shown in the species name block.
       The value is ignored if the scientific name is not shown.`
   }),
+  preferCommon: createRule({
+    key: 'preferCommon',
+    datasetName: 'visPreferCommon',
+    parseAndValidate: parseAndValidateBoolean,
+    defaultValue: false,
+    info: `Whether to prefer vernacular names over scientific names in the species taxonomy block.`
+  }),
   sort: createRule({
     key: 'sort',
     datasetName: 'visSort',
@@ -774,6 +782,7 @@ const VIS_TYPE_RULE_SETS = {
   'species-name-block': ['taxonId', 'taxonIdSource', 'primaryName', 'secondaryName', 'authority'],
   'species-remarks-block': ['taxonId', 'taxonIdSource'],
   'species-info-block': ['taxonId', 'taxonIdSource', 'control', 'region'],
+  'species-taxonomy-block': ['taxonId', 'taxonIdSource', 'preferCommon'],
   'species-image': ['taxonId', 'taxonIdSource', 'imageVariant', 'uuid', 'expand', 'width', 'height', 'showImageCaption', 'showImageAttribution', 'showImageLicense'],
   'records-table': ['taxonId', 'taxonIdSource', 'control', 'region', 'pageSize', 'tableResponsive'],
   'general-info-block': [],
@@ -822,6 +831,7 @@ const VIS_TYPE_DESCRIPTIONS = {
   'species-remarks-block': `A block visualisation showing remarks for a species.`,
   'species-info-block': `A block visualisation showing information for a species, including 
     its conservation status, a summary of the number of records and number of grid squares.`,
+  'species-taxonomy-block': `A block visualisation showing the parent taxa for a species, with an option to prefer vernacular names.`,
   'species-image': `A block visualisation showing an image for a species, fetched from the 
     taxa API's taxon-media data.`,
   'general-info-block': `A block visualisation showing general information for the project.`,

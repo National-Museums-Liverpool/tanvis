@@ -41,6 +41,16 @@ describe('parseOptions', () => {
     expect(parseOptions(element).boundaries).toBe(true);
   });
 
+  it('defaults species taxonomy to scientific names and parses data-vis-prefer-common', () => {
+    const element = document.createElement('div');
+    element.dataset.visType = 'species-taxonomy-block';
+
+    expect(parseOptions(element).preferCommon).toBe(false);
+
+    element.dataset.visPreferCommon = 'true';
+    expect(parseOptions(element).preferCommon).toBe(true);
+  });
+
   it('parses boundaries true when supplied as true', () => {
     const element = document.createElement('div');
     element.dataset.visBoundaries = 'true';

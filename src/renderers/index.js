@@ -12,6 +12,7 @@ export { renderTemporalYearChart } from './temporalYearChart.js';
 export { renderSpeciesNameBlock } from './speciesNameBlock.js';
 export { renderSpeciesRemarksBlock } from './speciesRemarksBlock.js';
 export { renderSpeciesInfoBlock } from './speciesInfoBlock.js';
+export { renderSpeciesTaxonomyBlock } from './speciesTaxonomyBlock.js';
 export { renderSpeciesImage } from './speciesImage.js';
 export { renderHelpBlock } from './helpBlock.js';
 export { renderGeneralInfoBlock } from './generalInfoBlock.js';
