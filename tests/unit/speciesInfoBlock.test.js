@@ -15,7 +15,7 @@ describe('species info block', () => {
         data: [{
           occurrences_count: 123,
           grid_square_count: 45,
-          taxon__conservation_status: 'Near Threatened',
+          taxon__gb_red_list: 'Near Threatened',
           frequency_trend_state: 'Increasing',
           last_record_date: '2025-06-01',
           geographic_region__higher_geography: null
@@ -71,10 +71,10 @@ describe('species info block', () => {
       ok: true,
       json: async () => ({
         data: [
-          { occurrences_count: 5, grid_square_count: 2, taxon__conservation_status: 'LC', geographic_region__higher_geography: 58 },
-          { occurrences_count: 6, grid_square_count: 3, taxon__conservation_status: 'LC', geographic_region__higher_geography: 59 },
-          { occurrences_count: 7, grid_square_count: 4, taxon__conservation_status: 'LC', geographic_region__higher_geography: 60 },
-          { occurrences_count: 18, grid_square_count: 9, taxon__conservation_status: 'LC', geographic_region__higher_geography: null }
+          { occurrences_count: 5, grid_square_count: 2, taxon__gb_red_list: 'LC', geographic_region__higher_geography: 58 },
+          { occurrences_count: 6, grid_square_count: 3, taxon__gb_red_list: 'LC', geographic_region__higher_geography: 59 },
+          { occurrences_count: 7, grid_square_count: 4, taxon__gb_red_list: 'LC', geographic_region__higher_geography: 60 },
+          { occurrences_count: 18, grid_square_count: 9, taxon__gb_red_list: 'LC', geographic_region__higher_geography: null }
         ]
       })
     });
@@ -130,7 +130,7 @@ describe('species info block', () => {
         return {
           ok: true,
           json: async () => ({
-            data: [{ occurrences_count: 1, grid_square_count: 1, taxon__conservation_status: 'Least Concern', geographic_region__higher_geography: null }]
+            data: [{ occurrences_count: 1, grid_square_count: 1, taxon__gb_red_list: 'Least Concern', geographic_region__higher_geography: null }]
           })
         };
       }
@@ -138,7 +138,7 @@ describe('species info block', () => {
       return {
         ok: true,
         json: async () => ({
-          data: [{ occurrences_count: 9, grid_square_count: 7, taxon__conservation_status: 'Vulnerable', geographic_region__higher_geography: null }]
+          data: [{ occurrences_count: 9, grid_square_count: 7, taxon__gb_red_list: 'Vulnerable', geographic_region__higher_geography: null }]
         })
       };
     });

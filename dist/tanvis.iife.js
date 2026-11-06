@@ -8432,7 +8432,7 @@ div[data-tanvis-controls="species-selector"] {
     renderCountCell(content, nodes.frequencyTrendValueCell, sortedRows, 'frequency_trend_state', region, toDisplayValue);
     renderCountCell(content, nodes.lastRecordValueCell, sortedRows, 'last_record_date', region, toDisplayValue);
     renderCountCell(content, nodes.aveRecsValueCell, aveRecsRows, 'average_records_per_year', region, toDisplayAverage);
-    const conservationStatus = toDisplayStatus(firstRow?.taxon__conservation_status);
+    const conservationStatus = toDisplayStatus(firstRow?.taxon__gb_red_list);
     const rarityCategory = toDisplayRarity(firstRow?.taxon__rarity_category);
 
     renderItalicCell(nodes.conservationValueCell, content, conservationStatus);
@@ -9191,7 +9191,7 @@ div[data-tanvis-controls="species-selector"] {
     return elements.map((element) => render(element));
   }
 
-  const version = '1.3.4';
+  const version = '1.3.5';
 
   if (typeof window !== 'undefined') {
     window.Tanvis = window.Tanvis || {};

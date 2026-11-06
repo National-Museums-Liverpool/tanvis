@@ -376,7 +376,7 @@ function renderSpeciesInfoText(content, statsRows, region, aveRecsRows) {
   renderCountCell(content, nodes.frequencyTrendValueCell, sortedRows, 'frequency_trend_state', region, toDisplayValue);
   renderCountCell(content, nodes.lastRecordValueCell, sortedRows, 'last_record_date', region, toDisplayValue);
   renderCountCell(content, nodes.aveRecsValueCell, aveRecsRows, 'average_records_per_year', region, toDisplayAverage);
-  const conservationStatus = toDisplayStatus(firstRow?.taxon__conservation_status);
+  const conservationStatus = toDisplayStatus(firstRow?.taxon__gb_red_list);
   const rarityCategory = toDisplayRarity(firstRow?.taxon__rarity_category);
 
   renderItalicCell(nodes.conservationValueCell, content, conservationStatus);
